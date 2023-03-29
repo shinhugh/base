@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2023-03-29T23:09:56.803Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0" etag="9cbBWx9zGj3bJfc1e6E1" version="21.1.2" type="device">
+<mxfile host="app.diagrams.net" modified="2023-03-29T23:26:46.025Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0" etag="jS065GWMJyDq6amJMSsS" version="21.1.2" type="device">
   <diagram name="Page-1" id="4avrkyJrO1HF61GQWn7J">
     <mxGraphModel dx="3131" dy="1673" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -181,10 +181,10 @@
         <mxCell id="4iE3-iKasyKdXARzK3Ku-68" value="Password hash (string)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Lucida Console;fontSize=14;" parent="4iE3-iKasyKdXARzK3Ku-63" vertex="1">
           <mxGeometry x="10" y="120" width="220" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="lMtaDuZxCy8Wa0wxjzj1-1" value="Roles (bit flags)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Lucida Console;fontSize=14;" vertex="1" parent="4iE3-iKasyKdXARzK3Ku-63">
+        <mxCell id="lMtaDuZxCy8Wa0wxjzj1-1" value="Roles (bit flags)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Lucida Console;fontSize=14;" parent="4iE3-iKasyKdXARzK3Ku-63" vertex="1">
           <mxGeometry x="10" y="200" width="220" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="4iE3-iKasyKdXARzK3Ku-70" value="5. Identification service returns UserAccount ID and roles (bit flags) to gateway." style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontSize=14;fontFamily=Lucida Console;whiteSpace=wrap;" parent="1" vertex="1">
+        <mxCell id="4iE3-iKasyKdXARzK3Ku-70" value="5. Identification service returns UserAccount ID and roles to gateway." style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontSize=14;fontFamily=Lucida Console;whiteSpace=wrap;" parent="1" vertex="1">
           <mxGeometry x="-80" y="-560" width="160" height="120" as="geometry" />
         </mxCell>
         <mxCell id="4iE3-iKasyKdXARzK3Ku-72" value="6. Gateway forwards original request with UserAccount ID and roles to appropriate service." style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontSize=14;fontFamily=Lucida Console;whiteSpace=wrap;" parent="1" vertex="1">
