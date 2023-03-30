@@ -1,3 +1,5 @@
+import { Sequelize, DataTypes } from 'sequelize';
+
 export class PersistentSessionServiceServer {
   #databaseInfo;
 
@@ -16,8 +18,20 @@ export class PersistentSessionServiceServer {
   }
 
   async create(authority, persistentSession) {
-    throw new Error('Not implemented');
-    // TODO: Implement
+    await openSequelize(this.#databaseInfo);
+    try {
+      await sequelize.models.persistentSessions.create({
+        id: persistentSession.id,
+        owner: persistentSession.owner,
+        roles: translateRoleArrayToBitFlags(persistentSession.roles),
+        refreshToken: persistentSession.refreshToken,
+        creationTime: persistentSession.creationTime,
+        expirationTime: persistentSession.expirationTime
+      });
+    }
+    finally {
+      await closeSequelize();
+    }
   }
 
   async deleteByRefreshToken(authority, refreshToken) {
@@ -158,14 +172,14 @@ export class Role {
 export class DatabaseInfo {
   #host;
   #port;
-  #name;
+  #database;
   #username;
   #password;
 
-  constructor(host, port, name, username, password) {
+  constructor(host, port, database, username, password) {
     this.#host = host;
     this.#port = port;
-    this.#name = name;
+    this.#database = database;
     this.#username = username;
     this.#password = password;
   }
@@ -186,12 +200,12 @@ export class DatabaseInfo {
     this.#port = port;
   }
 
-  get name() {
-    return this.#name;
+  get database() {
+    return this.#database;
   }
 
-  set name(name) {
-    this.#name = name;
+  set database(database) {
+    this.#database = database;
   }
 
   get username() {
@@ -210,3 +224,87 @@ export class DatabaseInfo {
     this.#password = password;
   }
 }
+
+const translateRoleArrayToBitFlags = (roles) => {
+  const uniqueRoles = [...new Set(roles)];
+  let bitFlags = 0;
+  for (const role of uniqueRoles) {
+    bitFlags += roleToBitFlagMap.get(role);
+  }
+  return bitFlags;
+};
+
+const openSequelize = async (databaseInfo) => {
+  if (!sequelize) {
+    sequelize = new Sequelize({
+      host: databaseInfo.host,
+      port: databaseInfo.port,
+      database: databaseInfo.database,
+      username: databaseInfo.username,
+      password: databaseInfo.password,
+      dialect: 'mysql',
+      logging: false,
+      pool: {
+        max: 2,
+        min: 0,
+        idle: 0,
+        acquire: 5000,
+        evict: 5000
+      }
+    });
+    await sequelize.authenticate();
+    sequelize.define('persistentSessions', sequelizePersistentSessionAttributes, sequelizePersistentSessionOptions);
+  }
+};
+
+const closeSequelize = async () => {
+  if (sequelize) {
+    await sequelize.close();
+  }
+  sequelize = undefined;
+};
+
+const roleToBitFlagMap = new Map([
+  [Role.System, 1],
+  [Role.User, 2],
+  [Role.Admin, 4]
+]);
+const sequelizePersistentSessionAttributes = {
+  id: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    primaryKey: true,
+    field: 'Id'
+  },
+  owner: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    field: 'Owner'
+  },
+  roles: {
+    type: DataTypes.TINYINT.UNSIGNED,
+    allowNull: false,
+    field: 'Roles'
+  },
+  refreshToken: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    field: 'RefreshToken'
+  },
+  creationTime: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false,
+    field: 'CreationTime'
+  },
+  expirationTime: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false,
+    field: 'ExpirationTime'
+  }
+};
+const sequelizePersistentSessionOptions = {
+  timestamps: false,
+  tableName: 'PersistentSessions'
+};
+let sequelize;
