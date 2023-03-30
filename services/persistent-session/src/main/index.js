@@ -92,7 +92,7 @@ export class Authority {
 
   constructor(id, roles) {
     this.#id = id;
-    this.#roles = roles;
+    this.roles = roles;
   }
 
   get id() {
@@ -109,5 +109,37 @@ export class Authority {
 
   set roles(roles) {
     this.#roles = roles;
+  }
+}
+
+export class Role {
+  static #allowConstructor = false;
+
+  #name;
+
+  static #create(name) {
+    Role.#allowConstructor = true;
+    const instance = new Role(name);
+    Role.#allowConstructor = false;
+    return instance;
+  }
+
+  static System = Role.#create('system');
+  static User = Role.#create('user');
+  static Admin = Role.#create('admin');
+
+  constructor(name) {
+    if (!Role.#allowConstructor) {
+      throw new TypeError('Role cannot be instantiated');
+    }
+    this.#name = name;
+  }
+
+  get name() {
+    return this.#name;
+  }
+
+  set name(name) {
+    this.#name = name;
   }
 }
