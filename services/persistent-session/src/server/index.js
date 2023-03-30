@@ -1,7 +1,6 @@
 import { Sequelize, DataTypes } from 'sequelize';
 
 // TODO: Remove comments
-// TODO: Organize code
 
 export class PersistentSessionServiceServer {
   #databaseInfo;
@@ -15,55 +14,6 @@ export class PersistentSessionServiceServer {
   // databaseInfo.password: String
   constructor(databaseInfo) {
     this.#databaseInfo = databaseInfo;
-  }
-
-  // From Identification service
-  // authority: Object (optional)
-  // authority.id: String (optional)
-  // authority.roles: [Role] (optional)
-  // id: String
-  async readById(authority, id) {
-    if (!authority || !authority.roles || !authority.roles.includes(Role.System)) {
-      throw new AccessDeniedError();
-    }
-    await this.#openSequelize(this.#databaseInfo);
-    try {
-      const persistentSession = await this.#sequelize.models.persistentSessions.findOne({
-        where: {
-          id: id
-        }
-      });
-      if (!persistentSession) {
-        throw new NotFoundError();
-      }
-      return new PersistentSession(persistentSession.id, persistentSession.userAccountId, persistentSession.roles, persistentSession.refreshToken, persistentSession.creationTime, persistentSession.expirationTime);
-    }
-    finally {
-      await this.#closeSequelize();
-    }
-  }
-
-  // From Login service
-  // authority: Object (optional)
-  // authority.id: String (optional)
-  // authority.roles: [Role] (optional)
-  // refreshToken: String
-  async readByRefreshToken(authority, refreshToken) {
-    await this.#openSequelize(this.#databaseInfo);
-    try {
-      const persistentSession = await this.#sequelize.models.persistentSessions.findOne({
-        where: {
-          refreshToken: refreshToken
-        }
-      });
-      if (!persistentSession) {
-        throw new NotFoundError();
-      }
-      return new PersistentSession(persistentSession.id, persistentSession.userAccountId, persistentSession.roles, persistentSession.refreshToken, persistentSession.creationTime, persistentSession.expirationTime);
-    }
-    finally {
-      await this.#closeSequelize();
-    }
   }
 
   // From Login service
@@ -95,22 +45,49 @@ export class PersistentSessionServiceServer {
     }
   }
 
-  // From Logout service
+  // From Identification service
+  // authority: Object (optional)
+  // authority.id: String (optional)
+  // authority.roles: [Role] (optional)
+  // id: String
+  async readById(authority, id) {
+    if (!authority || !authority.roles || !authority.roles.includes(Role.System)) {
+      throw new AccessDeniedError();
+    }
+    await this.#openSequelize(this.#databaseInfo);
+    try {
+      const persistentSession = await this.#sequelize.models.persistentSessions.findOne({
+        where: {
+          id: id
+        }
+      });
+      if (!persistentSession) {
+        throw new NotFoundError();
+      }
+      return new PersistentSession(persistentSession.id, persistentSession.userAccountId, translateBitFlagsToRoleArray(persistentSession.roles), persistentSession.refreshToken, persistentSession.creationTime, persistentSession.expirationTime);
+    }
+    finally {
+      await this.#closeSequelize();
+    }
+  }
+
+  // From Login service
   // authority: Object (optional)
   // authority.id: String (optional)
   // authority.roles: [Role] (optional)
   // refreshToken: String
-  async deleteByRefreshToken(authority, refreshToken) {
+  async readByRefreshToken(authority, refreshToken) {
     await this.#openSequelize(this.#databaseInfo);
     try {
-      const count = await this.#sequelize.models.persistentSessions.destroy({
+      const persistentSession = await this.#sequelize.models.persistentSessions.findOne({
         where: {
           refreshToken: refreshToken
         }
       });
-      if (count == 0) {
+      if (!persistentSession) {
         throw new NotFoundError();
       }
+      return new PersistentSession(persistentSession.id, persistentSession.userAccountId, translateBitFlagsToRoleArray(persistentSession.roles), persistentSession.refreshToken, persistentSession.creationTime, persistentSession.expirationTime);
     }
     finally {
       await this.#closeSequelize();
@@ -142,6 +119,28 @@ export class PersistentSessionServiceServer {
     }
   }
 
+  // From Logout service
+  // authority: Object (optional)
+  // authority.id: String (optional)
+  // authority.roles: [Role] (optional)
+  // refreshToken: String
+  async deleteByRefreshToken(authority, refreshToken) {
+    await this.#openSequelize(this.#databaseInfo);
+    try {
+      const count = await this.#sequelize.models.persistentSessions.destroy({
+        where: {
+          refreshToken: refreshToken
+        }
+      });
+      if (count == 0) {
+        throw new NotFoundError();
+      }
+    }
+    finally {
+      await this.#closeSequelize();
+    }
+  }
+
   async #openSequelize(databaseInfo) {
     if (!this.#sequelize) {
       this.#sequelize = new Sequelize({
@@ -150,15 +149,9 @@ export class PersistentSessionServiceServer {
         database: databaseInfo.database,
         username: databaseInfo.username,
         password: databaseInfo.password,
-        dialect: 'mysql',
-        logging: false,
-        pool: {
-          max: 2,
-          min: 0,
-          idle: 0,
-          acquire: 5000,
-          evict: 5000
-        }
+        dialect: sequelizeOptions.dialect,
+        logging: sequelizeOptions.logging,
+        pool: sequelizeOptions.pool
       });
       await this.#sequelize.authenticate();
       this.#sequelize.define('persistentSessions', sequelizePersistentSessionAttributes, sequelizePersistentSessionOptions);
@@ -219,7 +212,7 @@ export class Role {
 
   constructor(name) {
     if (!Role.#allowConstructor) {
-      throw new Error('Role cannot be instantiated');
+      throw new Error(roleInstantiationErrorMessage);
     }
     this.#name = name;
   }
@@ -231,21 +224,21 @@ export class Role {
 
 export class AccessDeniedError extends Error {
   constructor() {
-    super('Access denied');
+    super(accessDeniedErrorMessage);
     this.name = this.constructor.name;
   }
 }
 
 export class NotFoundError extends Error {
   constructor() {
-    super('Not found');
+    super(notFoundErrorMessage);
     this.name = this.constructor.name;
   }
 }
 
 export class ConflictError extends Error {
   constructor() {
-    super('Conflict');
+    super(conflictErrorMessage);
     this.name = this.constructor.name;
   }
 }
@@ -276,7 +269,22 @@ const translateBitFlagsToRoleArray = (bitFlags) => {
   return roleArray;
 };
 
+const roleInstantiationErrorMessage = 'Cannot instantiate Role';
+const accessDeniedErrorMessage = 'Access denied';
+const notFoundErrorMessage = 'Not found';
+const conflictErrorMessage = 'Conflict';
 const roleBitFlagOrder = [Role.System, Role.User, Role.Admin];
+const sequelizeOptions = {
+  dialect: 'mysql',
+  logging: false,
+  pool: {
+    max: 2,
+    min: 0,
+    idle: 0,
+    acquire: 5000,
+    evict: 5000
+  }
+};
 const sequelizePersistentSessionAttributes = {
   id: {
     type: DataTypes.STRING,
