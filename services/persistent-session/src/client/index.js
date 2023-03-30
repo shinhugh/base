@@ -1,4 +1,4 @@
-export class PersistentSessionService {
+export class PersistentSessionServiceClient {
   getById(authority, id) {
     // TODO: Implement
   }
@@ -130,7 +130,7 @@ export class Role {
 
   constructor(name) {
     if (!Role.#allowConstructor) {
-      throw new TypeError('Role cannot be instantiated');
+      throw new Error('Role cannot be instantiated');
     }
     this.#name = name;
   }
