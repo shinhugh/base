@@ -1,21 +1,32 @@
 export class PersistentSessionServiceClient {
-  getById(authority, id) {
+  #serverInfo;
+
+  constructor(serverInfo) {
+    this.#serverInfo = serverInfo;
+  }
+
+  async getById(authority, id) {
+    throw new Error('Not implemented');
     // TODO: Implement
   }
 
-  getByRefreshToken(authority, refreshToken) {
+  async getByRefreshToken(authority, refreshToken) {
+    throw new Error('Not implemented');
     // TODO: Implement
   }
 
-  create(authority, persistentSession) {
+  async create(authority, persistentSession) {
+    throw new Error('Not implemented');
     // TODO: Implement
   }
 
-  deleteByRefreshToken(authority, refreshToken) {
+  async deleteByRefreshToken(authority, refreshToken) {
+    throw new Error('Not implemented');
     // TODO: Implement
   }
 
-  deleteByUserAccountId(authority, userAccountId) {
+  async deleteByUserAccountId(authority, userAccountId) {
+    throw new Error('Not implemented');
     // TODO: Implement
   }
 }
@@ -141,5 +152,31 @@ export class Role {
 
   set name(name) {
     this.#name = name;
+  }
+}
+
+export class ServerInfo {
+  #host;
+  #port;
+
+  constructor(host, port) {
+    this.#host = host;
+    this.#port = port;
+  }
+
+  get host() {
+    return this.#host;
+  }
+
+  set host(host) {
+    this.#host = host;
+  }
+
+  get port() {
+    return this.#port;
+  }
+
+  set port(port) {
+    this.#port = port;
   }
 }
