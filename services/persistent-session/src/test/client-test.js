@@ -11,7 +11,7 @@ const testReadById = async () => {
   const authority = {
     roles: [Role.System]
   };
-  await service.readById(authority, 'persistent-session-id'); // TODO
+  await service.readById(authority, 'persistent-session-id');
 };
 
 const testReadByRefreshToken = async () => {

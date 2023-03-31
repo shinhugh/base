@@ -1,5 +1,4 @@
 // TODO: Remove comments
-// TODO: Make deep copies of function arguments
 
 export class PersistentSessionServiceClient {
   #serverInfo;

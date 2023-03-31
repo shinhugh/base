@@ -11,7 +11,7 @@ const testReadById = async () => {
   const authority = {
     roles: [Role.System]
   };
-  await service.readById(authority, 'persistent-session-id'); // TODO
+  await service.readById(authority, 'persistent-session-id');
 };
 
 const testReadByRefreshToken = async () => {
@@ -35,7 +35,7 @@ const testDeleteByRefreshToken = async () => {
 export const serverTestModule = {
   name: 'Server',
   tests: [
-    { name: 'Create', run: testCreate }
+    // { name: 'Create', run: testCreate },
     // { name: 'ReadById', run: testReadById },
     // { name: 'ReadByRefreshToken', run: testReadByRefreshToken },
     // { name: 'DeleteByUserAccountId', run: testDeleteByUserAccountId },

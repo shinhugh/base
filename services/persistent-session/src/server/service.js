@@ -2,7 +2,6 @@ import { randomUUID } from 'crypto';
 import { Sequelize, DataTypes } from 'sequelize';
 
 // TODO: Remove comments
-// TODO: Make deep copies of function arguments
 
 export class PersistentSessionServiceServer {
   #databaseInfo;
@@ -42,19 +41,18 @@ export class PersistentSessionServiceServer {
     if (!(persistentSession instanceof PersistentSession)) {
       throw new IllegalArgumentError();
     }
+    const entry = {
+      userAccountId: persistentSession.userAccountId,
+      roles: translateRoleArrayToBitFlags(persistentSession.roles),
+      refreshToken: persistentSession.refreshToken,
+      creationTime: persistentSession.creationTime,
+      expirationTime: persistentSession.expirationTime
+    };
     await this.#openSequelize(this.#databaseInfo);
     try {
-      const id = await this.#generateId();
-      const roles = translateRoleArrayToBitFlags(persistentSession.roles);
+      entry.id = await this.#generateId();
       try {
-        await this.#sequelize.models.persistentSessions.create({
-          id: id,
-          userAccountId: persistentSession.userAccountId,
-          roles: roles,
-          refreshToken: persistentSession.refreshToken,
-          creationTime: persistentSession.creationTime,
-          expirationTime: persistentSession.expirationTime
-        });
+        await this.#sequelize.models.persistentSessions.create(entry);
       }
       catch (e) {
         if (e instanceof Sequelize.ValidationError) {
@@ -86,15 +84,15 @@ export class PersistentSessionServiceServer {
     }
     await this.#openSequelize(this.#databaseInfo);
     try {
-      const persistentSession = await this.#sequelize.models.persistentSessions.findOne({
+      const entry = await this.#sequelize.models.persistentSessions.findOne({
         where: {
           id: id
         }
       });
-      if (!persistentSession) {
+      if (!entry) {
         throw new NotFoundError();
       }
-      return new PersistentSession(persistentSession.id, persistentSession.userAccountId, translateBitFlagsToRoleArray(persistentSession.roles), persistentSession.refreshToken, persistentSession.creationTime, persistentSession.expirationTime);
+      return new PersistentSession(entry.id, entry.userAccountId, translateBitFlagsToRoleArray(entry.roles), entry.refreshToken, entry.creationTime, entry.expirationTime);
     }
     finally {
       await this.#closeSequelize();
@@ -115,15 +113,15 @@ export class PersistentSessionServiceServer {
     }
     await this.#openSequelize(this.#databaseInfo);
     try {
-      const persistentSession = await this.#sequelize.models.persistentSessions.findOne({
+      const entry = await this.#sequelize.models.persistentSessions.findOne({
         where: {
           refreshToken: refreshToken
         }
       });
-      if (!persistentSession) {
+      if (!entry) {
         throw new NotFoundError();
       }
-      return new PersistentSession(persistentSession.id, persistentSession.userAccountId, translateBitFlagsToRoleArray(persistentSession.roles), persistentSession.refreshToken, persistentSession.creationTime, persistentSession.expirationTime);
+      return new PersistentSession(entry.id, entry.userAccountId, translateBitFlagsToRoleArray(entry.roles), entry.refreshToken, entry.creationTime, entry.expirationTime);
     }
     finally {
       await this.#closeSequelize();
