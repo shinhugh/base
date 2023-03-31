@@ -102,9 +102,9 @@ const translateBitFlagsToRoleArray = (bitFlags) => {
 
 const roleBitFlagOrder = [Role.System, Role.User, Role.Admin];
 const service = new PersistentSessionServiceServer({
-  host: 'localhost',
-  port: 3306,
-  database: 'base',
-  username: 'root',
-  password: ''
+  host: process.env.AUTH_DB_HOST,
+  port: process.env.AUTH_DB_PORT,
+  database: process.env.AUTH_DB_DATABASE,
+  username: process.env.AUTH_DB_USERNAME,
+  password: process.env.AUTH_DB_PASSWORD
 });
