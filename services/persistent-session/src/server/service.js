@@ -39,7 +39,7 @@ export class PersistentSessionServiceServer {
     if (detectIllegalAuthorityInput(authority)) {
       throw new IllegalArgumentError();
     }
-    if (!persistentSession) {
+    if (!(persistentSession instanceof PersistentSession)) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -56,9 +56,11 @@ export class PersistentSessionServiceServer {
           expirationTime: persistentSession.expirationTime
         });
       }
-      catch (e) { // TODO: Verify that error was thrown due to conflict
-        console.log(e); // DEBUG
-        throw new ConflictError();
+      catch (e) {
+        if (e instanceof Sequelize.ValidationError) {
+          throw new ConflictError();
+        }
+        throw e;
       }
       return id;
     }
@@ -79,7 +81,7 @@ export class PersistentSessionServiceServer {
     if (!authority || !authority.roles || !authority.roles.includes(Role.System)) {
       throw new AccessDeniedError();
     }
-    if (!id) {
+    if (typeof id !== 'string') {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -108,7 +110,7 @@ export class PersistentSessionServiceServer {
     if (detectIllegalAuthorityInput(authority)) {
       throw new IllegalArgumentError();
     }
-    if (!refreshToken) {
+    if (typeof refreshToken !== 'string') {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -140,7 +142,7 @@ export class PersistentSessionServiceServer {
     if (!authority || !authority.roles || !(authority.roles.includes(Role.System) || authority.roles.includes(Role.Admin) || (authority.roles.includes(Role.User) && authority.id && authority.id === userAccountId))) {
       throw new AccessDeniedError();
     }
-    if (!userAccountId) {
+    if (typeof userAccountId !== 'string') {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -168,7 +170,7 @@ export class PersistentSessionServiceServer {
     if (detectIllegalAuthorityInput(authority)) {
       throw new IllegalArgumentError();
     }
-    if (!refreshToken) {
+    if (typeof refreshToken !== 'string') {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);

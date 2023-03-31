@@ -16,7 +16,7 @@ export class PersistentSessionServiceClient {
     }
     this.#serverInfo = {
       host: serverInfo.host,
-      port: Math.floor(serverInfo.port)
+      port: serverInfo.port
     };
   }
 

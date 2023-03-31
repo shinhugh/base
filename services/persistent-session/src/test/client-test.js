@@ -39,7 +39,7 @@ export const clientTestModule = {
     // { name: 'ReadById', run: testReadById },
     // { name: 'ReadByRefreshToken', run: testReadByRefreshToken },
     // { name: 'DeleteByUserAccountId', run: testDeleteByUserAccountId },
-    // { name: 'DeleteByRefreshToken', run: testDeleteByRefreshToken }
+    // { name: 'DeleteByRefreshToken', run: testDeleteByRefreshToken },
   ]
 };
 const userAccountId = 'd1da9b21-5106-49b5-8ff1-6f3137fdf403';
