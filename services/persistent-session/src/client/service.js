@@ -218,11 +218,11 @@ const makeRequest = async (funcName, authority, args) => {
   const responseWrapper = await client.send(new InvokeCommand({
     FunctionName: 'base_persistentSessionService',
     LogType: 'None',
-    Payload: {
-      authority: authority,
+    Payload: JSON.stringify({
       function: funcName,
+      authority: authority,
       arguments: args
-    }
+    })
   }));
   const response = JSON.parse(Buffer.from(responseWrapper.Payload));
   switch (response.result) {
