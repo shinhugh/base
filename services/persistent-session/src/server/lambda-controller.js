@@ -1,10 +1,10 @@
 import { PersistentSessionServiceServer, PersistentSession, Role, IllegalArgumentError } from './service.js';
 
 // request: object
+// request.function: string
 // request.authority: object (optional)
 // request.authority.id: string (optional)
 // request.authority.roles: [string] (optional)
-// request.function: string
 // request.arguments: [any] (optional)
 export const handler = async (request) => {
   try {
@@ -48,6 +48,7 @@ export const handler = async (request) => {
     };
   }
   catch (e) {
+    console.debug('Error thrown: ' + e.message);
     return {
       result: e.constructor.name
     };
@@ -103,7 +104,7 @@ const translateBitFlagsToRoleArray = (bitFlags) => {
 const roleBitFlagOrder = [Role.System, Role.User, Role.Admin];
 const service = new PersistentSessionServiceServer({
   host: process.env.AUTH_DB_HOST,
-  port: process.env.AUTH_DB_PORT,
+  port: Number(process.env.AUTH_DB_PORT),
   database: process.env.AUTH_DB_DATABASE,
   username: process.env.AUTH_DB_USERNAME,
   password: process.env.AUTH_DB_PASSWORD

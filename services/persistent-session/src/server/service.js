@@ -57,7 +57,7 @@ export class PersistentSessionServiceServer {
         }
         throw e;
       }
-      return id;
+      return entry.id;
     }
     finally {
       await this.#closeSequelize();

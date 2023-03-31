@@ -3,10 +3,10 @@ PersistentSessions:
 CREATE TABLE PersistentSessions (
   Id VARCHAR(36) NOT NULL PRIMARY KEY,
   UserAccountId VARCHAR(36) NOT NULL,
-  Roles TINYINT(3) UNSIGNED NOT NULL,
+  Roles TINYINT UNSIGNED NOT NULL,
   RefreshToken VARCHAR(128) NOT NULL UNIQUE,
-  CreationTime INT(10) UNSIGNED NOT NULL,
-  ExpirationTime INT(10) UNSIGNED NOT NULL
+  CreationTime INT UNSIGNED NOT NULL,
+  ExpirationTime INT UNSIGNED NOT NULL
 );
 
 ------------------------------------------------------------
@@ -18,5 +18,5 @@ CREATE TABLE UserAccounts (
   Name VARCHAR(32) NOT NULL UNIQUE,
   PasswordHash VARCHAR(64) NOT NULL,
   PasswordSalt VARCHAR(32) NOT NULL,
-  Roles TINYINT(3) UNSIGNED NOT NULL
+  Roles TINYINT UNSIGNED NOT NULL
 );
