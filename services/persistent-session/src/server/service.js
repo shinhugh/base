@@ -14,11 +14,8 @@ export class PersistentSessionServiceServer {
   // databaseInfo.username: string
   // databaseInfo.password: string
   constructor(databaseInfo) {
-    if (typeof databaseInfo !== 'object' || typeof databaseInfo.host !== 'string' || typeof databaseInfo.port !== 'number' || typeof databaseInfo.database !== 'string' || typeof databaseInfo.username !== 'string' || typeof databaseInfo.password !== 'string') {
-      throw new TypeError(typeErrorMessage);
-    }
-    if (!Number.isInteger(databaseInfo.port)) {
-      throw new TypeError(nonIntegerErrorMessage);
+    if (typeof databaseInfo !== 'object' || typeof databaseInfo.host !== 'string' || !Number.isInteger(databaseInfo.port) || typeof databaseInfo.database !== 'string' || typeof databaseInfo.username !== 'string' || typeof databaseInfo.password !== 'string') {
+      throw new IllegalArgumentError();
     }
     this.#databaseInfo = {
       host: databaseInfo.host,
@@ -35,7 +32,7 @@ export class PersistentSessionServiceServer {
   // authority.roles: [Role] (optional)
   // persistentSession: PersistentSession
   async create(authority, persistentSession) {
-    if (detectIllegalAuthorityInput(authority)) {
+    if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
     if (!(persistentSession instanceof PersistentSession)) {
@@ -73,10 +70,10 @@ export class PersistentSessionServiceServer {
   // authority.roles: [Role] (optional)
   // id: string
   async readById(authority, id) {
-    if (detectIllegalAuthorityInput(authority)) {
+    if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
-    if (!authority || !authority.roles || !authority.roles.includes(Role.System)) {
+    if (authority == null || authority.roles == null || !authority.roles.includes(Role.System)) {
       throw new AccessDeniedError();
     }
     if (typeof id !== 'string') {
@@ -89,7 +86,7 @@ export class PersistentSessionServiceServer {
           id: id
         }
       });
-      if (!entry) {
+      if (entry == null) {
         throw new NotFoundError();
       }
       return new PersistentSession(entry.id, entry.userAccountId, translateBitFlagsToRoleArray(entry.roles), entry.refreshToken, entry.creationTime, entry.expirationTime);
@@ -105,7 +102,7 @@ export class PersistentSessionServiceServer {
   // authority.roles: [Role] (optional)
   // refreshToken: string
   async readByRefreshToken(authority, refreshToken) {
-    if (detectIllegalAuthorityInput(authority)) {
+    if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
     if (typeof refreshToken !== 'string') {
@@ -118,7 +115,7 @@ export class PersistentSessionServiceServer {
           refreshToken: refreshToken
         }
       });
-      if (!entry) {
+      if (entry == null) {
         throw new NotFoundError();
       }
       return new PersistentSession(entry.id, entry.userAccountId, translateBitFlagsToRoleArray(entry.roles), entry.refreshToken, entry.creationTime, entry.expirationTime);
@@ -134,10 +131,10 @@ export class PersistentSessionServiceServer {
   // authority.roles: [Role] (optional)
   // userAccountId: string
   async deleteByUserAccountId(authority, userAccountId) {
-    if (detectIllegalAuthorityInput(authority)) {
+    if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
-    if (!authority || !authority.roles || !(authority.roles.includes(Role.System) || authority.roles.includes(Role.Admin) || (authority.roles.includes(Role.User) && authority.id && authority.id === userAccountId))) {
+    if (authority == null || authority.roles == null || !(authority.roles.includes(Role.System) || authority.roles.includes(Role.Admin) || (authority.roles.includes(Role.User) && authority.id != null && authority.id === userAccountId))) {
       throw new AccessDeniedError();
     }
     if (typeof userAccountId !== 'string') {
@@ -165,7 +162,7 @@ export class PersistentSessionServiceServer {
   // authority.roles: [Role] (optional)
   // refreshToken: string
   async deleteByRefreshToken(authority, refreshToken) {
-    if (detectIllegalAuthorityInput(authority)) {
+    if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
     if (typeof refreshToken !== 'string') {
@@ -200,7 +197,7 @@ export class PersistentSessionServiceServer {
   }
 
   async #openSequelize(databaseInfo) {
-    if (!this.#sequelize) {
+    if (this.#sequelize == null) {
       this.#sequelize = new Sequelize({
         host: databaseInfo.host,
         port: databaseInfo.port,
@@ -217,7 +214,7 @@ export class PersistentSessionServiceServer {
   }
 
   async #closeSequelize() {
-    if (this.#sequelize) {
+    if (this.#sequelize != null) {
       await this.#sequelize.close();
     }
     this.#sequelize = undefined;
@@ -252,7 +249,7 @@ export class PersistentSession {
   }
 
   set id(id) {
-    if (id && typeof id !== 'string') {
+    if (id != null && typeof id !== 'string') {
       throw new IllegalArgumentError();
     }
     this.#id = id;
@@ -277,7 +274,7 @@ export class PersistentSession {
   }
 
   set roles(roles) {
-    if (!validateRoleArrayType(roles)) {
+    if (roles == null || !validateRoleArrayType(roles)) {
       throw new IllegalArgumentError();
     }
     this.#roles = roles;
@@ -394,6 +391,12 @@ export class ConflictError extends Error {
 }
 
 const translateRoleArrayToBitFlags = (roleArray) => {
+  if (roleArray == null) {
+    return roleArray;
+  }
+  if (!validateRoleArrayType(roleArray)) {
+    throw new IllegalArgumentError();
+  }
   const filteredRoleArray = [...new Set(roleArray)];
   let bitFlags = 0;
   for (const role of filteredRoleArray) {
@@ -403,6 +406,12 @@ const translateRoleArrayToBitFlags = (roleArray) => {
 };
 
 const translateBitFlagsToRoleArray = (bitFlags) => {
+  if (bitFlags == null) {
+    return bitFlags;
+  }
+  if (!Number.isInteger(bitFlags)) {
+    throw new IllegalArgumentError();
+  }
   const roleArray = [];
   let remainingFlags = bitFlags;
   let index = 0;
@@ -419,23 +428,26 @@ const translateBitFlagsToRoleArray = (bitFlags) => {
   return roleArray;
 };
 
-const detectIllegalAuthorityInput = (authority) => {
-  if (!authority) {
-    return false;
+const validateAuthorityObjectSchema = (authority) => {
+  if (authority == null) {
+    return true;
   }
   if (typeof authority !== 'object') {
-    return true;
+    return false;
   }
-  if (authority.id && typeof authority.id !== 'string') {
-    return true;
+  if (authority.id != null && typeof authority.id !== 'string') {
+    return false;
   }
-  if (authority.roles && !validateRoleArrayType(authority.roles)) {
-    return true;
+  if (!validateRoleArrayType(authority.roles)) {
+    return false;
   }
-  return false;
+  return true;
 };
 
 const validateRoleArrayType = (roleArray) => {
+  if (roleArray == null) {
+    return true;
+  }
   if (Object.prototype.toString.call(roleArray) !== '[object Array]') {
     return false;
   }
@@ -450,8 +462,6 @@ const validateRoleArrayType = (roleArray) => {
 const maximumUnsignedIntValue = 4294967295;
 const idLength = 36;
 const refreshTokenLength = 128;
-const typeErrorMessage = 'Illegal type';
-const nonIntegerErrorMessage = 'Non-integer number';
 const illegalInstantiationErrorMessage = 'Illegal instantiation';
 const illegalArgumentErrorMessage = 'Illegal argument';
 const accessDeniedErrorMessage = 'Access denied';

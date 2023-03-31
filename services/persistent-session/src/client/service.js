@@ -1,31 +1,14 @@
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+
 // TODO: Remove comments
 
 export class PersistentSessionServiceClient {
-  #serverInfo;
-
-  // serverInfo: object
-  // serverInfo.host: string
-  // serverInfo.port: number (integer)
-  constructor(serverInfo) {
-    if (typeof serverInfo !== 'object' || typeof serverInfo.host !== 'string' || typeof serverInfo.port !== 'number') {
-      throw new TypeError(typeErrorMessage);
-    }
-    if (!Number.isInteger(serverInfo.port)) {
-      throw new TypeError(nonIntegerErrorMessage);
-    }
-    this.#serverInfo = {
-      host: serverInfo.host,
-      port: serverInfo.port
-    };
-  }
-
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: [Role] (optional)
   // persistentSession: PersistentSession
   async create(authority, persistentSession) {
-    throw new Error('Not implemented');
-    // TODO: Implement
+    return await makeRequest('create', translateAuthorityObjectToPlainObjectIfPossible(authority), [ translatePersistentSessionToPlainObjectIfPossible(persistentSession) ]);
   }
 
   // authority: object (optional)
@@ -33,8 +16,7 @@ export class PersistentSessionServiceClient {
   // authority.roles: [Role] (optional)
   // id: string
   async readById(authority, id) {
-    throw new Error('Not implemented');
-    // TODO: Implement
+    return await makeRequest('readById', translateAuthorityObjectToPlainObjectIfPossible(authority), [ id ]);
   }
 
   // authority: object (optional)
@@ -42,8 +24,7 @@ export class PersistentSessionServiceClient {
   // authority.roles: [Role] (optional)
   // refreshToken: string
   async readByRefreshToken(authority, refreshToken) {
-    throw new Error('Not implemented');
-    // TODO: Implement
+    return await makeRequest('readByRefreshToken', translateAuthorityObjectToPlainObjectIfPossible(authority), [ refreshToken ]);
   }
 
   // authority: object (optional)
@@ -51,8 +32,7 @@ export class PersistentSessionServiceClient {
   // authority.roles: [Role] (optional)
   // userAccountId: string
   async deleteByUserAccountId(authority, userAccountId) {
-    throw new Error('Not implemented');
-    // TODO: Implement
+    return await makeRequest('deleteByUserAccountId', translateAuthorityObjectToPlainObjectIfPossible(authority), [ userAccountId ]);
   }
 
   // authority: object (optional)
@@ -60,8 +40,7 @@ export class PersistentSessionServiceClient {
   // authority.roles: [Role] (optional)
   // refreshToken: string
   async deleteByRefreshToken(authority, refreshToken) {
-    throw new Error('Not implemented');
-    // TODO: Implement
+    return await makeRequest('deleteByRefreshToken', translateAuthorityObjectToPlainObjectIfPossible(authority), [ refreshToken ]);
   }
 }
 
@@ -93,7 +72,7 @@ export class PersistentSession {
   }
 
   set id(id) {
-    if (id && typeof id !== 'string') {
+    if (id != null && typeof id !== 'string') {
       throw new IllegalArgumentError();
     }
     this.#id = id;
@@ -118,7 +97,7 @@ export class PersistentSession {
   }
 
   set roles(roles) {
-    if (!validateRoleArrayType(roles)) {
+    if (roles == null || !validateRoleArrayType(roles)) {
       throw new IllegalArgumentError();
     }
     this.#roles = roles;
@@ -234,13 +213,96 @@ export class ConflictError extends Error {
   }
 }
 
+const makeRequest = async (funcName, authority, args) => {
+  const client = new LambdaClient();
+  const responseWrapper = await client.send(new InvokeCommand({
+    FunctionName: 'base_persistentSessionService',
+    LogType: 'None',
+    Payload: {
+      authority: authority,
+      function: funcName,
+      arguments: args
+    }
+  }));
+  const response = JSON.parse(Buffer.from(responseWrapper.Payload));
+  switch (response.result) {
+    case 'IllegalArgumentError':
+      throw new IllegalArgumentError();
+    case 'AccessDeniedError':
+      throw new AccessDeniedError();
+    case 'NotFoundError':
+      throw new NotFoundError();
+    case 'ConflictError':
+      throw new ConflictError();
+    default:
+      return response.payload;
+  }
+};
+
+const translatePersistentSessionToPlainObjectIfPossible = (persistentSession) => {
+  try {
+    return {
+      id: persistentSession.id,
+      userAccountId: persistentSession.userAccountId,
+      roles: translateRoleArrayToBitFlags(persistentSession.roles),
+      refreshToken: persistentSession.refreshToken,
+      creationTime: persistentSession.creationTime,
+      expirationTime: persistentSession.expirationTime
+    };
+  }
+  catch {
+    return persistentSession;
+  }
+};
+
+const translateAuthorityObjectToPlainObjectIfPossible = (authority) => {
+  try {
+    return {
+      id: authority.id,
+      roles: translateRoleArrayToBitFlags(authority.roles)
+    };
+  }
+  catch {
+    return authority;
+  }
+};
+
+const translateRoleArrayToBitFlags = (roleArray) => {
+  if (roleArray == null) {
+    return roleArray;
+  }
+  if (!validateRoleArrayType(roleArray)) {
+    throw new IllegalArgumentError();
+  }
+  const filteredRoleArray = [...new Set(roleArray)];
+  let bitFlags = 0;
+  for (const role of filteredRoleArray) {
+    bitFlags += Math.pow(2, roleBitFlagOrder.indexOf(role));
+  }
+  return bitFlags;
+};
+
+const validateRoleArrayType = (roleArray) => {
+  if (roleArray == null) {
+    return true;
+  }
+  if (Object.prototype.toString.call(roleArray) !== '[object Array]') {
+    return false;
+  }
+  for (const element of roleArray) {
+    if (!(element instanceof Role)) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const maximumUnsignedIntValue = 4294967295;
 const idLength = 36;
 const refreshTokenLength = 128;
-const typeErrorMessage = 'Illegal type';
-const nonIntegerErrorMessage = 'Non-integer number';
 const illegalInstantiationErrorMessage = 'Illegal instantiation';
 const illegalArgumentErrorMessage = 'Illegal argument';
 const accessDeniedErrorMessage = 'Access denied';
 const notFoundErrorMessage = 'Not found';
 const conflictErrorMessage = 'Conflict';
+const roleBitFlagOrder = [Role.System, Role.User, Role.Admin];
