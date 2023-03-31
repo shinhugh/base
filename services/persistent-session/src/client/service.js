@@ -16,7 +16,7 @@ export class PersistentSessionServiceClient {
   // authority.roles: [Role] (optional)
   // id: string
   async readById(authority, id) {
-    return await makeRequest('readById', translateAuthorityObjectToPlainObjectIfPossible(authority), [ id ]);
+    return translatePlainObjectToPersistentSessionIfPossible(await makeRequest('readById', translateAuthorityObjectToPlainObjectIfPossible(authority), [ id ]));
   }
 
   // authority: object (optional)
@@ -24,7 +24,7 @@ export class PersistentSessionServiceClient {
   // authority.roles: [Role] (optional)
   // refreshToken: string
   async readByRefreshToken(authority, refreshToken) {
-    return await makeRequest('readByRefreshToken', translateAuthorityObjectToPlainObjectIfPossible(authority), [ refreshToken ]);
+    return translatePlainObjectToPersistentSessionIfPossible(await makeRequest('readByRefreshToken', translateAuthorityObjectToPlainObjectIfPossible(authority), [ refreshToken ]));
   }
 
   // authority: object (optional)
@@ -252,6 +252,16 @@ const translatePersistentSessionToPlainObjectIfPossible = (persistentSession) =>
   }
   catch {
     return persistentSession;
+  }
+};
+
+const translatePlainObjectToPersistentSessionIfPossible = (object) => {
+  try {
+    const roles = translateBitFlagsToRoleArray(object.roles);
+    return new PersistentSession(object.id, object.userAccountId, roles, object.refreshToken, object.creationTime, object.expirationTime);
+  }
+  catch {
+    return object;
   }
 };
 

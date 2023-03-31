@@ -24,12 +24,12 @@ export const handler = async (request) => {
           case 'readById':
             return await (async () => {
               const id = (args != null && args.length >= 1) ? args?.[0] : undefined;
-              return await service.readById(authority, id);
+              return translatePersistentSessionToPlainObjectIfPossible(await service.readById(authority, id));
             })();
           case 'readByRefreshToken':
             return await (async () => {
               const refreshToken = (args != null && args.length >= 1) ? args?.[0] : undefined;
-              return await service.readByRefreshToken(authority, refreshToken);
+              return translatePersistentSessionToPlainObjectIfPossible(await service.readByRefreshToken(authority, refreshToken));
             })();
           case 'deleteByUserAccountId':
             return await (async () => {
@@ -52,6 +52,22 @@ export const handler = async (request) => {
     return {
       result: e.constructor.name
     };
+  }
+};
+
+const translatePersistentSessionToPlainObjectIfPossible = (persistentSession) => {
+  try {
+    return {
+      id: persistentSession.id,
+      userAccountId: persistentSession.userAccountId,
+      roles: translateRoleArrayToBitFlags(persistentSession.roles),
+      refreshToken: persistentSession.refreshToken,
+      creationTime: persistentSession.creationTime,
+      expirationTime: persistentSession.expirationTime
+    };
+  }
+  catch {
+    return persistentSession;
   }
 };
 
