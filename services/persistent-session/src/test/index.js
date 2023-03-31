@@ -1,5 +1,5 @@
-import { serverTestModule } from './server-test.js'
-import { clientTestModule } from './client-test.js'
+import { serverTestModule } from './server-test.js';
+import { clientTestModule } from './client-test.js';
 
 const runTestModule = async (testModule) => {
   for (const test of testModule.tests) {
