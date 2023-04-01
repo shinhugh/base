@@ -1,17 +1,23 @@
-import { PersistentSessionServiceClient, PersistentSession, Role } from '../client/service.js';
+import { PersistentSessionServiceClient, Role } from '../client/service.js';
 
 const testCreate = async () => {
   const authority = null;
   const timestamp = Math.floor(Date.now()/ 1000);
-  const persistentSession = new PersistentSession(undefined, userAccountId, [Role.User, Role.Admin], refreshToken, timestamp, timestamp + 600);
-  await service.create(authority, persistentSession);
+  const persistentSession = {
+    userAccountId: userAccountId,
+    roles: Role.User | Role.Admin,
+    refreshToken: refreshToken,
+    creationTime: timestamp,
+    expirationTime: timestamp + 600
+  };
+  id = await service.create(authority, persistentSession);
 };
 
 const testReadById = async () => {
   const authority = {
-    roles: [Role.System]
+    roles: Role.System
   };
-  await service.readById(authority, 'persistent-session-id');
+  await service.readById(authority, id);
 };
 
 const testReadByRefreshToken = async () => {
@@ -22,7 +28,7 @@ const testReadByRefreshToken = async () => {
 const testDeleteByUserAccountId = async () => {
   const authority = {
     id: userAccountId,
-    roles: [Role.User]
+    roles: Role.User
   };
   await service.deleteByUserAccountId(authority, userAccountId);
 };
@@ -44,7 +50,5 @@ export const clientTestModule = {
 };
 const userAccountId = 'd1da9b21-5106-49b5-8ff1-6f3137fdf403';
 const refreshToken = 'xt02bgf0srkdb6g572eqcww6umdaik9566bt42axzs67aw9jd3bul6zspaktf8pp2k7lob6tmihmdutzmszvztyrlzj3xdqyx1eipffml19ph1b9a7w5mjk32hq4vsrh';
-const service = new PersistentSessionServiceClient({
-  host: 'localhost',
-  port: 5001
-});
+const service = new PersistentSessionServiceClient();
+let id;

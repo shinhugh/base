@@ -1,17 +1,23 @@
-import { PersistentSessionServiceServer, PersistentSession, Role } from '../server/service.js';
+import { PersistentSessionServiceServer, Role } from '../server/service.js';
 
 const testCreate = async () => {
   const authority = null;
   const timestamp = Math.floor(Date.now()/ 1000);
-  const persistentSession = new PersistentSession(undefined, userAccountId, [Role.User, Role.Admin], refreshToken, timestamp, timestamp + 600);
-  await service.create(authority, persistentSession);
+  const persistentSession = {
+    userAccountId: userAccountId,
+    roles: Role.User | Role.Admin,
+    refreshToken: refreshToken,
+    creationTime: timestamp,
+    expirationTime: timestamp + 600
+  };
+  id = await service.create(authority, persistentSession);
 };
 
 const testReadById = async () => {
   const authority = {
-    roles: [Role.System]
+    roles: Role.System
   };
-  await service.readById(authority, 'persistent-session-id');
+  await service.readById(authority, id);
 };
 
 const testReadByRefreshToken = async () => {
@@ -22,7 +28,7 @@ const testReadByRefreshToken = async () => {
 const testDeleteByUserAccountId = async () => {
   const authority = {
     id: userAccountId,
-    roles: [Role.User]
+    roles: Role.User
   };
   await service.deleteByUserAccountId(authority, userAccountId);
 };
@@ -51,3 +57,4 @@ const service = new PersistentSessionServiceServer({
   username: 'root',
   password: ''
 });
+let id;
