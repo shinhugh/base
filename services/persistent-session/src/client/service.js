@@ -5,183 +5,47 @@ import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 export class PersistentSessionServiceClient {
   // authority: object (optional)
   // authority.id: string (optional)
-  // authority.roles: [Role] (optional)
-  // persistentSession: PersistentSession
+  // authority.roles: number (unsigned 8-bit integer) (optional)
+  // persistentSession: object
+  // persistentSession.userAccountId: string
+  // persistentSession.roles: number (unsigned 8-bit integer)
+  // persistentSession.refreshToken: string
+  // persistentSession.creationTime: number (unsigned 32-bit integer)
+  // persistentSession.expirationTime: number (unsigned 32-bit integer)
   async create(authority, persistentSession) {
-    return await makeRequest('create', translateAuthorityObjectToPlainObjectIfPossible(authority), [ translatePersistentSessionToPlainObjectIfPossible(persistentSession) ]);
+    return await makeRequest('create', authority, [ persistentSession ]);
   }
 
   // authority: object (optional)
   // authority.id: string (optional)
-  // authority.roles: [Role] (optional)
+  // authority.roles: number (unsigned 8-bit integer) (optional)
   // id: string
   async readById(authority, id) {
-    return translatePlainObjectToPersistentSessionIfPossible(await makeRequest('readById', translateAuthorityObjectToPlainObjectIfPossible(authority), [ id ]));
+    return await makeRequest('readById', authority, [ id ]);
   }
 
   // authority: object (optional)
   // authority.id: string (optional)
-  // authority.roles: [Role] (optional)
+  // authority.roles: number (unsigned 8-bit integer) (optional)
   // refreshToken: string
   async readByRefreshToken(authority, refreshToken) {
-    return translatePlainObjectToPersistentSessionIfPossible(await makeRequest('readByRefreshToken', translateAuthorityObjectToPlainObjectIfPossible(authority), [ refreshToken ]));
+    return await makeRequest('readByRefreshToken', authority, [ refreshToken ]);
   }
 
   // authority: object (optional)
   // authority.id: string (optional)
-  // authority.roles: [Role] (optional)
+  // authority.roles: number (unsigned 8-bit integer) (optional)
   // userAccountId: string
   async deleteByUserAccountId(authority, userAccountId) {
-    return await makeRequest('deleteByUserAccountId', translateAuthorityObjectToPlainObjectIfPossible(authority), [ userAccountId ]);
+    return await makeRequest('deleteByUserAccountId', authority, [ userAccountId ]);
   }
 
   // authority: object (optional)
   // authority.id: string (optional)
-  // authority.roles: [Role] (optional)
+  // authority.roles: number (unsigned 8-bit integer) (optional)
   // refreshToken: string
   async deleteByRefreshToken(authority, refreshToken) {
-    return await makeRequest('deleteByRefreshToken', translateAuthorityObjectToPlainObjectIfPossible(authority), [ refreshToken ]);
-  }
-}
-
-export class PersistentSession {
-  #id;
-  #userAccountId;
-  #roles;
-  #refreshToken;
-  #creationTime;
-  #expirationTime;
-
-  // id: string (optional)
-  // userAccountId: string
-  // roles: [Role]
-  // refreshToken: string
-  // creationTime: number (unsigned 32-bit integer)
-  // expirationTime: number (unsigned 32-bit integer)
-  constructor(id, userAccountId, roles, refreshToken, creationTime, expirationTime) {
-    this.id = id;
-    this.userAccountId = userAccountId;
-    this.roles = roles;
-    this.refreshToken = refreshToken;
-    this.creationTime = creationTime;
-    this.expirationTime = expirationTime;
-  }
-
-  get id() {
-    return this.#id;
-  }
-
-  set id(id) {
-    if (id != null && typeof id !== 'string') {
-      throw new IllegalArgumentError();
-    }
-    this.#id = id;
-  }
-
-  get userAccountId() {
-    return this.#userAccountId;
-  }
-
-  set userAccountId(userAccountId) {
-    if (typeof userAccountId !== 'string') {
-      throw new IllegalArgumentError();
-    }
-    if (userAccountId.length != idLength) {
-      throw new IllegalArgumentError();
-    }
-    this.#userAccountId = userAccountId;
-  }
-
-  get roles() {
-    return this.#roles;
-  }
-
-  set roles(roles) {
-    if (roles == null || !validateRoleArrayType(roles)) {
-      throw new IllegalArgumentError();
-    }
-    this.#roles = roles;
-  }
-
-  get refreshToken() {
-    return this.#refreshToken;
-  }
-
-  set refreshToken(refreshToken) {
-    if (typeof refreshToken !== 'string') {
-      throw new IllegalArgumentError();
-    }
-    if (refreshToken.length != refreshTokenLength) {
-      throw new IllegalArgumentError();
-    }
-    this.#refreshToken = refreshToken;
-  }
-
-  get creationTime() {
-    return this.#creationTime;
-  }
-
-  set creationTime(creationTime) {
-    if (typeof creationTime !== 'number') {
-      throw new IllegalArgumentError();
-    }
-    if (!Number.isInteger(creationTime) || creationTime < 0 || creationTime > maximumUnsignedIntValue) {
-      throw new IllegalArgumentError();
-    }
-    this.#creationTime = creationTime;
-  }
-
-  get expirationTime() {
-    return this.#expirationTime;
-  }
-
-  set expirationTime(expirationTime) {
-    if (typeof expirationTime !== 'number') {
-      throw new IllegalArgumentError();
-    }
-    if (!Number.isInteger(expirationTime) || expirationTime < 0 || expirationTime > maximumUnsignedIntValue) {
-      throw new IllegalArgumentError();
-    }
-    this.#expirationTime = expirationTime;
-  }
-}
-
-export class Role {
-  static #allowConstructor = false;
-  static #system = Role.#create('system');
-  static #user = Role.#create('user');
-  static #admin = Role.#create('admin');
-
-  #name;
-
-  static #create(name) {
-    Role.#allowConstructor = true;
-    const instance = new Role(name);
-    Role.#allowConstructor = false;
-    return instance;
-  }
-
-  static get System() {
-    return Role.#system;
-  }
-
-  static get User() {
-    return Role.#user;
-  }
-
-  static get Admin() {
-    return Role.#admin;
-  }
-
-  constructor(name) {
-    if (!Role.#allowConstructor) {
-      throw new Error(illegalInstantiationErrorMessage);
-    }
-    this.#name = name;
-  }
-
-  get name() {
-    return this.#name;
+    return await makeRequest('deleteByRefreshToken', authority, [ refreshToken ]);
   }
 }
 
@@ -239,80 +103,12 @@ const makeRequest = async (funcName, authority, args) => {
   }
 };
 
-const translatePersistentSessionToPlainObjectIfPossible = (persistentSession) => {
-  try {
-    return {
-      id: persistentSession.id,
-      userAccountId: persistentSession.userAccountId,
-      roles: translateRoleArrayToBitFlags(persistentSession.roles),
-      refreshToken: persistentSession.refreshToken,
-      creationTime: persistentSession.creationTime,
-      expirationTime: persistentSession.expirationTime
-    };
-  }
-  catch {
-    return persistentSession;
-  }
-};
-
-const translatePlainObjectToPersistentSessionIfPossible = (object) => {
-  try {
-    const roles = translateBitFlagsToRoleArray(object.roles);
-    return new PersistentSession(object.id, object.userAccountId, roles, object.refreshToken, object.creationTime, object.expirationTime);
-  }
-  catch {
-    return object;
-  }
-};
-
-const translateAuthorityObjectToPlainObjectIfPossible = (authority) => {
-  try {
-    return {
-      id: authority.id,
-      roles: translateRoleArrayToBitFlags(authority.roles)
-    };
-  }
-  catch {
-    return authority;
-  }
-};
-
-const translateRoleArrayToBitFlags = (roleArray) => {
-  if (roleArray == null) {
-    return roleArray;
-  }
-  if (!validateRoleArrayType(roleArray)) {
-    throw new IllegalArgumentError();
-  }
-  const filteredRoleArray = [...new Set(roleArray)];
-  let bitFlags = 0;
-  for (const role of filteredRoleArray) {
-    bitFlags += Math.pow(2, roleBitFlagOrder.indexOf(role));
-  }
-  return bitFlags;
-};
-
-const validateRoleArrayType = (roleArray) => {
-  if (roleArray == null) {
-    return true;
-  }
-  if (Object.prototype.toString.call(roleArray) !== '[object Array]') {
-    return false;
-  }
-  for (const element of roleArray) {
-    if (!(element instanceof Role)) {
-      return false;
-    }
-  }
-  return true;
-};
-
-const maximumUnsignedIntValue = 4294967295;
-const idLength = 36;
-const refreshTokenLength = 128;
-const illegalInstantiationErrorMessage = 'Illegal instantiation';
 const illegalArgumentErrorMessage = 'Illegal argument';
 const accessDeniedErrorMessage = 'Access denied';
 const notFoundErrorMessage = 'Not found';
 const conflictErrorMessage = 'Conflict';
-const roleBitFlagOrder = [Role.System, Role.User, Role.Admin];
+export const Role = Object.freeze({
+  System: Math.pow(2, 0),
+  User: Math.pow(2, 1),
+  Admin: Math.pow(2, 2)
+});

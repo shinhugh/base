@@ -9,12 +9,12 @@ export class PersistentSessionServiceServer {
 
   // databaseInfo: object
   // databaseInfo.host: string
-  // databaseInfo.port: number (integer)
+  // databaseInfo.port: number (unsigned 16-bit integer)
   // databaseInfo.database: string
   // databaseInfo.username: string
   // databaseInfo.password: string
   constructor(databaseInfo) {
-    if (typeof databaseInfo !== 'object' || typeof databaseInfo.host !== 'string' || !Number.isInteger(databaseInfo.port) || typeof databaseInfo.database !== 'string' || typeof databaseInfo.username !== 'string' || typeof databaseInfo.password !== 'string') {
+    if (databaseInfo == null || !validateDatabaseInfoObjectSchema(databaseInfo)) {
       throw new IllegalArgumentError();
     }
     this.#databaseInfo = {
@@ -29,18 +29,20 @@ export class PersistentSessionServiceServer {
   // From Login service
   // authority: object (optional)
   // authority.id: string (optional)
-  // authority.roles: [Role] (optional)
-  // persistentSession: PersistentSession
+  // authority.roles: number (unsigned 8-bit integer) (optional)
+  // persistentSession: object
+  // persistentSession.userAccountId: string
+  // persistentSession.roles: number (unsigned 8-bit integer)
+  // persistentSession.refreshToken: string
+  // persistentSession.creationTime: number (unsigned 32-bit integer)
+  // persistentSession.expirationTime: number (unsigned 32-bit integer)
   async create(authority, persistentSession) {
-    if (!validateAuthorityObjectSchema(authority)) {
-      throw new IllegalArgumentError();
-    }
-    if (!(persistentSession instanceof PersistentSession)) {
+    if (!validateAuthorityObjectSchema(authority) || !validatePersistentSessionObjectSchema(persistentSession)) {
       throw new IllegalArgumentError();
     }
     const entry = {
       userAccountId: persistentSession.userAccountId,
-      roles: translateRoleArrayToBitFlags(persistentSession.roles),
+      roles: persistentSession.roles,
       refreshToken: persistentSession.refreshToken,
       creationTime: persistentSession.creationTime,
       expirationTime: persistentSession.expirationTime
@@ -67,13 +69,13 @@ export class PersistentSessionServiceServer {
   // From Identification service
   // authority: object (optional)
   // authority.id: string (optional)
-  // authority.roles: [Role] (optional)
+  // authority.roles: number (unsigned 8-bit integer) (optional)
   // id: string
   async readById(authority, id) {
     if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
-    if (authority == null || authority.roles == null || !authority.roles.includes(Role.System)) {
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, [ Role.System ])) {
       throw new AccessDeniedError();
     }
     if (typeof id !== 'string') {
@@ -89,7 +91,7 @@ export class PersistentSessionServiceServer {
       if (entry == null) {
         throw new NotFoundError();
       }
-      return new PersistentSession(entry.id, entry.userAccountId, translateBitFlagsToRoleArray(entry.roles), entry.refreshToken, entry.creationTime, entry.expirationTime);
+      return entry;
     }
     finally {
       await this.#closeSequelize();
@@ -99,7 +101,7 @@ export class PersistentSessionServiceServer {
   // From Login service
   // authority: object (optional)
   // authority.id: string (optional)
-  // authority.roles: [Role] (optional)
+  // authority.roles: number (unsigned 8-bit integer) (optional)
   // refreshToken: string
   async readByRefreshToken(authority, refreshToken) {
     if (!validateAuthorityObjectSchema(authority)) {
@@ -118,7 +120,7 @@ export class PersistentSessionServiceServer {
       if (entry == null) {
         throw new NotFoundError();
       }
-      return new PersistentSession(entry.id, entry.userAccountId, translateBitFlagsToRoleArray(entry.roles), entry.refreshToken, entry.creationTime, entry.expirationTime);
+      return entry;
     }
     finally {
       await this.#closeSequelize();
@@ -128,28 +130,30 @@ export class PersistentSessionServiceServer {
   // From Account service
   // authority: object (optional)
   // authority.id: string (optional)
-  // authority.roles: [Role] (optional)
+  // authority.roles: number (unsigned 8-bit integer) (optional)
   // userAccountId: string
   async deleteByUserAccountId(authority, userAccountId) {
     if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
-    if (authority == null || authority.roles == null || !(authority.roles.includes(Role.System) || authority.roles.includes(Role.Admin) || (authority.roles.includes(Role.User) && authority.id != null && authority.id === userAccountId))) {
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, [ Role.System, Role.Admin, Role.User ])) {
       throw new AccessDeniedError();
     }
     if (typeof userAccountId !== 'string') {
       throw new IllegalArgumentError();
     }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, [ Role.System, Role.Admin ])) {
+      if (authority.id !== userAccountId) {
+        throw new AccessDeniedError();
+      }
+    }
     await this.#openSequelize(this.#databaseInfo);
     try {
-      const count = await this.#sequelize.models.persistentSessions.destroy({
+      await this.#sequelize.models.persistentSessions.destroy({
         where: {
           userAccountId: userAccountId
         }
       });
-      if (count == 0) {
-        throw new NotFoundError();
-      }
     }
     finally {
       await this.#closeSequelize();
@@ -159,7 +163,7 @@ export class PersistentSessionServiceServer {
   // From Logout service
   // authority: object (optional)
   // authority.id: string (optional)
-  // authority.roles: [Role] (optional)
+  // authority.roles: number (unsigned 8-bit integer) (optional)
   // refreshToken: string
   async deleteByRefreshToken(authority, refreshToken) {
     if (!validateAuthorityObjectSchema(authority)) {
@@ -170,14 +174,11 @@ export class PersistentSessionServiceServer {
     }
     await this.#openSequelize(this.#databaseInfo);
     try {
-      const count = await this.#sequelize.models.persistentSessions.destroy({
+      await this.#sequelize.models.persistentSessions.destroy({
         where: {
           refreshToken: refreshToken
         }
       });
-      if (count == 0) {
-        throw new NotFoundError();
-      }
     }
     finally {
       await this.#closeSequelize();
@@ -221,147 +222,6 @@ export class PersistentSessionServiceServer {
   }
 }
 
-export class PersistentSession {
-  #id;
-  #userAccountId;
-  #roles;
-  #refreshToken;
-  #creationTime;
-  #expirationTime;
-
-  // id: string (optional)
-  // userAccountId: string
-  // roles: [Role]
-  // refreshToken: string
-  // creationTime: number (unsigned 32-bit integer)
-  // expirationTime: number (unsigned 32-bit integer)
-  constructor(id, userAccountId, roles, refreshToken, creationTime, expirationTime) {
-    this.id = id;
-    this.userAccountId = userAccountId;
-    this.roles = roles;
-    this.refreshToken = refreshToken;
-    this.creationTime = creationTime;
-    this.expirationTime = expirationTime;
-  }
-
-  get id() {
-    return this.#id;
-  }
-
-  set id(id) {
-    if (id != null && typeof id !== 'string') {
-      throw new IllegalArgumentError();
-    }
-    this.#id = id;
-  }
-
-  get userAccountId() {
-    return this.#userAccountId;
-  }
-
-  set userAccountId(userAccountId) {
-    if (typeof userAccountId !== 'string') {
-      throw new IllegalArgumentError();
-    }
-    if (userAccountId.length != idLength) {
-      throw new IllegalArgumentError();
-    }
-    this.#userAccountId = userAccountId;
-  }
-
-  get roles() {
-    return this.#roles;
-  }
-
-  set roles(roles) {
-    if (roles == null || !validateRoleArrayType(roles)) {
-      throw new IllegalArgumentError();
-    }
-    this.#roles = roles;
-  }
-
-  get refreshToken() {
-    return this.#refreshToken;
-  }
-
-  set refreshToken(refreshToken) {
-    if (typeof refreshToken !== 'string') {
-      throw new IllegalArgumentError();
-    }
-    if (refreshToken.length != refreshTokenLength) {
-      throw new IllegalArgumentError();
-    }
-    this.#refreshToken = refreshToken;
-  }
-
-  get creationTime() {
-    return this.#creationTime;
-  }
-
-  set creationTime(creationTime) {
-    if (typeof creationTime !== 'number') {
-      throw new IllegalArgumentError();
-    }
-    if (!Number.isInteger(creationTime) || creationTime < 0 || creationTime > maximumUnsignedIntValue) {
-      throw new IllegalArgumentError();
-    }
-    this.#creationTime = creationTime;
-  }
-
-  get expirationTime() {
-    return this.#expirationTime;
-  }
-
-  set expirationTime(expirationTime) {
-    if (typeof expirationTime !== 'number') {
-      throw new IllegalArgumentError();
-    }
-    if (!Number.isInteger(expirationTime) || expirationTime < 0 || expirationTime > maximumUnsignedIntValue) {
-      throw new IllegalArgumentError();
-    }
-    this.#expirationTime = expirationTime;
-  }
-}
-
-export class Role {
-  static #allowConstructor = false;
-  static #system = Role.#create('system');
-  static #user = Role.#create('user');
-  static #admin = Role.#create('admin');
-
-  #name;
-
-  static #create(name) {
-    Role.#allowConstructor = true;
-    const instance = new Role(name);
-    Role.#allowConstructor = false;
-    return instance;
-  }
-
-  static get System() {
-    return Role.#system;
-  }
-
-  static get User() {
-    return Role.#user;
-  }
-
-  static get Admin() {
-    return Role.#admin;
-  }
-
-  constructor(name) {
-    if (!Role.#allowConstructor) {
-      throw new Error(illegalInstantiationErrorMessage);
-    }
-    this.#name = name;
-  }
-
-  get name() {
-    return this.#name;
-  }
-}
-
 export class IllegalArgumentError extends Error {
   constructor() {
     super(illegalArgumentErrorMessage);
@@ -390,42 +250,69 @@ export class ConflictError extends Error {
   }
 }
 
-const translateRoleArrayToBitFlags = (roleArray) => {
-  if (roleArray == null) {
-    return roleArray;
-  }
-  if (!validateRoleArrayType(roleArray)) {
+const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
+  if (!validateAuthorityObjectSchema(authority) || (roles != null && (!Number.isInteger(roles) || roles < 0 || roles > maxRoles))) {
     throw new IllegalArgumentError();
   }
-  const filteredRoleArray = [...new Set(roleArray)];
-  let bitFlags = 0;
-  for (const role of filteredRoleArray) {
-    bitFlags += Math.pow(2, roleBitFlagOrder.indexOf(role));
+  if (roles == null || roles == 0) {
+    return true;
   }
-  return bitFlags;
+  if (authority == null || authority.roles == null) {
+    return false;
+  }
+  return (authority.roles & roles) != 0;
 };
 
-const translateBitFlagsToRoleArray = (bitFlags) => {
-  if (bitFlags == null) {
-    return bitFlags;
+const validateDatabaseInfoObjectSchema = (databaseInfo) => {
+  if (databaseInfo == null) {
+    return true;
   }
-  if (!Number.isInteger(bitFlags)) {
-    throw new IllegalArgumentError();
+  if (typeof databaseInfo !== 'object') {
+    return false;
   }
-  const roleArray = [];
-  let remainingFlags = bitFlags;
-  let index = 0;
-  while (remainingFlags > 0) {
-    if (index >= roleBitFlagOrder.length) {
-      break;
-    }
-    if (remainingFlags % 2 > 0) {
-      roleArray.push(roleBitFlagOrder[index]);
-    }
-    remainingFlags = Math.floor(remainingFlags / 2);
-    index++;
+  if (typeof databaseInfo.host !== 'string') {
+    return false;
   }
-  return roleArray;
+  if (!Number.isInteger(databaseInfo.port) || databaseInfo.port < 0 || databaseInfo.port > maxPortNumber) {
+    return false;
+  }
+  if (typeof databaseInfo.database !== 'string') {
+    return false;
+  }
+  if (typeof databaseInfo.username !== 'string') {
+    return false;
+  }
+  if (typeof databaseInfo.password !== 'string') {
+    return false;
+  }
+  return true;
+};
+
+const validatePersistentSessionObjectSchema = (persistentSession) => {
+  if (persistentSession == null) {
+    return true;
+  }
+  if (typeof persistentSession !== 'object') {
+    return false;
+  }
+  if (persistentSession.id != null && typeof persistentSession.id !== 'string') {
+    return false;
+  }
+  if (typeof persistentSession.userAccountId !== 'string' || persistentSession.userAccountId.length != idLength) {
+    return false;
+  }
+  if (!Number.isInteger(persistentSession.roles) || persistentSession.roles < 0 || persistentSession.roles > maxRoles) {
+    return false;
+  }
+  if (typeof persistentSession.refreshToken !== 'string' || persistentSession.refreshToken.length != refreshTokenLength) {
+    return false;
+  }
+  if (!Number.isInteger(persistentSession.creationTime) || persistentSession.creationTime < 0 || persistentSession.creationTime > maxTime) {
+    return false;
+  }
+  if (!Number.isInteger(persistentSession.expirationTime) || persistentSession.expirationTime < 0 || persistentSession.expirationTime > maxTime) {
+    return false;
+  }
 };
 
 const validateAuthorityObjectSchema = (authority) => {
@@ -438,36 +325,26 @@ const validateAuthorityObjectSchema = (authority) => {
   if (authority.id != null && typeof authority.id !== 'string') {
     return false;
   }
-  if (!validateRoleArrayType(authority.roles)) {
+  if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > maxRoles)) {
     return false;
   }
   return true;
 };
 
-const validateRoleArrayType = (roleArray) => {
-  if (roleArray == null) {
-    return true;
-  }
-  if (Object.prototype.toString.call(roleArray) !== '[object Array]') {
-    return false;
-  }
-  for (const element of roleArray) {
-    if (!(element instanceof Role)) {
-      return false;
-    }
-  }
-  return true;
-};
-
-const maximumUnsignedIntValue = 4294967295;
+const maxPortNumber = 65535;
 const idLength = 36;
+const maxRoles = 255;
 const refreshTokenLength = 128;
-const illegalInstantiationErrorMessage = 'Illegal instantiation';
+const maxTime = 4294967295;
 const illegalArgumentErrorMessage = 'Illegal argument';
 const accessDeniedErrorMessage = 'Access denied';
 const notFoundErrorMessage = 'Not found';
 const conflictErrorMessage = 'Conflict';
-const roleBitFlagOrder = [Role.System, Role.User, Role.Admin];
+export const Role = Object.freeze({
+  System: Math.pow(2, 0),
+  User: Math.pow(2, 1),
+  Admin: Math.pow(2, 2)
+});
 const sequelizeOptions = {
   dialect: 'mysql',
   logging: false,

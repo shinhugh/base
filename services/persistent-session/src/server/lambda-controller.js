@@ -1,45 +1,45 @@
-import { PersistentSessionServiceServer, PersistentSession, Role, IllegalArgumentError } from './service.js';
+import { PersistentSessionServiceServer, IllegalArgumentError } from './service.js';
+
+// TODO: Remove comments
 
 // request: object
 // request.function: string
 // request.authority: object (optional)
 // request.authority.id: string (optional)
-// request.authority.roles: [string] (optional)
+// request.authority.roles: number (unsigned 8-bit int) (optional)
 // request.arguments: [any] (optional)
 export const handler = async (request) => {
   try {
     if (typeof request !== 'object' || (request.arguments != null && Object.prototype.toString.call(request.arguments) !== '[object Array]')) {
       throw new IllegalArgumentError();
     }
-    const authority = translateBitFlagsToRoleArrayInAuthorityObjectIfPossible(request.authority);
-    const args = request.arguments;
     return {
       payload: await (async () => {
         switch(request.function) {
           case 'create':
             return await (async () => {
-              const persistentSession = (args != null && args.length >= 1) ? translatePlainObjectToPersistentSessionIfPossible(args?.[0]) : undefined;
-              return await service.create(authority, persistentSession);
+              const persistentSession = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
+              return await service.create(request.authority, persistentSession);
             })();
           case 'readById':
             return await (async () => {
-              const id = (args != null && args.length >= 1) ? args?.[0] : undefined;
-              return translatePersistentSessionToPlainObjectIfPossible(await service.readById(authority, id));
+              const id = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
+              return await service.readById(request.authority, id);
             })();
           case 'readByRefreshToken':
             return await (async () => {
-              const refreshToken = (args != null && args.length >= 1) ? args?.[0] : undefined;
-              return translatePersistentSessionToPlainObjectIfPossible(await service.readByRefreshToken(authority, refreshToken));
+              const refreshToken = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
+              return await service.readByRefreshToken(request.authority, refreshToken);
             })();
           case 'deleteByUserAccountId':
             return await (async () => {
-              const userAccountId = (args != null && args.length >= 1) ? args?.[0] : undefined;
-              return await service.deleteByUserAccountId(authority, userAccountId);
+              const userAccountId = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
+              return await service.deleteByUserAccountId(request.authority, userAccountId);
             })();
           case 'deleteByRefreshToken':
             return await (async () => {
-              const refreshToken = (args != null && args.length >= 1) ? args?.[0] : undefined;
-              return await service.deleteByRefreshToken(authority, refreshToken);
+              const refreshToken = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
+              return await service.deleteByRefreshToken(request.authority, refreshToken);
             })();
           default:
             throw new IllegalArgumentError();
@@ -55,69 +55,6 @@ export const handler = async (request) => {
   }
 };
 
-const translatePersistentSessionToPlainObjectIfPossible = (persistentSession) => {
-  try {
-    return {
-      id: persistentSession.id,
-      userAccountId: persistentSession.userAccountId,
-      roles: translateRoleArrayToBitFlags(persistentSession.roles),
-      refreshToken: persistentSession.refreshToken,
-      creationTime: persistentSession.creationTime,
-      expirationTime: persistentSession.expirationTime
-    };
-  }
-  catch {
-    return persistentSession;
-  }
-};
-
-const translatePlainObjectToPersistentSessionIfPossible = (object) => {
-  try {
-    const roles = translateBitFlagsToRoleArray(object.roles);
-    return new PersistentSession(object.id, object.userAccountId, roles, object.refreshToken, object.creationTime, object.expirationTime);
-  }
-  catch {
-    return object;
-  }
-};
-
-const translateBitFlagsToRoleArrayInAuthorityObjectIfPossible = (object) => {
-  try {
-    const roles = translateBitFlagsToRoleArray(object.roles);
-    return {
-      id: object.id,
-      roles: roles
-    };
-  }
-  catch {
-    return object;
-  }
-};
-
-const translateBitFlagsToRoleArray = (bitFlags) => {
-  if (bitFlags == null) {
-    return bitFlags;
-  }
-  if (!Number.isInteger(bitFlags)) {
-    throw new IllegalArgumentError();
-  }
-  const roleArray = [];
-  let remainingFlags = bitFlags;
-  let index = 0;
-  while (remainingFlags > 0) {
-    if (index >= roleBitFlagOrder.length) {
-      break;
-    }
-    if (remainingFlags % 2 > 0) {
-      roleArray.push(roleBitFlagOrder[index]);
-    }
-    remainingFlags = Math.floor(remainingFlags / 2);
-    index++;
-  }
-  return roleArray;
-};
-
-const roleBitFlagOrder = [Role.System, Role.User, Role.Admin];
 const service = new PersistentSessionServiceServer({
   host: process.env.AUTH_DB_HOST,
   port: Number(process.env.AUTH_DB_PORT),
