@@ -1,4 +1,4 @@
-import { PersistentSessionServiceServer, IllegalArgumentError } from './service.js';
+import { PersistentSessionService, IllegalArgumentError } from './service.js';
 
 // TODO: Remove comments
 
@@ -55,7 +55,7 @@ export const handler = async (request) => {
   }
 };
 
-const service = new PersistentSessionServiceServer({
+const service = new PersistentSessionService({
   host: process.env.AUTH_DB_HOST,
   port: Number(process.env.AUTH_DB_PORT),
   database: process.env.AUTH_DB_DATABASE,

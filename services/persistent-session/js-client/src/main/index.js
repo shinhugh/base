@@ -1,1 +1,1 @@
-export { PersistentSessionServiceClient, IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError, Role } from './service.js';
+export { PersistentSessionService, IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError, Role } from './service.js';

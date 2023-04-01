@@ -2,7 +2,7 @@ import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
 // TODO: Remove comments
 
-export class PersistentSessionServiceClient {
+export class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)

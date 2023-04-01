@@ -1,4 +1,4 @@
-import { PersistentSessionServiceServer, Role } from '../main/service.js';
+import { PersistentSessionService, Role } from '../main/service.js';
 
 const runTestModule = async (testModule) => {
   for (const test of testModule.tests) {
@@ -66,7 +66,7 @@ export const serverTestModule = {
     // { name: 'DeleteByRefreshToken', run: testDeleteByRefreshToken },
   ]
 };
-const service = new PersistentSessionServiceServer({
+const service = new PersistentSessionService({
   host: 'localhost',
   port: 3306,
   database: 'base',

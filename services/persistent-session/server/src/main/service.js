@@ -3,7 +3,7 @@ import { Sequelize, DataTypes } from 'sequelize';
 
 // TODO: Remove comments
 
-export class PersistentSessionServiceServer {
+export class PersistentSessionService {
   #databaseInfo;
   #sequelize;
 
