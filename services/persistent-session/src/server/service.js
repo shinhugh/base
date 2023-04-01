@@ -313,6 +313,7 @@ const validatePersistentSessionObjectSchema = (persistentSession) => {
   if (!Number.isInteger(persistentSession.expirationTime) || persistentSession.expirationTime < 0 || persistentSession.expirationTime > maxTime) {
     return false;
   }
+  return true;
 };
 
 const validateAuthorityObjectSchema = (authority) => {
