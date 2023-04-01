@@ -1,4 +1,20 @@
-import { PersistentSessionServiceClient, Role } from '../client/service.js';
+import { PersistentSessionServiceClient, Role } from '../main/service.js';
+
+const runTestModule = async (testModule) => {
+  for (const test of testModule.tests) {
+    const header = '[' + testModule.name + ' : ' + test.name + '] ';
+    console.log(header + 'Entering test');
+    try {
+      await test.run();
+      console.log(header + 'Result: Success');
+    }
+    catch (e) {
+      console.error(header + '' + e.message);
+      console.log(header + 'Result: Failure');
+    }
+    console.log(header + 'Exiting test');
+  }
+};
 
 const testCreate = async () => {
   const authority = null;
@@ -38,6 +54,8 @@ const testDeleteByRefreshToken = async () => {
   await service.deleteByRefreshToken(authority, refreshToken);
 };
 
+const userAccountId = 'd1da9b21-5106-49b5-8ff1-6f3137fdf403';
+const refreshToken = 'xt02bgf0srkdb6g572eqcww6umdaik9566bt42axzs67aw9jd3bul6zspaktf8pp2k7lob6tmihmdutzmszvztyrlzj3xdqyx1eipffml19ph1b9a7w5mjk32hq4vsrh';
 export const clientTestModule = {
   name: 'Client',
   tests: [
@@ -48,7 +66,7 @@ export const clientTestModule = {
     // { name: 'DeleteByRefreshToken', run: testDeleteByRefreshToken },
   ]
 };
-const userAccountId = 'd1da9b21-5106-49b5-8ff1-6f3137fdf403';
-const refreshToken = 'xt02bgf0srkdb6g572eqcww6umdaik9566bt42axzs67aw9jd3bul6zspaktf8pp2k7lob6tmihmdutzmszvztyrlzj3xdqyx1eipffml19ph1b9a7w5mjk32hq4vsrh';
 const service = new PersistentSessionServiceClient();
 let id;
+
+await runTestModule(clientTestModule);
