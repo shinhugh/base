@@ -1,4 +1,4 @@
-package base.useraccount.service;
+package base.useraccount.server.service;
 
 public interface UserAccountService {
 }
