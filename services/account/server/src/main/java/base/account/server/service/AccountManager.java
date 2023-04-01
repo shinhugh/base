@@ -1,4 +1,4 @@
-package base.account.service;
+package base.account.server.service;
 
 public class AccountManager implements AccountService {
 }
