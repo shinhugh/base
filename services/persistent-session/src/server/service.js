@@ -75,10 +75,10 @@ export class PersistentSessionServiceServer {
     if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, [ Role.System ])) {
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
       throw new AccessDeniedError();
     }
-    if (typeof id !== 'string') {
+    if (typeof id !== 'string' || id.length != idLength) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -107,7 +107,7 @@ export class PersistentSessionServiceServer {
     if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
-    if (typeof refreshToken !== 'string') {
+    if (typeof refreshToken !== 'string' || refreshToken.length != refreshTokenLength) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -136,13 +136,13 @@ export class PersistentSessionServiceServer {
     if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, [ Role.System, Role.Admin, Role.User ])) {
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
       throw new AccessDeniedError();
     }
-    if (typeof userAccountId !== 'string') {
+    if (typeof userAccountId !== 'string' || userAccountId.length != idLength) {
       throw new IllegalArgumentError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, [ Role.System, Role.Admin ])) {
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin)) {
       if (authority.id !== userAccountId) {
         throw new AccessDeniedError();
       }
@@ -169,7 +169,7 @@ export class PersistentSessionServiceServer {
     if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
-    if (typeof refreshToken !== 'string') {
+    if (typeof refreshToken !== 'string' || refreshToken.length != refreshTokenLength) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -295,7 +295,7 @@ const validatePersistentSessionObjectSchema = (persistentSession) => {
   if (typeof persistentSession !== 'object') {
     return false;
   }
-  if (persistentSession.id != null && typeof persistentSession.id !== 'string') {
+  if (persistentSession.id != null && (typeof persistentSession.id !== 'string' || persistentSession.id.length != idLength)) {
     return false;
   }
   if (typeof persistentSession.userAccountId !== 'string' || persistentSession.userAccountId.length != idLength) {
@@ -323,7 +323,7 @@ const validateAuthorityObjectSchema = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && typeof authority.id !== 'string') {
+  if (authority.id != null && (typeof authority.id !== 'string' || authority.id.length !== idLength)) {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > maxRoles)) {
