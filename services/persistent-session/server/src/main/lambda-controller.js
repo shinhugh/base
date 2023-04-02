@@ -8,7 +8,7 @@ import { PersistentSessionService, IllegalArgumentError } from './service.js';
 // request.authority.id: string (optional)
 // request.authority.roles: number (unsigned 8-bit int) (optional)
 // request.arguments: [any] (optional)
-export const handler = async (request) => {
+const handler = async (request) => {
   try {
     if (typeof request !== 'object' || (request.arguments != null && Object.prototype.toString.call(request.arguments) !== '[object Array]')) {
       throw new IllegalArgumentError();
@@ -62,3 +62,7 @@ const service = new PersistentSessionService({
   username: process.env.AUTH_DB_USERNAME,
   password: process.env.AUTH_DB_PASSWORD
 });
+
+export {
+  handler
+};

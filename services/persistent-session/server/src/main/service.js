@@ -3,7 +3,7 @@ import { Sequelize, DataTypes } from 'sequelize';
 
 // TODO: Remove comments
 
-export class PersistentSessionService {
+class PersistentSessionService {
   #databaseInfo;
   #sequelize;
 
@@ -222,28 +222,28 @@ export class PersistentSessionService {
   }
 }
 
-export class IllegalArgumentError extends Error {
+class IllegalArgumentError extends Error {
   constructor() {
     super(illegalArgumentErrorMessage);
     this.name = this.constructor.name;
   }
 }
 
-export class AccessDeniedError extends Error {
+class AccessDeniedError extends Error {
   constructor() {
     super(accessDeniedErrorMessage);
     this.name = this.constructor.name;
   }
 }
 
-export class NotFoundError extends Error {
+class NotFoundError extends Error {
   constructor() {
     super(notFoundErrorMessage);
     this.name = this.constructor.name;
   }
 }
 
-export class ConflictError extends Error {
+class ConflictError extends Error {
   constructor() {
     super(conflictErrorMessage);
     this.name = this.constructor.name;
@@ -341,7 +341,7 @@ const illegalArgumentErrorMessage = 'Illegal argument';
 const accessDeniedErrorMessage = 'Access denied';
 const notFoundErrorMessage = 'Not found';
 const conflictErrorMessage = 'Conflict';
-export const Role = Object.freeze({
+const Role = Object.freeze({
   System: Math.pow(2, 0),
   User: Math.pow(2, 1),
   Admin: Math.pow(2, 2)
@@ -394,4 +394,13 @@ const sequelizePersistentSessionAttributes = {
 const sequelizePersistentSessionOptions = {
   timestamps: false,
   tableName: 'PersistentSessions'
+};
+
+export {
+  PersistentSessionService,
+  IllegalArgumentError,
+  AccessDeniedError,
+  NotFoundError,
+  ConflictError,
+  Role
 };
