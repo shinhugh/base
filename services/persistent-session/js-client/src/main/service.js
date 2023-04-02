@@ -79,15 +79,17 @@ export class ConflictError extends Error {
 
 const makeRequest = async (funcName, authority, args) => {
   const client = new LambdaClient();
-  const responseWrapper = await client.send(new InvokeCommand({
+  const request = {
+    function: funcName,
+    authority: authority,
+    arguments: args
+  };
+  const requestWrapper = new InvokeCommand({
     FunctionName: 'base_persistentSessionService',
     LogType: 'None',
-    Payload: JSON.stringify({
-      function: funcName,
-      authority: authority,
-      arguments: args
-    })
-  }));
+    Payload: JSON.stringify(request)
+  });
+  const responseWrapper = await client.send(requestWrapper);
   const response = JSON.parse(Buffer.from(responseWrapper.Payload));
   switch (response.result) {
     case 'IllegalArgumentError':

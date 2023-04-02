@@ -8,6 +8,17 @@ public class PersistentSession {
     private long creationTime;
     private long expirationTime;
 
+    public PersistentSession() { }
+
+    public PersistentSession(String id, String userAccountId, short roles, String refreshToken, long creationTime, long expirationTime) {
+        this.id = id;
+        this.userAccountId = userAccountId;
+        this.roles = roles;
+        this.refreshToken = refreshToken;
+        this.creationTime = creationTime;
+        this.expirationTime = expirationTime;
+    }
+
     public String getId() {
         return id;
     }
