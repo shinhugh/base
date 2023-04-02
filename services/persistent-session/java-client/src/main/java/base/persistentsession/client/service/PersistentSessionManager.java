@@ -10,6 +10,8 @@ import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.lambda.model.LogType;
 
+import java.lang.reflect.Type;
+
 public class PersistentSessionManager implements PersistentSessionService {
     private static final String FUNCTION_NAME = "base_persistentSessionService";
     private final Gson gson = new Gson();
@@ -18,38 +20,38 @@ public class PersistentSessionManager implements PersistentSessionService {
     public String create(Authority authority, PersistentSession persistentSession) {
         Object[] args = new Object[1];
         args[0] = persistentSession;
-        return makeRequest("create", authority, args);
+        return (String) makeRequest("create", authority, args, String.class);
     }
 
     @Override
     public PersistentSession readById(Authority authority, String id) {
         Object[] args = new Object[1];
         args[0] = id;
-        return makeRequest("readById", authority, args);
+        return (PersistentSession) makeRequest("readById", authority, args, PersistentSession.class);
     }
 
     @Override
     public PersistentSession readByRefreshToken(Authority authority, String refreshToken) {
         Object[] args = new Object[1];
         args[0] = refreshToken;
-        return makeRequest("readByRefreshToken", authority, args);
+        return (PersistentSession) makeRequest("readByRefreshToken", authority, args, PersistentSession.class);
     }
 
     @Override
     public void deleteByUserAccountId(Authority authority, String userAccountId) {
         Object[] args = new Object[1];
         args[0] = userAccountId;
-        makeRequest("deleteByUserAccountId", authority, args);
+        makeRequest("deleteByUserAccountId", authority, args, null);
     }
 
     @Override
     public void deleteByRefreshToken(Authority authority, String refreshToken) {
         Object[] args = new Object[1];
         args[0] = refreshToken;
-        makeRequest("deleteByRefreshToken", authority, args);
+        makeRequest("deleteByRefreshToken", authority, args, Object.class);
     }
 
-    private <T> T makeRequest(String funcName, Authority authority, Object[] args) {
+    private Object makeRequest(String funcName, Authority authority, Object[] args, Type payloadType) {
         try (LambdaClient client = LambdaClient.builder().build()) {
             InvokeRequestPayload request = new InvokeRequestPayload(funcName, authority, args);
             InvokeRequest requestWrapper = InvokeRequest.builder()
@@ -58,7 +60,10 @@ public class PersistentSessionManager implements PersistentSessionService {
                     .payload(SdkBytes.fromUtf8String(gson.toJson(request)))
                     .build();
             InvokeResponse responseWrapper = client.invoke(requestWrapper);
-            InvokeResponsePayload response = gson.fromJson(responseWrapper.payload().asUtf8String(), InvokeResponsePayload.class);
+            InvokeResponsePayload<Object> response = gson.fromJson(responseWrapper.payload().asUtf8String(), TypeToken.getParameterized(InvokeResponsePayload.class, payloadType == null ? Object.class : payloadType).getType());
+            if (response.getResult() == null) {
+                return payloadType == null ? null : response.getPayload();
+            }
             switch (response.getResult()) {
                 case IllegalArgumentError:
                     throw new IllegalArgumentException();
@@ -69,7 +74,7 @@ public class PersistentSessionManager implements PersistentSessionService {
                 case ConflictError:
                     throw new ConflictException();
                 default:
-                    return gson.fromJson(response.getPayload(), (new TypeToken<T>() { }).getType());
+                    return payloadType == null ? null : response.getPayload();
             }
         }
     }
@@ -110,9 +115,9 @@ public class PersistentSessionManager implements PersistentSessionService {
         }
     }
 
-    private static class InvokeResponsePayload {
+    private static class InvokeResponsePayload<T> {
         private Result result;
-        private String payload;
+        private T payload;
 
         public Result getResult() {
             return result;
@@ -122,11 +127,11 @@ public class PersistentSessionManager implements PersistentSessionService {
             this.result = result;
         }
 
-        public String getPayload() {
+        public T getPayload() {
             return payload;
         }
 
-        public void setPayload(String payload) {
+        public void setPayload(T payload) {
             this.payload = payload;
         }
 
