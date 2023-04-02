@@ -1,6 +1,7 @@
 public class TestApplication {
     public static void main(String[] args) {
-        PersistentSessionManagerTests tests = new PersistentSessionManagerTests();
-        tests.testAll();
+        for (Test test : PersistentSessionManagerTests.tests) {
+            test.run();
+        }
     }
 }
