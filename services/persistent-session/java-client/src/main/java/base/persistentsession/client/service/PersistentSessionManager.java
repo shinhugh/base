@@ -1,7 +1,7 @@
 package base.persistentsession.client.service;
 
-import base.persistentsession.client.model.*;
 import base.persistentsession.client.model.IllegalArgumentException;
+import base.persistentsession.client.model.*;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import software.amazon.awssdk.core.SdkBytes;
@@ -60,7 +60,7 @@ public class PersistentSessionManager implements PersistentSessionService {
                     .payload(SdkBytes.fromUtf8String(gson.toJson(request)))
                     .build();
             InvokeResponse responseWrapper = client.invoke(requestWrapper);
-            InvokeResponsePayload<Object> response = gson.fromJson(responseWrapper.payload().asUtf8String(), TypeToken.getParameterized(InvokeResponsePayload.class, payloadType == null ? Object.class : payloadType).getType());
+            InvokeResponsePayload response = gson.fromJson(responseWrapper.payload().asUtf8String(), TypeToken.getParameterized(InvokeResponsePayload.class, payloadType == null ? Object.class : payloadType).getType());
             if (response.getResult() == null) {
                 return payloadType == null ? null : response.getPayload();
             }
@@ -115,9 +115,9 @@ public class PersistentSessionManager implements PersistentSessionService {
         }
     }
 
-    private static class InvokeResponsePayload<T> {
+    private static class InvokeResponsePayload {
         private Result result;
-        private T payload;
+        private Object payload;
 
         public Result getResult() {
             return result;
@@ -127,11 +127,11 @@ public class PersistentSessionManager implements PersistentSessionService {
             this.result = result;
         }
 
-        public T getPayload() {
+        public Object getPayload() {
             return payload;
         }
 
-        public void setPayload(T payload) {
+        public void setPayload(Object payload) {
             this.payload = payload;
         }
 

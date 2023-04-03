@@ -1,9 +1,7 @@
-import base.useraccount.server.model.Authority;
-import base.useraccount.server.model.Role;
-import base.useraccount.server.model.UserAccount;
-import base.useraccount.server.service.UserAccountManager;
-
-import java.util.Map;
+import base.useraccount.client.model.Authority;
+import base.useraccount.client.model.Role;
+import base.useraccount.client.model.UserAccount;
+import base.useraccount.client.service.UserAccountManager;
 
 public class UserAccountManagerTests {
     private static final Authority AUTHORITY = new Authority(null, (short) 1);
@@ -11,17 +9,10 @@ public class UserAccountManagerTests {
     private static final String ACCOUNT_PASSWORD_HASH = "4a804274c38354a356d5373e091089d343454b551f6116d94bc06d786f9bbcea";
     private static final String ACCOUNT_PASSWORD_SALT = "pmm7pvj7pbnn18k7ld3pfrkszj80i135";
     private static final short ACCOUNT_ROLES = (short) (Role.USER .getBitFlag() | Role.ADMIN.getBitFlag());
-    private static final String DB_HOST = "localhost";
-    private static final int DB_PORT = 3306;
-    private static final String DB_DATABASE = "base";
-    private static final String DB_USERNAME = "root";
-    private static final String DB_PASSWORD = "";
-    private static final String CONNECTION_URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_DATABASE;
-    private static final Map<String, String> DATABASE_INFO = Map.of("hibernate.connection.url", CONNECTION_URL, "hibernate.connection.username", DB_USERNAME, "hibernate.connection.password", DB_PASSWORD);
-    private static final UserAccountManager userAccountManager = new UserAccountManager(DATABASE_INFO);
+    private static final UserAccountManager userAccountManager = new UserAccountManager();
     private static String id;
 
-    public static Test[] tests = new Test[]{
+    public static Test[] tests = new Test[] {
             new Test("Create", new CreateTest()),
             new Test("ReadById", new ReadByIdTest()),
             new Test("ReadByName", new ReadByNameTest()),
