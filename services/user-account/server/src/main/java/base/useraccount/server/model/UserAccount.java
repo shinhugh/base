@@ -3,19 +3,21 @@ package base.useraccount.server.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "UserAccounts")
 public class UserAccount {
     @Id
-    @Column(nullable = false)
+    @Column(name = "Id", nullable = false)
     private String id;
-    @Column(nullable = false, unique = true)
+    @Column(name = "Name", nullable = false, unique = true)
     private String name;
-    @Column(nullable = false)
+    @Column(name = "PasswordHash", nullable = false)
     private String passwordHash;
-    @Column(nullable = false)
+    @Column(name = "PasswordSalt", nullable = false)
     private String passwordSalt;
-    @Column(nullable = false)
+    @Column(name = "Roles", nullable = false)
     private short roles;
 
     public UserAccount() { }

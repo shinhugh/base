@@ -1,23 +1,26 @@
 package base.useraccount.server.service;
 
+import base.useraccount.server.model.IllegalArgumentException;
 import base.useraccount.server.model.*;
 import jakarta.persistence.*;
 
-import java.lang.IllegalArgumentException;
+import java.util.Map;
 import java.util.UUID;
 
 public class UserAccountManager implements UserAccountService {
     private static final int ID_LENGTH = 36;
     private static final int NAME_MIN_LENGTH = 4;
-    private static final int NAME_MAX_LENGTH = 16;
-    private static final int PASSWORD_HASH_LENGTH = 64; // TODO: Password hash length
+    private static final int NAME_MAX_LENGTH = 32;
+    private static final int PASSWORD_HASH_LENGTH = 64;
     private static final int PASSWORD_SALT_LENGTH = 32;
     private static final short MAX_ROLES = 255;
     private final EntityManagerFactory entityManagerFactory;
 
-    public UserAccountManager() {
-        JpaPropertiesService jpaPropertiesService = new JpaPropertiesManager();
-        entityManagerFactory = Persistence.createEntityManagerFactory("base", jpaPropertiesService.generateProperties());
+    public UserAccountManager(Map<String, String> databaseInfo) {
+        if (databaseInfo == null) {
+            throw new IllegalArgumentException();
+        }
+        entityManagerFactory = Persistence.createEntityManagerFactory("base", databaseInfo);
     }
 
     @Override
@@ -50,14 +53,14 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public UserAccount readById(Authority authority, String id) {
-        if (authority == null || (authority.getRoles() & (1 | 2 | 4)) == 0) { // TODO: Don't hard-code role values
+        if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
             throw new AccessDeniedException();
         }
-        boolean onlyAuthorizedAsUser = (authority.getRoles() & (2 | 4)) == 0; // TODO: Don't hard-code role values
+        boolean onlyAuthorizedAsUser = (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.ADMIN.getBitFlag())) == 0;
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null) {
+        if (id == null || id.length() != ID_LENGTH) {
             throw new IllegalArgumentException();
         }
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
@@ -87,14 +90,14 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public UserAccount readByName(Authority authority, String name) {
-        if (authority == null || (authority.getRoles() & (1 | 2 | 4)) == 0) { // TODO: Don't hard-code role values
+        if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
             throw new AccessDeniedException();
         }
-        boolean onlyAuthorizedAsUser = (authority.getRoles() & (2 | 4)) == 0; // TODO: Don't hard-code role values
+        boolean onlyAuthorizedAsUser = (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.ADMIN.getBitFlag())) == 0;
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (name == null) {
+        if (name == null || name.length() < NAME_MIN_LENGTH || name.length() > NAME_MAX_LENGTH) {
             throw new IllegalArgumentException();
         }
         String queryString = "from UserAccount as x where x.name = :name";
@@ -127,14 +130,77 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public void updateById(Authority authority, String id, UserAccount userAccount) {
-        // TODO
-        throw new RuntimeException("Not implemented");
+        if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
+            throw new AccessDeniedException();
+        }
+        boolean onlyAuthorizedAsUser = (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.ADMIN.getBitFlag())) == 0;
+        if (onlyAuthorizedAsUser && authority.getId() == null) {
+            throw new AccessDeniedException();
+        }
+        if (id == null || id.length() != ID_LENGTH) {
+            throw new IllegalArgumentException();
+        }
+        if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
+            throw new AccessDeniedException();
+        }
+        if (detectInvalidUserAccountInput(userAccount)) {
+            throw new IllegalArgumentException();
+        }
+        String queryString = "from UserAccount as x where x.id = :id";
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        try {
+            UserAccount match = null;
+            entityManager.getTransaction().begin();
+            TypedQuery<UserAccount> query = entityManager.createQuery(queryString, UserAccount.class);
+            query.setParameter("id", id);
+            try {
+                match = query.getSingleResult();
+            }
+            catch (NoResultException ignored) { }
+            if (match == null) {
+                entityManager.getTransaction().rollback();
+                throw new NotFoundException();
+            }
+            match.setName(userAccount.getName());
+            match.setPasswordHash(userAccount.getPasswordHash());
+            match.setPasswordSalt(userAccount.getPasswordSalt());
+            match.setRoles(userAccount.getRoles());
+            entityManager.getTransaction().commit();
+        }
+        finally {
+            entityManager.close();
+        }
     }
 
     @Override
     public void deleteById(Authority authority, String id) {
-        // TODO
-        throw new RuntimeException("Not implemented");
+        if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
+            throw new AccessDeniedException();
+        }
+        boolean onlyAuthorizedAsUser = (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.ADMIN.getBitFlag())) == 0;
+        if (onlyAuthorizedAsUser && authority.getId() == null) {
+            throw new AccessDeniedException();
+        }
+        if (id == null || id.length() != ID_LENGTH) {
+            throw new IllegalArgumentException();
+        }
+        if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
+            throw new AccessDeniedException();
+        }
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        try {
+            entityManager.getTransaction().begin();
+            UserAccount userAccount = entityManager.find(UserAccount.class, id);
+            if (userAccount == null) {
+                entityManager.getTransaction().rollback();
+                return;
+            }
+            entityManager.remove(userAccount);
+            entityManager.getTransaction().commit();
+        }
+        finally {
+            entityManager.close();
+        }
     }
 
     private boolean detectInvalidUserAccountInput(UserAccount userAccount) {
