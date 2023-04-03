@@ -53,14 +53,14 @@ public class UserAccountManager implements UserAccountService {
 
     private Object makeRequest(String funcName, Authority authority, Object[] args) {
         try (LambdaClient client = LambdaClient.builder().build()) {
-            InvokeRequestPayload request = new InvokeRequestPayload(funcName, authority, args);
+            Request request = new Request(funcName, authority, args);
             InvokeRequest requestWrapper = InvokeRequest.builder()
                     .functionName(FUNCTION_NAME)
                     .logType(LogType.NONE)
                     .payload(SdkBytes.fromUtf8String(gson.toJson(request)))
                     .build();
             InvokeResponse responseWrapper = client.invoke(requestWrapper);
-            InvokeResponsePayload response = gson.fromJson(responseWrapper.payload().asUtf8String(), InvokeResponsePayload.class);
+            Response response = gson.fromJson(responseWrapper.payload().asUtf8String(), Response.class);
             if (response.getResult() == null) {
                 return response.getPayload();
             }
@@ -90,12 +90,12 @@ public class UserAccountManager implements UserAccountService {
         return new UserAccount(null, name, passwordHash, passwordSalt, roles);
     }
 
-    private static class InvokeRequestPayload {
+    private static class Request {
         private String function;
         private Authority authority;
         private Object[] arguments;
 
-        public InvokeRequestPayload(String function, Authority authority, Object[] arguments) {
+        public Request(String function, Authority authority, Object[] arguments) {
             this.function = function;
             this.authority = authority;
             this.arguments = arguments;
@@ -126,7 +126,7 @@ public class UserAccountManager implements UserAccountService {
         }
     }
 
-    private static class InvokeResponsePayload {
+    private static class Response {
         private Result result;
         private Object payload;
 

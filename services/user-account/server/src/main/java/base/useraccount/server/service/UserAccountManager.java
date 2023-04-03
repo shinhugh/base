@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class UserAccountManager implements UserAccountService {
-    private static final int ID_MAX_LENGTH = 36;
+    private static final int ID_LENGTH = 36;
     private static final int NAME_MAX_LENGTH = 32;
     private static final int PASSWORD_HASH_MAX_LENGTH = 64;
     private static final int PASSWORD_SALT_MAX_LENGTH = 32;
@@ -24,7 +24,10 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public String create(Authority authority, UserAccount userAccount) {
-        if (detectInvalidUserAccountInput(userAccount)) {
+        if (!validateAuthorityInput(authority)) {
+            throw new IllegalArgumentException();
+        }
+        if (userAccount == null || !validateUserAccountInput(userAccount)) {
             throw new IllegalArgumentException();
         }
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -52,6 +55,9 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public UserAccount readById(Authority authority, String id) {
+        if (!validateAuthorityInput(authority)) {
+            throw new IllegalArgumentException();
+        }
         if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
             throw new AccessDeniedException();
         }
@@ -59,7 +65,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || id.length() > ID_MAX_LENGTH) {
+        if (id == null || id.length() > ID_LENGTH) {
             throw new IllegalArgumentException();
         }
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
@@ -89,6 +95,9 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public UserAccount readByName(Authority authority, String name) {
+        if (!validateAuthorityInput(authority)) {
+            throw new IllegalArgumentException();
+        }
         if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
             throw new AccessDeniedException();
         }
@@ -129,6 +138,9 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public void updateById(Authority authority, String id, UserAccount userAccount) {
+        if (!validateAuthorityInput(authority)) {
+            throw new IllegalArgumentException();
+        }
         if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
             throw new AccessDeniedException();
         }
@@ -136,13 +148,13 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || id.length() > ID_MAX_LENGTH) {
+        if (id == null || id.length() > ID_LENGTH) {
             throw new IllegalArgumentException();
         }
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
             throw new AccessDeniedException();
         }
-        if (detectInvalidUserAccountInput(userAccount)) {
+        if (userAccount == null || !validateUserAccountInput(userAccount)) {
             throw new IllegalArgumentException();
         }
         String queryString = "from UserAccount as x where x.id = :id";
@@ -173,6 +185,9 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public void deleteById(Authority authority, String id) {
+        if (!validateAuthorityInput(authority)) {
+            throw new IllegalArgumentException();
+        }
         if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
             throw new AccessDeniedException();
         }
@@ -180,7 +195,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || id.length() > ID_MAX_LENGTH) {
+        if (id == null || id.length() > ID_LENGTH) {
             throw new IllegalArgumentException();
         }
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
@@ -202,20 +217,30 @@ public class UserAccountManager implements UserAccountService {
         }
     }
 
-    private boolean detectInvalidUserAccountInput(UserAccount userAccount) {
+    private boolean validateAuthorityInput(Authority authority) {
+        if (authority == null) {
+            return true;
+        }
+        if (authority.getId() != null && authority.getId().length() != ID_LENGTH) {
+            return false;
+        }
+        return authority.getRoles() >= 0 && authority.getRoles() <= ROLES_MAX_VALUE;
+    }
+
+    private boolean validateUserAccountInput(UserAccount userAccount) {
         if (userAccount == null) {
             return true;
         }
         if (userAccount.getName() == null || userAccount.getName().length() > NAME_MAX_LENGTH) {
-            return true;
+            return false;
         }
         if (userAccount.getPasswordHash() == null || userAccount.getPasswordHash().length() > PASSWORD_HASH_MAX_LENGTH) {
-            return true;
+            return false;
         }
         if (userAccount.getPasswordSalt() == null || userAccount.getPasswordSalt().length() > PASSWORD_SALT_MAX_LENGTH) {
-            return true;
+            return false;
         }
-        return userAccount.getRoles() < 0 || userAccount.getRoles() > ROLES_MAX_VALUE;
+        return userAccount.getRoles() >= 0 && userAccount.getRoles() <= ROLES_MAX_VALUE;
     }
 
     private String generateId(EntityManager entityManager) {

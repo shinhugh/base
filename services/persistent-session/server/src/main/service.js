@@ -78,7 +78,7 @@ class PersistentSessionService {
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
       throw new AccessDeniedError();
     }
-    if (typeof id !== 'string' || id.length > idMaxLength) {
+    if (typeof id !== 'string' || id.length > idLength) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -139,7 +139,7 @@ class PersistentSessionService {
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
       throw new AccessDeniedError();
     }
-    if (typeof userAccountId !== 'string' || userAccountId.length > idMaxLength) {
+    if (typeof userAccountId !== 'string' || userAccountId.length > idLength) {
       throw new IllegalArgumentError();
     }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin)) {
@@ -288,6 +288,22 @@ const validateDatabaseInfoObjectSchema = (databaseInfo) => {
   return true;
 };
 
+const validateAuthorityObjectSchema = (authority) => {
+  if (authority == null) {
+    return true;
+  }
+  if (typeof authority !== 'object') {
+    return false;
+  }
+  if (authority.id != null && (typeof authority.id !== 'string' || authority.id.length != idLength)) {
+    return false;
+  }
+  if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
+    return false;
+  }
+  return true;
+};
+
 const validatePersistentSessionObjectSchema = (persistentSession) => {
   if (persistentSession == null) {
     return true;
@@ -295,7 +311,7 @@ const validatePersistentSessionObjectSchema = (persistentSession) => {
   if (typeof persistentSession !== 'object') {
     return false;
   }
-  if (typeof persistentSession.userAccountId !== 'string' || persistentSession.userAccountId.length > idMaxLength) {
+  if (typeof persistentSession.userAccountId !== 'string' || persistentSession.userAccountId.length > idLength) {
     return false;
   }
   if (!Number.isInteger(persistentSession.roles) || persistentSession.roles < 0 || persistentSession.roles > rolesMaxValue) {
@@ -313,24 +329,8 @@ const validatePersistentSessionObjectSchema = (persistentSession) => {
   return true;
 };
 
-const validateAuthorityObjectSchema = (authority) => {
-  if (authority == null) {
-    return true;
-  }
-  if (typeof authority !== 'object') {
-    return false;
-  }
-  if (authority.id != null && (typeof authority.id !== 'string' || authority.id.length > idMaxLength)) {
-    return false;
-  }
-  if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
-    return false;
-  }
-  return true;
-};
-
 const maxPortNumber = 65535;
-const idMaxLength = 36;
+const idLength = 36;
 const rolesMaxValue = 255;
 const refreshTokenMaxLength = 128;
 const timeMaxValue = 4294967295;

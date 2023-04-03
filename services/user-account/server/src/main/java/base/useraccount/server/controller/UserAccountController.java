@@ -108,8 +108,6 @@ public class UserAccountController {
         private String result;
         private Object payload;
 
-        public Response() { }
-
         public Response(String result, Object payload) {
             this.result = result;
             this.payload = payload;
