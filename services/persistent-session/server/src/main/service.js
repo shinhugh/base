@@ -78,7 +78,7 @@ class PersistentSessionService {
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
       throw new AccessDeniedError();
     }
-    if (typeof id !== 'string' || id.length != idLength) {
+    if (typeof id !== 'string' || id.length > idMaxLength) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -107,7 +107,7 @@ class PersistentSessionService {
     if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
-    if (typeof refreshToken !== 'string' || refreshToken.length != refreshTokenLength) {
+    if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -139,7 +139,7 @@ class PersistentSessionService {
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
       throw new AccessDeniedError();
     }
-    if (typeof userAccountId !== 'string' || userAccountId.length != idLength) {
+    if (typeof userAccountId !== 'string' || userAccountId.length > idMaxLength) {
       throw new IllegalArgumentError();
     }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin)) {
@@ -169,7 +169,7 @@ class PersistentSessionService {
     if (!validateAuthorityObjectSchema(authority)) {
       throw new IllegalArgumentError();
     }
-    if (typeof refreshToken !== 'string' || refreshToken.length != refreshTokenLength) {
+    if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -251,7 +251,7 @@ class ConflictError extends Error {
 }
 
 const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
-  if (!validateAuthorityObjectSchema(authority) || (roles != null && (!Number.isInteger(roles) || roles < 0 || roles > maxRoles))) {
+  if (!validateAuthorityObjectSchema(authority) || (roles != null && (!Number.isInteger(roles) || roles < 0 || roles > rolesMaxValue))) {
     throw new IllegalArgumentError();
   }
   if (roles == null || roles == 0) {
@@ -295,19 +295,19 @@ const validatePersistentSessionObjectSchema = (persistentSession) => {
   if (typeof persistentSession !== 'object') {
     return false;
   }
-  if (typeof persistentSession.userAccountId !== 'string' || persistentSession.userAccountId.length != idLength) {
+  if (typeof persistentSession.userAccountId !== 'string' || persistentSession.userAccountId.length > idMaxLength) {
     return false;
   }
-  if (!Number.isInteger(persistentSession.roles) || persistentSession.roles < 0 || persistentSession.roles > maxRoles) {
+  if (!Number.isInteger(persistentSession.roles) || persistentSession.roles < 0 || persistentSession.roles > rolesMaxValue) {
     return false;
   }
-  if (typeof persistentSession.refreshToken !== 'string' || persistentSession.refreshToken.length != refreshTokenLength) {
+  if (typeof persistentSession.refreshToken !== 'string' || persistentSession.refreshToken.length > refreshTokenMaxLength) {
     return false;
   }
-  if (!Number.isInteger(persistentSession.creationTime) || persistentSession.creationTime < 0 || persistentSession.creationTime > maxTime) {
+  if (!Number.isInteger(persistentSession.creationTime) || persistentSession.creationTime < 0 || persistentSession.creationTime > timeMaxValue) {
     return false;
   }
-  if (!Number.isInteger(persistentSession.expirationTime) || persistentSession.expirationTime < 0 || persistentSession.expirationTime > maxTime) {
+  if (!Number.isInteger(persistentSession.expirationTime) || persistentSession.expirationTime < 0 || persistentSession.expirationTime > timeMaxValue) {
     return false;
   }
   return true;
@@ -320,20 +320,20 @@ const validateAuthorityObjectSchema = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && (typeof authority.id !== 'string' || authority.id.length !== idLength)) {
+  if (authority.id != null && (typeof authority.id !== 'string' || authority.id.length > idMaxLength)) {
     return false;
   }
-  if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > maxRoles)) {
+  if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
     return false;
   }
   return true;
 };
 
 const maxPortNumber = 65535;
-const idLength = 36;
-const maxRoles = 255;
-const refreshTokenLength = 128;
-const maxTime = 4294967295;
+const idMaxLength = 36;
+const rolesMaxValue = 255;
+const refreshTokenMaxLength = 128;
+const timeMaxValue = 4294967295;
 const illegalArgumentErrorMessage = 'Illegal argument';
 const accessDeniedErrorMessage = 'Access denied';
 const notFoundErrorMessage = 'Not found';

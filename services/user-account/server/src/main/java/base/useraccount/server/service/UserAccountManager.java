@@ -8,12 +8,11 @@ import java.util.Map;
 import java.util.UUID;
 
 public class UserAccountManager implements UserAccountService {
-    private static final int ID_LENGTH = 36;
-    private static final int NAME_MIN_LENGTH = 4;
+    private static final int ID_MAX_LENGTH = 36;
     private static final int NAME_MAX_LENGTH = 32;
-    private static final int PASSWORD_HASH_LENGTH = 64;
-    private static final int PASSWORD_SALT_LENGTH = 32;
-    private static final short MAX_ROLES = 255;
+    private static final int PASSWORD_HASH_MAX_LENGTH = 64;
+    private static final int PASSWORD_SALT_MAX_LENGTH = 32;
+    private static final short ROLES_MAX_VALUE = 255;
     private final EntityManagerFactory entityManagerFactory;
 
     public UserAccountManager(Map<String, String> databaseInfo) {
@@ -60,7 +59,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || id.length() != ID_LENGTH) {
+        if (id == null || id.length() > ID_MAX_LENGTH) {
             throw new IllegalArgumentException();
         }
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
@@ -97,7 +96,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (name == null || name.length() < NAME_MIN_LENGTH || name.length() > NAME_MAX_LENGTH) {
+        if (name == null || name.length() > NAME_MAX_LENGTH) {
             throw new IllegalArgumentException();
         }
         String queryString = "from UserAccount as x where x.name = :name";
@@ -137,7 +136,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || id.length() != ID_LENGTH) {
+        if (id == null || id.length() > ID_MAX_LENGTH) {
             throw new IllegalArgumentException();
         }
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
@@ -181,7 +180,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || id.length() != ID_LENGTH) {
+        if (id == null || id.length() > ID_MAX_LENGTH) {
             throw new IllegalArgumentException();
         }
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
@@ -207,16 +206,16 @@ public class UserAccountManager implements UserAccountService {
         if (userAccount == null) {
             return true;
         }
-        if (userAccount.getName() == null || userAccount.getName().length() < NAME_MIN_LENGTH || userAccount.getName().length() > NAME_MAX_LENGTH) {
+        if (userAccount.getName() == null || userAccount.getName().length() > NAME_MAX_LENGTH) {
             return true;
         }
-        if (userAccount.getPasswordHash() == null || userAccount.getPasswordHash().length() != PASSWORD_HASH_LENGTH) {
+        if (userAccount.getPasswordHash() == null || userAccount.getPasswordHash().length() > PASSWORD_HASH_MAX_LENGTH) {
             return true;
         }
-        if (userAccount.getPasswordSalt() == null || userAccount.getPasswordSalt().length() != PASSWORD_SALT_LENGTH) {
+        if (userAccount.getPasswordSalt() == null || userAccount.getPasswordSalt().length() > PASSWORD_SALT_MAX_LENGTH) {
             return true;
         }
-        return userAccount.getRoles() < 0 || userAccount.getRoles() > MAX_ROLES;
+        return userAccount.getRoles() < 0 || userAccount.getRoles() > ROLES_MAX_VALUE;
     }
 
     private String generateId(EntityManager entityManager) {
