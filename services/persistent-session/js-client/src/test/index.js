@@ -7,7 +7,7 @@ for (const test of tests) {
     await test.run();
   }
   catch (e) {
-    console.error(header + e.message);
+    console.log(header + e.message);
   }
   console.log(header + 'Exiting test');
 }
