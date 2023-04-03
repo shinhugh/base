@@ -295,9 +295,6 @@ const validatePersistentSessionObjectSchema = (persistentSession) => {
   if (typeof persistentSession !== 'object') {
     return false;
   }
-  if (persistentSession.id != null && (typeof persistentSession.id !== 'string' || persistentSession.id.length != idLength)) {
-    return false;
-  }
   if (typeof persistentSession.userAccountId !== 'string' || persistentSession.userAccountId.length != idLength) {
     return false;
   }
