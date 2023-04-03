@@ -26,7 +26,7 @@ public class UserAccountManagerTests {
             new Test("ReadById", new ReadByIdTest()),
             new Test("ReadByName", new ReadByNameTest()),
             new Test("UpdateById", new UpdateByIdTest()),
-            new Test("DeleteById", new DeleteByIdTest())
+            new Test("DeleteById", new DeleteByIdTest()),
     };
 
     private static class CreateTest implements Test.Runnable {

@@ -1,16 +1,15 @@
 package base.useraccount.client.service;
 
+import base.useraccount.client.model.IllegalArgumentException;
 import base.useraccount.client.model.*;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.lambda.model.LogType;
 
-import java.lang.IllegalArgumentException;
-import java.lang.reflect.Type;
+import java.util.Map;
 
 public class UserAccountManager implements UserAccountService {
     private static final String FUNCTION_NAME = "base_userAccountService";
@@ -20,21 +19,21 @@ public class UserAccountManager implements UserAccountService {
     public String create(Authority authority, UserAccount userAccount) {
         Object[] args = new Object[1];
         args[0] = userAccount;
-        return (String) makeRequest("create", authority, args, String.class);
+        return (String) makeRequest("create", authority, args);
     }
 
     @Override
     public UserAccount readById(Authority authority, String id) {
         Object[] args = new Object[1];
         args[0] = id;
-        return (UserAccount) makeRequest("readById", authority, args, UserAccount.class);
+        return parseUserAccountFromMap((Map<String, Object>) makeRequest("readById", authority, args));
     }
 
     @Override
     public UserAccount readByName(Authority authority, String name) {
         Object[] args = new Object[1];
         args[0] = name;
-        return (UserAccount) makeRequest("readByName", authority, args, UserAccount.class);
+        return parseUserAccountFromMap((Map<String, Object>) makeRequest("readByName", authority, args));
     }
 
     @Override
@@ -42,17 +41,17 @@ public class UserAccountManager implements UserAccountService {
         Object[] args = new Object[2];
         args[0] = id;
         args[1] = userAccount;
-        makeRequest("updateById", authority, args, String.class);
+        makeRequest("updateById", authority, args);
     }
 
     @Override
     public void deleteById(Authority authority, String id) {
         Object[] args = new Object[1];
         args[0] = id;
-        makeRequest("deleteById", authority, args, null);
+        makeRequest("deleteById", authority, args);
     }
 
-    private Object makeRequest(String funcName, Authority authority, Object[] args, Type payloadType) {
+    private Object makeRequest(String funcName, Authority authority, Object[] args) {
         try (LambdaClient client = LambdaClient.builder().build()) {
             InvokeRequestPayload request = new InvokeRequestPayload(funcName, authority, args);
             InvokeRequest requestWrapper = InvokeRequest.builder()
@@ -61,9 +60,9 @@ public class UserAccountManager implements UserAccountService {
                     .payload(SdkBytes.fromUtf8String(gson.toJson(request)))
                     .build();
             InvokeResponse responseWrapper = client.invoke(requestWrapper);
-            InvokeResponsePayload response = gson.fromJson(responseWrapper.payload().asUtf8String(), TypeToken.getParameterized(InvokeResponsePayload.class, payloadType == null ? Object.class : payloadType).getType());
+            InvokeResponsePayload response = gson.fromJson(responseWrapper.payload().asUtf8String(), InvokeResponsePayload.class);
             if (response.getResult() == null) {
-                return payloadType == null ? null : response.getPayload();
+                return response.getPayload();
             }
             switch (response.getResult()) {
                 case IllegalArgumentError:
@@ -75,9 +74,20 @@ public class UserAccountManager implements UserAccountService {
                 case ConflictError:
                     throw new ConflictException();
                 default:
-                    return payloadType == null ? null : response.getPayload();
+                    return response.getPayload();
             }
         }
+    }
+
+    private UserAccount parseUserAccountFromMap(Map<String, Object> map) {
+        if (map == null) {
+            return null;
+        }
+        String name = (String) map.get("name");
+        String passwordHash = (String) map.get("passwordHash");
+        String passwordSalt = (String) map.get("passwordSalt");
+        short roles = (short) (double) map.get("roles");
+        return new UserAccount(null, name, passwordHash, passwordSalt, roles);
     }
 
     private static class InvokeRequestPayload {

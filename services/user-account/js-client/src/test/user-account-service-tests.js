@@ -1,13 +1,11 @@
 import { UserAccountService, Role } from '../main/service.js';
 
 const testCreate = async () => {
-  const currentTime = Math.floor(Date.now() / 1000);
   const userAccount = {
-    userAccountId: sessionUserAccountId,
-    roles: sessionRoles,
-    refreshToken: sessionRefreshToken,
-    creationTime: currentTime,
-    expirationTime: currentTime + sessionDuration
+    name: accountName,
+    passwordHash: accountPasswordHash,
+    passwordSalt: accountPasswordSalt,
+    roles: accountRoles
   };
   id = await userAccountService.create(authority, userAccount);
 };
@@ -17,15 +15,21 @@ const testReadById = async () => {
 };
 
 const testReadByName = async () => {
-  await userAccountService.readByRefreshToken(authority, sessionRefreshToken);
+  await userAccountService.readByName(authority, accountName);
 };
 
 const testUpdateById = async () => {
-  await userAccountService.deleteByUserAccountId(authority, sessionUserAccountId);
+  const userAccount = {
+    name: 'changed',
+    passwordHash: accountPasswordHash,
+    passwordSalt: accountPasswordSalt,
+    roles: accountRoles
+  };
+  await userAccountService.updateById(authority, id, userAccount);
 };
 
 const testDeleteById = async () => {
-  await userAccountService.deleteByRefreshToken(authority, sessionRefreshToken);
+  await userAccountService.deleteById(authority, id);
 };
 
 const authority = {

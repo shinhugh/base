@@ -17,7 +17,7 @@ public class PersistentSessionManagerTests {
             new Test("ReadById", new ReadByIdTest()),
             new Test("ReadByRefreshToken", new ReadByRefreshTokenTest()),
             new Test("DeleteByUserAccountId", new DeleteByUserAccountIdTest()),
-            new Test("DeleteByRefreshToken", new DeleteByRefreshTokenTest())
+            new Test("DeleteByRefreshToken", new DeleteByRefreshTokenTest()),
     };
 
     private static class CreateTest implements Test.Runnable {
