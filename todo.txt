@@ -1,4 +1,3 @@
 - modify Authority to contain creation time of origin PersistentSession
   - Java: update classes and validation methods
   - Node: update validation methods
-- check all bitwise operations and make sure that parentheses are used
