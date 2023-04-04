@@ -1,8 +1,11 @@
 import { PersistentSessionService } from "./persistent-session-service";
 import { IdentificationService } from "./identification-service";
 
-const handler = async () => {
-  // TODO
+const handler = async (event) => {
+  // TODO: Extract ID token from request
+  const token = '';
+  const authority = await identificationService.identify({ roles: Role.System }, token);
+  // TODO: Return generated authority to caller
 };
 
 const persistentSessionService = new PersistentSessionService();

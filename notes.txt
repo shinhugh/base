@@ -3,6 +3,15 @@ TODO:
 - modify Authority to contain creation time of origin PersistentSession
   - Java: update classes and validation methods
   - Node: update validation methods
+- every service controller should expose the same API format
+  invoke(functionName, authority, arguments)
+  functionName: string
+  authority (optional): {
+    id: string (36 characters) (optional)
+    roles: number (unsigned 8-bit integer) (optional)
+    authTime: number (unsigned 32-bit integer) (optional)
+  }
+  arguments: [any] (optional)
 
 
 Test entry for PersistentSessions table:
