@@ -37,7 +37,10 @@ class PersistentSessionService {
   // persistentSession.creationTime: number (unsigned 32-bit integer)
   // persistentSession.expirationTime: number (unsigned 32-bit integer)
   async create(authority, persistentSession) {
-    if (!validateAuthority(authority) || !validatePersistentSession(persistentSession)) {
+    if (!validateAuthority(authority)) {
+      throw new IllegalArgumentError();
+    }
+    if (persistentSession == null || !validatePersistentSession(persistentSession)) {
       throw new IllegalArgumentError();
     }
     const entry = {
