@@ -20,27 +20,27 @@ const handler = async (request) => {
           case 'create':
             return await (async () => {
               const persistentSession = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
-              return await service.create(request.authority, persistentSession);
+              return await persistentSessionService.create(request.authority, persistentSession);
             })();
           case 'readById':
             return await (async () => {
               const id = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
-              return await service.readById(request.authority, id);
+              return await persistentSessionService.readById(request.authority, id);
             })();
           case 'readByRefreshToken':
             return await (async () => {
               const refreshToken = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
-              return await service.readByRefreshToken(request.authority, refreshToken);
+              return await persistentSessionService.readByRefreshToken(request.authority, refreshToken);
             })();
           case 'deleteByUserAccountId':
             return await (async () => {
               const userAccountId = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
-              return await service.deleteByUserAccountId(request.authority, userAccountId);
+              return await persistentSessionService.deleteByUserAccountId(request.authority, userAccountId);
             })();
           case 'deleteByRefreshToken':
             return await (async () => {
               const refreshToken = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
-              return await service.deleteByRefreshToken(request.authority, refreshToken);
+              return await persistentSessionService.deleteByRefreshToken(request.authority, refreshToken);
             })();
           default:
             throw new IllegalArgumentError();
@@ -56,7 +56,7 @@ const handler = async (request) => {
   }
 };
 
-const service = new PersistentSessionService({
+const persistentSessionService = new PersistentSessionService({
   host: process.env.AUTH_DB_HOST,
   port: Number(process.env.AUTH_DB_PORT),
   database: process.env.AUTH_DB_DATABASE,
