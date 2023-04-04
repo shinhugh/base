@@ -66,7 +66,7 @@ public class UserAccountController {
             String name = (String) map.get("name");
             String passwordHash = (String) map.get("passwordHash");
             String passwordSalt = (String) map.get("passwordSalt");
-            short roles = (short) (int) map.get("roles");
+            short roles = (short) (double) map.get("roles");
             return new UserAccount(null, name, passwordHash, passwordSalt, roles);
         }
         catch (ClassCastException ex) {
