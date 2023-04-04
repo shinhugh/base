@@ -1,5 +1,7 @@
 import { randomUUID } from 'crypto';
 import { Sequelize, DataTypes } from 'sequelize';
+import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './errors.js';
+import { Role } from './role.js';
 
 // TODO: Remove comments
 
@@ -225,34 +227,6 @@ class PersistentSessionService {
   }
 }
 
-class IllegalArgumentError extends Error {
-  constructor() {
-    super(illegalArgumentErrorMessage);
-    this.name = this.constructor.name;
-  }
-}
-
-class AccessDeniedError extends Error {
-  constructor() {
-    super(accessDeniedErrorMessage);
-    this.name = this.constructor.name;
-  }
-}
-
-class NotFoundError extends Error {
-  constructor() {
-    super(notFoundErrorMessage);
-    this.name = this.constructor.name;
-  }
-}
-
-class ConflictError extends Error {
-  constructor() {
-    super(conflictErrorMessage);
-    this.name = this.constructor.name;
-  }
-}
-
 const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
   if (!validateAuthority(authority) || (roles != null && (!Number.isInteger(roles) || roles < 0 || roles > rolesMaxValue))) {
     throw new IllegalArgumentError();
@@ -337,15 +311,6 @@ const idLength = 36;
 const rolesMaxValue = 255;
 const refreshTokenMaxLength = 128;
 const timeMaxValue = 4294967295;
-const illegalArgumentErrorMessage = 'Illegal argument';
-const accessDeniedErrorMessage = 'Access denied';
-const notFoundErrorMessage = 'Not found';
-const conflictErrorMessage = 'Conflict';
-const Role = Object.freeze({
-  System: Math.pow(2, 0),
-  User: Math.pow(2, 1),
-  Admin: Math.pow(2, 2)
-});
 const sequelizeOptions = {
   dialect: 'mysql',
   logging: false,
@@ -397,10 +362,5 @@ const sequelizePersistentSessionOptions = {
 };
 
 export {
-  PersistentSessionService,
-  IllegalArgumentError,
-  AccessDeniedError,
-  NotFoundError,
-  ConflictError,
-  Role
+  PersistentSessionService
 };

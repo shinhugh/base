@@ -1,4 +1,5 @@
-import { UserAccountService, Role } from '../main/service.js';
+import { UserAccountService } from '../main/user-account-service.js';
+import { Role } from '../main/role.js';
 
 const testCreate = async () => {
   const userAccount = {

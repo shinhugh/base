@@ -1,4 +1,5 @@
-import { PersistentSessionService, Role } from '../main/service.js';
+import { PersistentSessionService } from '../main/persistent-session-service.js';
+import { Role } from '../main/role.js';
 
 const testCreate = async () => {
   const currentTime = Math.floor(Date.now() / 1000);

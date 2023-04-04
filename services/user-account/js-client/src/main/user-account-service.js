@@ -1,4 +1,5 @@
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './errors.js';
 
 class UserAccountService {
   async create(authority, userAccount) {
@@ -19,34 +20,6 @@ class UserAccountService {
 
   async deleteById(authority, id) {
     return await makeRequest('deleteById', authority, [ id ]);
-  }
-}
-
-class IllegalArgumentError extends Error {
-  constructor() {
-    super(illegalArgumentErrorMessage);
-    this.name = this.constructor.name;
-  }
-}
-
-class AccessDeniedError extends Error {
-  constructor() {
-    super(accessDeniedErrorMessage);
-    this.name = this.constructor.name;
-  }
-}
-
-class NotFoundError extends Error {
-  constructor() {
-    super(notFoundErrorMessage);
-    this.name = this.constructor.name;
-  }
-}
-
-class ConflictError extends Error {
-  constructor() {
-    super(conflictErrorMessage);
-    this.name = this.constructor.name;
   }
 }
 
@@ -78,21 +51,6 @@ const makeRequest = async (funcName, authority, args) => {
   }
 };
 
-const illegalArgumentErrorMessage = 'Illegal argument';
-const accessDeniedErrorMessage = 'Access denied';
-const notFoundErrorMessage = 'Not found';
-const conflictErrorMessage = 'Conflict';
-const Role = Object.freeze({
-  System: Math.pow(2, 0),
-  User: Math.pow(2, 1),
-  Admin: Math.pow(2, 2)
-});
-
 export {
-  UserAccountService,
-  IllegalArgumentError,
-  AccessDeniedError,
-  NotFoundError,
-  ConflictError,
-  Role
+  UserAccountService
 };

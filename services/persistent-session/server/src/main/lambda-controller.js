@@ -1,4 +1,5 @@
-import { PersistentSessionService, IllegalArgumentError } from './service.js';
+import { IllegalArgumentError } from './errors.js';
+import { PersistentSessionService } from './persistent-session-service.js';
 
 // TODO: Remove comments
 
