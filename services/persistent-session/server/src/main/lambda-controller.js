@@ -48,7 +48,7 @@ const handler = async (request) => {
     };
   }
   catch (e) {
-    console.debug('Error thrown: ' + e.message);
+    console.log('Error thrown: ' + e.message);
     return {
       result: e.constructor.name
     };

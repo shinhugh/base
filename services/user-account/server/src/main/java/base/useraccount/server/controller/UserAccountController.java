@@ -52,11 +52,13 @@ public class UserAccountController {
             }
         }
         catch (ClassCastException ex) {
+            System.out.println("Error thrown: IllegalArgumentError");
             return new Response("IllegalArgumentError", null);
         }
         catch (Exception ex) {
             String errorName = ex.getClass().getSimpleName();
             errorName = errorName.substring(0, Math.max(errorName.lastIndexOf("Exception"), 0)) + "Error";
+            System.out.println("Error thrown: " + errorName);
             return new Response(errorName, null);
         }
     }
