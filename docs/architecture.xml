@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2023-03-30T22:26:23.477Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0" etag="JsKgslGIT0kRYG-yBC80" version="21.1.2" type="device">
+<mxfile host="app.diagrams.net" modified="2023-04-04T06:25:26.783Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0" etag="Py7WNat_o46y9UOJKBUn" version="21.1.4" type="device">
   <diagram name="Page-1" id="4avrkyJrO1HF61GQWn7J">
     <mxGraphModel dx="3131" dy="1673" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -184,10 +184,10 @@
         <mxCell id="lMtaDuZxCy8Wa0wxjzj1-1" value="Roles (bit flags)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Lucida Console;fontSize=14;" parent="4iE3-iKasyKdXARzK3Ku-63" vertex="1">
           <mxGeometry x="10" y="200" width="220" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="4iE3-iKasyKdXARzK3Ku-70" value="5. Identification service returns UserAccount ID and roles to gateway." style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontSize=14;fontFamily=Lucida Console;whiteSpace=wrap;" parent="1" vertex="1">
+        <mxCell id="4iE3-iKasyKdXARzK3Ku-70" value="5. Identification service returns UserAccount ID, roles, and creation time of PersistentSession to gateway." style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontSize=14;fontFamily=Lucida Console;whiteSpace=wrap;" parent="1" vertex="1">
           <mxGeometry x="-80" y="-560" width="160" height="120" as="geometry" />
         </mxCell>
-        <mxCell id="4iE3-iKasyKdXARzK3Ku-72" value="6. Gateway forwards original request with UserAccount ID and roles to appropriate service." style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontSize=14;fontFamily=Lucida Console;whiteSpace=wrap;" parent="1" vertex="1">
+        <mxCell id="4iE3-iKasyKdXARzK3Ku-72" value="6. Gateway forwards original request with UserAccount ID, roles, and creation time of PersistentSession to appropriate service." style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontSize=14;fontFamily=Lucida Console;whiteSpace=wrap;" parent="1" vertex="1">
           <mxGeometry x="-160" y="160" width="160" height="120" as="geometry" />
         </mxCell>
       </root>
