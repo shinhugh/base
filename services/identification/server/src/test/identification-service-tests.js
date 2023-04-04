@@ -13,7 +13,7 @@ const token = ''; // TODO
 const persistentSessionService = new PersistentSessionService();
 const identificationService = new IdentificationService(persistentSessionService, {
   algorithm: 'HS256',
-  secretKey: 'Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng='
+  secretKey: Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64')
 });
 const tests = [
   { name: 'Identify', run: testIdentify },

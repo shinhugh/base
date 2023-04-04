@@ -7,8 +7,8 @@ const handler = async () => {
 
 const persistentSessionService = new PersistentSessionService();
 const identificationService = new IdentificationService(persistentSessionService, {
-  algorithm: 'HS256',
-  secretKey: process.env.AUTH_SECRET_KEY
+  algorithm: process.env.AUTH_ALGORITHM,
+  secretKey: Buffer.from(process.env.AUTH_SECRET_KEY, 'base64')
 });
 
 export {
