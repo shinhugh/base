@@ -121,11 +121,12 @@ public class UserAccountController {
         }
         try {
             Map<String, Object> map = (Map<String, Object>) object;
+            String id = (String) map.get("id");
             String name = (String) map.get("name");
             String passwordHash = (String) map.get("passwordHash");
             String passwordSalt = (String) map.get("passwordSalt");
             short roles = parseShortFromObject(map.get("roles"));
-            return new UserAccount(null, name, passwordHash, passwordSalt, roles);
+            return new UserAccount(id, name, passwordHash, passwordSalt, roles);
         }
         catch (ClassCastException ex) {
             throw new ClassCastException();

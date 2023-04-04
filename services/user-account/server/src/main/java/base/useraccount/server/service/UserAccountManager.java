@@ -9,10 +9,10 @@ import java.util.UUID;
 
 public class UserAccountManager implements UserAccountService {
     private static final int ID_LENGTH = 36;
+    private static final short ROLES_MAX_VALUE = 255;
     private static final int NAME_MAX_LENGTH = 32;
     private static final int PASSWORD_HASH_MAX_LENGTH = 64;
     private static final int PASSWORD_SALT_MAX_LENGTH = 32;
-    private static final short ROLES_MAX_VALUE = 255;
     private final EntityManagerFactory entityManagerFactory;
 
     public UserAccountManager(Map<String, String> databaseInfo) {
@@ -24,10 +24,10 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public String create(Authority authority, UserAccount userAccount) {
-        if (!validateAuthorityInput(authority)) {
+        if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        if (userAccount == null || !validateUserAccountInput(userAccount)) {
+        if (userAccount == null || !validateUserAccount(userAccount)) {
             throw new IllegalArgumentException();
         }
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -55,13 +55,13 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public UserAccount readById(Authority authority, String id) {
-        if (!validateAuthorityInput(authority)) {
+        if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
         }
-        boolean onlyAuthorizedAsUser = (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.ADMIN.getBitFlag())) == 0;
+        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
@@ -95,13 +95,13 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public UserAccount readByName(Authority authority, String name) {
-        if (!validateAuthorityInput(authority)) {
+        if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
         }
-        boolean onlyAuthorizedAsUser = (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.ADMIN.getBitFlag())) == 0;
+        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
@@ -138,13 +138,13 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public void updateById(Authority authority, String id, UserAccount userAccount) {
-        if (!validateAuthorityInput(authority)) {
+        if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
         }
-        boolean onlyAuthorizedAsUser = (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.ADMIN.getBitFlag())) == 0;
+        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
@@ -154,7 +154,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
             throw new AccessDeniedException();
         }
-        if (userAccount == null || !validateUserAccountInput(userAccount)) {
+        if (userAccount == null || !validateUserAccount(userAccount)) {
             throw new IllegalArgumentException();
         }
         String queryString = "from UserAccount as x where x.id = :id";
@@ -185,13 +185,13 @@ public class UserAccountManager implements UserAccountService {
 
     @Override
     public void deleteById(Authority authority, String id) {
-        if (!validateAuthorityInput(authority)) {
+        if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        if (authority == null || (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.USER.getBitFlag() | Role.ADMIN.getBitFlag())) == 0) {
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
         }
-        boolean onlyAuthorizedAsUser = (authority.getRoles() & (Role.SYSTEM.getBitFlag() | Role.ADMIN.getBitFlag())) == 0;
+        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
@@ -217,7 +217,20 @@ public class UserAccountManager implements UserAccountService {
         }
     }
 
-    private boolean validateAuthorityInput(Authority authority) {
+    private boolean verifyAuthorityContainsAtLeastOneRole(Authority authority, short roles) {
+        if (!validateAuthority(authority) || roles < 0 || roles > ROLES_MAX_VALUE) {
+            throw new IllegalArgumentException();
+        }
+        if (roles == 0) {
+            return true;
+        }
+        if (authority == null) {
+            return false;
+        }
+        return (authority.getRoles() & roles) != 0;
+    }
+
+    private boolean validateAuthority(Authority authority) {
         if (authority == null) {
             return true;
         }
@@ -227,7 +240,7 @@ public class UserAccountManager implements UserAccountService {
         return authority.getRoles() >= 0 && authority.getRoles() <= ROLES_MAX_VALUE;
     }
 
-    private boolean validateUserAccountInput(UserAccount userAccount) {
+    private boolean validateUserAccount(UserAccount userAccount) {
         if (userAccount == null) {
             return true;
         }

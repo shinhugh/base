@@ -14,7 +14,7 @@ class PersistentSessionService {
   // databaseInfo.username: string
   // databaseInfo.password: string
   constructor(databaseInfo) {
-    if (databaseInfo == null || !validateDatabaseInfoObjectSchema(databaseInfo)) {
+    if (databaseInfo == null || !validateDatabaseInfo(databaseInfo)) {
       throw new IllegalArgumentError();
     }
     this.#databaseInfo = {
@@ -37,7 +37,7 @@ class PersistentSessionService {
   // persistentSession.creationTime: number (unsigned 32-bit integer)
   // persistentSession.expirationTime: number (unsigned 32-bit integer)
   async create(authority, persistentSession) {
-    if (!validateAuthorityObjectSchema(authority) || !validatePersistentSessionObjectSchema(persistentSession)) {
+    if (!validateAuthority(authority) || !validatePersistentSession(persistentSession)) {
       throw new IllegalArgumentError();
     }
     const entry = {
@@ -72,7 +72,7 @@ class PersistentSessionService {
   // authority.roles: number (unsigned 8-bit integer) (optional)
   // id: string
   async readById(authority, id) {
-    if (!validateAuthorityObjectSchema(authority)) {
+    if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
@@ -104,7 +104,7 @@ class PersistentSessionService {
   // authority.roles: number (unsigned 8-bit integer) (optional)
   // refreshToken: string
   async readByRefreshToken(authority, refreshToken) {
-    if (!validateAuthorityObjectSchema(authority)) {
+    if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
@@ -133,7 +133,7 @@ class PersistentSessionService {
   // authority.roles: number (unsigned 8-bit integer) (optional)
   // userAccountId: string
   async deleteByUserAccountId(authority, userAccountId) {
-    if (!validateAuthorityObjectSchema(authority)) {
+    if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
@@ -166,7 +166,7 @@ class PersistentSessionService {
   // authority.roles: number (unsigned 8-bit integer) (optional)
   // refreshToken: string
   async deleteByRefreshToken(authority, refreshToken) {
-    if (!validateAuthorityObjectSchema(authority)) {
+    if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
@@ -251,7 +251,7 @@ class ConflictError extends Error {
 }
 
 const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
-  if (!validateAuthorityObjectSchema(authority) || (roles != null && (!Number.isInteger(roles) || roles < 0 || roles > rolesMaxValue))) {
+  if (!validateAuthority(authority) || (roles != null && (!Number.isInteger(roles) || roles < 0 || roles > rolesMaxValue))) {
     throw new IllegalArgumentError();
   }
   if (roles == null || roles == 0) {
@@ -263,7 +263,7 @@ const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
   return (authority.roles & roles) != 0;
 };
 
-const validateDatabaseInfoObjectSchema = (databaseInfo) => {
+const validateDatabaseInfo = (databaseInfo) => {
   if (databaseInfo == null) {
     return true;
   }
@@ -288,7 +288,7 @@ const validateDatabaseInfoObjectSchema = (databaseInfo) => {
   return true;
 };
 
-const validateAuthorityObjectSchema = (authority) => {
+const validateAuthority = (authority) => {
   if (authority == null) {
     return true;
   }
@@ -304,7 +304,7 @@ const validateAuthorityObjectSchema = (authority) => {
   return true;
 };
 
-const validatePersistentSessionObjectSchema = (persistentSession) => {
+const validatePersistentSession = (persistentSession) => {
   if (persistentSession == null) {
     return true;
   }

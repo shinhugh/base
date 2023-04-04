@@ -6,7 +6,7 @@ import base.persistentsession.client.service.PersistentSessionManager;
 public class PersistentSessionManagerTests {
     private static final Authority AUTHORITY = new Authority(null, (short) 1);
     private static final String SESSION_USER_ACCOUNT_ID = "d1da9b21-5106-49b5-8ff1-6f3137fdf403";
-    private static final short SESSION_ROLES = (short) (Role.USER .getBitFlag() | Role.ADMIN.getBitFlag());
+    private static final short SESSION_ROLES = (short) (Role.USER | Role.ADMIN);
     private static final String SESSION_REFRESH_TOKEN = "xt02bgf0srkdb6g572eqcww6umdaik9566bt42axzs67aw9jd3bul6zspaktf8pp2k7lob6tmihmdutzmszvztyrlzj3xdqyx1eipffml19ph1b9a7w5mjk32hq4vsrh";
     private static final long SESSION_DURATION = 600;
     private static final PersistentSessionManager persistentSessionManager = new PersistentSessionManager();

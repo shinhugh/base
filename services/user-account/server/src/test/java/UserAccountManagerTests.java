@@ -10,7 +10,7 @@ public class UserAccountManagerTests {
     private static final String ACCOUNT_NAME = "qwer";
     private static final String ACCOUNT_PASSWORD_HASH = "4a804274c38354a356d5373e091089d343454b551f6116d94bc06d786f9bbcea";
     private static final String ACCOUNT_PASSWORD_SALT = "pmm7pvj7pbnn18k7ld3pfrkszj80i135";
-    private static final short ACCOUNT_ROLES = (short) (Role.USER .getBitFlag() | Role.ADMIN.getBitFlag());
+    private static final short ACCOUNT_ROLES = (short) (Role.USER | Role.ADMIN);
     private static final String DB_HOST = "localhost";
     private static final int DB_PORT = 3306;
     private static final String DB_DATABASE = "base";

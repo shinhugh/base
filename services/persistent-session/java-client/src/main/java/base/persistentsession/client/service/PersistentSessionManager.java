@@ -3,14 +3,13 @@ package base.persistentsession.client.service;
 import base.persistentsession.client.model.IllegalArgumentException;
 import base.persistentsession.client.model.*;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.lambda.model.LogType;
 
-import java.lang.reflect.Type;
+import java.util.Map;
 
 public class PersistentSessionManager implements PersistentSessionService {
     private static final String FUNCTION_NAME = "base_persistentSessionService";
@@ -20,49 +19,49 @@ public class PersistentSessionManager implements PersistentSessionService {
     public String create(Authority authority, PersistentSession persistentSession) {
         Object[] args = new Object[1];
         args[0] = persistentSession;
-        return (String) makeRequest("create", authority, args, String.class);
+        return parseStringFromObject(makeRequest("create", authority, args));
     }
 
     @Override
     public PersistentSession readById(Authority authority, String id) {
         Object[] args = new Object[1];
         args[0] = id;
-        return (PersistentSession) makeRequest("readById", authority, args, PersistentSession.class);
+        return parsePersistentSessionFromObject(makeRequest("readById", authority, args));
     }
 
     @Override
     public PersistentSession readByRefreshToken(Authority authority, String refreshToken) {
         Object[] args = new Object[1];
         args[0] = refreshToken;
-        return (PersistentSession) makeRequest("readByRefreshToken", authority, args, PersistentSession.class);
+        return parsePersistentSessionFromObject(makeRequest("readByRefreshToken", authority, args));
     }
 
     @Override
     public void deleteByUserAccountId(Authority authority, String userAccountId) {
         Object[] args = new Object[1];
         args[0] = userAccountId;
-        makeRequest("deleteByUserAccountId", authority, args, null);
+        makeRequest("deleteByUserAccountId", authority, args);
     }
 
     @Override
     public void deleteByRefreshToken(Authority authority, String refreshToken) {
         Object[] args = new Object[1];
         args[0] = refreshToken;
-        makeRequest("deleteByRefreshToken", authority, args, Object.class);
+        makeRequest("deleteByRefreshToken", authority, args);
     }
 
-    private Object makeRequest(String funcName, Authority authority, Object[] args, Type payloadType) {
+    private Object makeRequest(String funcName, Authority authority, Object[] args) {
         try (LambdaClient client = LambdaClient.builder().build()) {
-            InvokeRequestPayload request = new InvokeRequestPayload(funcName, authority, args);
+            Request request = new Request(funcName, authority, args);
             InvokeRequest requestWrapper = InvokeRequest.builder()
                     .functionName(FUNCTION_NAME)
                     .logType(LogType.NONE)
                     .payload(SdkBytes.fromUtf8String(gson.toJson(request)))
                     .build();
             InvokeResponse responseWrapper = client.invoke(requestWrapper);
-            InvokeResponsePayload response = gson.fromJson(responseWrapper.payload().asUtf8String(), TypeToken.getParameterized(InvokeResponsePayload.class, payloadType == null ? Object.class : payloadType).getType());
+            Response response = gson.fromJson(responseWrapper.payload().asUtf8String(), Response.class);
             if (response.getResult() == null) {
-                return payloadType == null ? null : response.getPayload();
+                return response.getPayload();
             }
             switch (response.getResult()) {
                 case IllegalArgumentError:
@@ -74,17 +73,75 @@ public class PersistentSessionManager implements PersistentSessionService {
                 case ConflictError:
                     throw new ConflictException();
                 default:
-                    return payloadType == null ? null : response.getPayload();
+                    return response.getPayload();
             }
         }
     }
 
-    private static class InvokeRequestPayload {
+    private short parseShortFromObject(Object object) {
+        if (object == null) {
+            return 0;
+        }
+        if (object instanceof Integer) {
+            return (short) (int) object;
+        }
+        if (object instanceof Double) {
+            return (short) (double) object;
+        }
+        throw new ClassCastException();
+    }
+
+    private long parseLongFromObject(Object object) {
+        if (object == null) {
+            return 0;
+        }
+        if (object instanceof Long) {
+            return (long) object;
+        }
+        if (object instanceof Integer) {
+            return (long) (int) object;
+        }
+        if (object instanceof Double) {
+            return (long) (double) object;
+        }
+        throw new ClassCastException();
+    }
+
+    private String parseStringFromObject(Object object) {
+        if (object == null) {
+            return null;
+        }
+        if (object instanceof String) {
+            return (String) object;
+        }
+        throw new ClassCastException();
+    }
+
+    private PersistentSession parsePersistentSessionFromObject(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            Map<String, Object> map = (Map<String, Object>) object;
+            String id = (String) map.get("id");
+            String userAccountId = (String) map.get("userAccountId");
+            short roles = parseShortFromObject(map.get("roles"));
+            String refreshToken = (String) map.get("refreshToken");
+            long creationTime = parseLongFromObject(map.get("creationTime"));
+            long expirationTime = parseLongFromObject(map.get("expirationTime"));
+            return new PersistentSession(id, userAccountId, roles, refreshToken, creationTime, expirationTime);
+        }
+        catch (ClassCastException ex) {
+            throw new ClassCastException();
+        }
+    }
+
+    private static class Request {
         private String function;
         private Authority authority;
         private Object[] arguments;
 
-        public InvokeRequestPayload(String function, Authority authority, Object[] arguments) {
+        public Request(String function, Authority authority, Object[] arguments) {
             this.function = function;
             this.authority = authority;
             this.arguments = arguments;
@@ -115,7 +172,7 @@ public class PersistentSessionManager implements PersistentSessionService {
         }
     }
 
-    private static class InvokeResponsePayload {
+    private static class Response {
         private Result result;
         private Object payload;
 
