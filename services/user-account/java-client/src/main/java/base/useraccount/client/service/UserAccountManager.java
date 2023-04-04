@@ -19,21 +19,21 @@ public class UserAccountManager implements UserAccountService {
     public String create(Authority authority, UserAccount userAccount) {
         Object[] args = new Object[1];
         args[0] = userAccount;
-        return (String) makeRequest("create", authority, args);
+        return parseStringFromObject(makeRequest("create", authority, args));
     }
 
     @Override
     public UserAccount readById(Authority authority, String id) {
         Object[] args = new Object[1];
         args[0] = id;
-        return parseUserAccountFromMap((Map<String, Object>) makeRequest("readById", authority, args));
+        return parseUserAccountFromObject(makeRequest("readById", authority, args));
     }
 
     @Override
     public UserAccount readByName(Authority authority, String name) {
         Object[] args = new Object[1];
         args[0] = name;
-        return parseUserAccountFromMap((Map<String, Object>) makeRequest("readByName", authority, args));
+        return parseUserAccountFromObject(makeRequest("readByName", authority, args));
     }
 
     @Override
@@ -79,15 +79,44 @@ public class UserAccountManager implements UserAccountService {
         }
     }
 
-    private UserAccount parseUserAccountFromMap(Map<String, Object> map) {
-        if (map == null) {
+    private short parseShortFromObject(Object object) {
+        if (object == null) {
+            return 0;
+        }
+        if (object instanceof Integer) {
+            return (short) (int) object;
+        }
+        if (object instanceof Double) {
+            return (short) (double) object;
+        }
+        throw new ClassCastException();
+    }
+
+    private String parseStringFromObject(Object object) {
+        if (object == null) {
             return null;
         }
-        String name = (String) map.get("name");
-        String passwordHash = (String) map.get("passwordHash");
-        String passwordSalt = (String) map.get("passwordSalt");
-        short roles = (short) (double) map.get("roles");
-        return new UserAccount(null, name, passwordHash, passwordSalt, roles);
+        if (object instanceof String) {
+            return (String) object;
+        }
+        throw new ClassCastException();
+    }
+
+    private UserAccount parseUserAccountFromObject(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            Map<String, Object> map = (Map<String, Object>) object;
+            String name = (String) map.get("name");
+            String passwordHash = (String) map.get("passwordHash");
+            String passwordSalt = (String) map.get("passwordSalt");
+            short roles = parseShortFromObject(map.get("roles"));
+            return new UserAccount(null, name, passwordHash, passwordSalt, roles);
+        }
+        catch (ClassCastException ex) {
+            throw new ClassCastException();
+        }
     }
 
     private static class Request {
