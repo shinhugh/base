@@ -1,4 +1,4 @@
-import { jwt } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { IllegalArgumentError, AccessDeniedError } from './errors.js';
 import { Role } from './role.js';
 import { PersistentSessionService } from './persistent-session-service.js';

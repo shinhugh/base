@@ -1,0 +1,17 @@
+TODO:
+
+- modify Authority to contain creation time of origin PersistentSession
+  - Java: update classes and validation methods
+  - Node: update validation methods
+
+
+Test entry for PersistentSessions table:
+
+insert into PersistentSessions values (
+  '00000000-0000-0000-0000-000000000000',
+  '00000000-0000-0000-0000-000000000000',
+  6,
+  '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+  0,
+  4294967295
+);
