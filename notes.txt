@@ -21,3 +21,13 @@ insert into PersistentSessions values (
   0,
   4294967295
 );
+
+Test entry for UserAccount table:
+
+insert into UserAccounts values (
+  '00000000-0000-0000-0000-000000000000',
+  'qwer',
+  'bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3',
+  '00000000000000000000000000000000',
+  6
+);

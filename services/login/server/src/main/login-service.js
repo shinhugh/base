@@ -70,6 +70,7 @@ class LoginService {
     })();
     const idToken = jwt.sign({
       sessionId: sessionId,
+      iat: currentTime,
       exp: currentTime + jwtDuration
     }, this.#encryptionInfo.secretKey, {
       algorithm: this.#encryptionInfo.algorithm
@@ -89,7 +90,7 @@ class LoginService {
     }
     const persistentSession = await (async () => {
       try {
-        return await this.#persistentSessionService.readByRefreshToken(refreshToken);
+        return await this.#persistentSessionService.readByRefreshToken(systemAuthority, refreshToken);
       }
       catch {
         throw new AccessDeniedError();
@@ -101,6 +102,7 @@ class LoginService {
     }
     const idToken = jwt.sign({
       sessionId: persistentSession.id,
+      iat: currentTime,
       exp: currentTime + jwtDuration
     }, this.#encryptionInfo.secretKey, {
       algorithm: this.#encryptionInfo.algorithm

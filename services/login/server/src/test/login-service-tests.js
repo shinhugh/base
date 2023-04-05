@@ -4,11 +4,31 @@ import { UserAccountService } from '../main/user-account-service.js';
 import { LoginService } from '../main/login-service.js';
 
 const testLoginViaCredentials = async () => {
-  // TODO: Implement
+  const result = await loginService.loginViaCredentials(null, {
+    name: 'qwer',
+    password: 'Qwer!234'
+  });
+  try {
+    jwt.verify(result.idToken, secretKey, {
+      algorithms: [algorithm]
+    });
+  }
+  catch {
+    throw new Error('Invalid ID token generated');
+  }
+  refreshToken = result.refreshToken;
 };
 
 const testLoginViaRefreshToken = async () => {
-  // TODO: Implement
+  const result = await loginService.loginViaRefreshToken(null, refreshToken);
+  try {
+    jwt.verify(result.idToken, secretKey, {
+      algorithms: [algorithm]
+    });
+  }
+  catch {
+    throw new Error('Invalid ID token generated');
+  }
 };
 
 const algorithm = 'HS256';
@@ -23,6 +43,7 @@ const tests = [
   { name: 'LoginViaCredentials', run: testLoginViaCredentials },
   { name: 'LoginViaRefreshToken', run: testLoginViaRefreshToken },
 ];
+let refreshToken;
 
 export {
   tests
