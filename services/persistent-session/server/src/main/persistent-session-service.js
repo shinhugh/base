@@ -32,6 +32,7 @@ class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)
+  // authority.authTime: number (unsigned 32-bit integer) (optional)
   // persistentSession: object
   // persistentSession.userAccountId: string
   // persistentSession.roles: number (unsigned 8-bit integer)
@@ -75,6 +76,7 @@ class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)
+  // authority.authTime: number (unsigned 32-bit integer) (optional)
   // id: string
   async readById(authority, id) {
     if (!validateAuthority(authority)) {
@@ -107,6 +109,7 @@ class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)
+  // authority.authTime: number (unsigned 32-bit integer) (optional)
   // refreshToken: string
   async readByRefreshToken(authority, refreshToken) {
     if (!validateAuthority(authority)) {
@@ -136,6 +139,7 @@ class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)
+  // authority.authTime: number (unsigned 32-bit integer) (optional)
   // userAccountId: string
   async deleteByUserAccountId(authority, userAccountId) {
     if (!validateAuthority(authority)) {
@@ -169,6 +173,7 @@ class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)
+  // authority.authTime: number (unsigned 32-bit integer) (optional)
   // refreshToken: string
   async deleteByRefreshToken(authority, refreshToken) {
     if (!validateAuthority(authority)) {
@@ -276,6 +281,9 @@ const validateAuthority = (authority) => {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
+    return false;
+  }
+  if (authority.authTime != null && (!Number.isInteger(authority.authTime) || authority.authTime < 0 || authority.authTime > timeMaxValue)) {
     return false;
   }
   return true;

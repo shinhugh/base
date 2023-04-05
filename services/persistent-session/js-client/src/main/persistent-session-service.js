@@ -7,6 +7,7 @@ class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)
+  // authority.authTime: number (unsigned 32-bit integer) (optional)
   // persistentSession: object
   // persistentSession.userAccountId: string
   // persistentSession.roles: number (unsigned 8-bit integer)
@@ -20,6 +21,7 @@ class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)
+  // authority.authTime: number (unsigned 32-bit integer) (optional)
   // id: string
   async readById(authority, id) {
     return await makeRequest('readById', authority, [ id ]);
@@ -28,6 +30,7 @@ class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)
+  // authority.authTime: number (unsigned 32-bit integer) (optional)
   // refreshToken: string
   async readByRefreshToken(authority, refreshToken) {
     return await makeRequest('readByRefreshToken', authority, [ refreshToken ]);
@@ -36,6 +39,7 @@ class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)
+  // authority.authTime: number (unsigned 32-bit integer) (optional)
   // userAccountId: string
   async deleteByUserAccountId(authority, userAccountId) {
     return await makeRequest('deleteByUserAccountId', authority, [ userAccountId ]);
@@ -44,6 +48,7 @@ class PersistentSessionService {
   // authority: object (optional)
   // authority.id: string (optional)
   // authority.roles: number (unsigned 8-bit integer) (optional)
+  // authority.authTime: number (unsigned 32-bit integer) (optional)
   // refreshToken: string
   async deleteByRefreshToken(authority, refreshToken) {
     return await makeRequest('deleteByRefreshToken', authority, [ refreshToken ]);

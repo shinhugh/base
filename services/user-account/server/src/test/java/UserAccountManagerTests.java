@@ -6,7 +6,7 @@ import base.useraccount.server.service.UserAccountManager;
 import java.util.Map;
 
 public class UserAccountManagerTests {
-    private static final Authority AUTHORITY = new Authority(null, (short) 1);
+    private static final Authority AUTHORITY = new Authority(null, Role.SYSTEM, 0);
     private static final String ACCOUNT_NAME = "qwer";
     private static final String ACCOUNT_PASSWORD_HASH = "4a804274c38354a356d5373e091089d343454b551f6116d94bc06d786f9bbcea";
     private static final String ACCOUNT_PASSWORD_SALT = "pmm7pvj7pbnn18k7ld3pfrkszj80i135";

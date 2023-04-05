@@ -10,6 +10,7 @@ import java.util.UUID;
 public class UserAccountManager implements UserAccountService {
     private static final int ID_LENGTH = 36;
     private static final short ROLES_MAX_VALUE = 255;
+    private static final long TIME_MAX_VALUE = 4294967295L;
     private static final int NAME_MAX_LENGTH = 32;
     private static final int PASSWORD_HASH_MAX_LENGTH = 64;
     private static final int PASSWORD_SALT_MAX_LENGTH = 32;
@@ -237,7 +238,10 @@ public class UserAccountManager implements UserAccountService {
         if (authority.getId() != null && authority.getId().length() != ID_LENGTH) {
             return false;
         }
-        return authority.getRoles() >= 0 && authority.getRoles() <= ROLES_MAX_VALUE;
+        if (authority.getRoles() < 0 || authority.getRoles() > ROLES_MAX_VALUE) {
+            return false;
+        }
+        return authority.getAuthTime() >= 0 && authority.getAuthTime() <= TIME_MAX_VALUE;
     }
 
     private boolean validateUserAccount(UserAccount userAccount) {

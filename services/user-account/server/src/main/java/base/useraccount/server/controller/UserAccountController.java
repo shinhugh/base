@@ -76,6 +76,22 @@ public class UserAccountController {
         throw new ClassCastException();
     }
 
+    private long parseLongFromObject(Object object) {
+        if (object == null) {
+            return 0;
+        }
+        if (object instanceof Long) {
+            return (long) object;
+        }
+        if (object instanceof Integer) {
+            return (long) (int) object;
+        }
+        if (object instanceof Double) {
+            return (long) (double) object;
+        }
+        throw new ClassCastException();
+    }
+
     private String parseStringFromObject(Object object) {
         if (object == null) {
             return null;
@@ -110,7 +126,8 @@ public class UserAccountController {
             Map<String, Object> map = (Map<String, Object>) object;
             String id = (String) map.get("id");
             short roles = parseShortFromObject(map.get("roles"));
-            return new Authority(id, roles);
+            long authTime = parseLongFromObject(map.get("authTime"));
+            return new Authority(id, roles, authTime);
         }
         catch (ClassCastException ex) {
             throw new ClassCastException();
