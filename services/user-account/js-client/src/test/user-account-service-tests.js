@@ -2,13 +2,12 @@ import { UserAccountService } from '../main/user-account-service.js';
 import { Role } from '../main/role.js';
 
 const testCreate = async () => {
-  const userAccount = {
+  const inputUserAccount = {
     name: accountName,
-    passwordHash: accountPasswordHash,
-    passwordSalt: accountPasswordSalt,
+    password: accountPassword,
     roles: accountRoles
   };
-  id = await userAccountService.create(authority, userAccount);
+  id = (await userAccountService.create(authority, inputUserAccount)).id;
 };
 
 const testReadById = async () => {
@@ -20,13 +19,12 @@ const testReadByName = async () => {
 };
 
 const testUpdateById = async () => {
-  const userAccount = {
+  const inputUserAccount = {
     name: 'changed',
-    passwordHash: accountPasswordHash,
-    passwordSalt: accountPasswordSalt,
+    password: accountPassword,
     roles: accountRoles
   };
-  await userAccountService.updateById(authority, id, userAccount);
+  await userAccountService.updateById(authority, id, inputUserAccount);
 };
 
 const testDeleteById = async () => {
@@ -37,8 +35,7 @@ const authority = {
   roles: Role.System
 };
 const accountName = 'qwer';
-const accountPasswordHash = '4a804274c38354a356d5373e091089d343454b551f6116d94bc06d786f9bbcea';
-const accountPasswordSalt = 'pmm7pvj7pbnn18k7ld3pfrkszj80i135';
+const accountPassword = 'Qwer!234';
 const accountRoles = Role.User | Role.Admin;
 const userAccountService = new UserAccountService();
 const tests = [

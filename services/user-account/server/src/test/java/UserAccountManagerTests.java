@@ -31,8 +31,8 @@ public class UserAccountManagerTests {
     private static class CreateTest implements Test.Runnable {
         @Override
         public void run() {
-            UserAccount userAccount = new UserAccount(null, ACCOUNT_NAME, ACCOUNT_PASSWORD, null, null, ACCOUNT_ROLES);
-            id = userAccountManager.create(AUTHORITY, userAccount).getId();
+            UserAccount inputUserAccount = new UserAccount(null, ACCOUNT_NAME, ACCOUNT_PASSWORD, null, null, ACCOUNT_ROLES);
+            id = userAccountManager.create(AUTHORITY, inputUserAccount).getId();
         }
     }
 
@@ -53,9 +53,8 @@ public class UserAccountManagerTests {
     private static class UpdateByIdTest implements Test.Runnable {
         @Override
         public void run() {
-            String name = "changed";
-            UserAccount userAccount = new UserAccount(null, name, ACCOUNT_PASSWORD, null, null, ACCOUNT_ROLES);
-            userAccountManager.updateById(AUTHORITY, id, userAccount);
+            UserAccount inputUserAccount = new UserAccount(null, "changed", ACCOUNT_PASSWORD, null, null, ACCOUNT_ROLES);
+            userAccountManager.updateById(AUTHORITY, id, inputUserAccount);
         }
     }
 

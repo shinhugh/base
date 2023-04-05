@@ -2,13 +2,13 @@ import { Role } from '../main/role.js';
 import { PersistentSessionService } from '../main/persistent-session-service.js';
 
 const testCreate = async () => {
-  const persistentSession = {
+  const inputPersistentSession = {
     userAccountId: sessionUserAccountId,
     roles: sessionRoles
   };
-  const result = await persistentSessionService.create(authority, persistentSession);
-  id = result.id;
-  refreshToken = result.refreshToken;
+  const output = await persistentSessionService.create(authority, inputPersistentSession);
+  id = output.id;
+  refreshToken = output.refreshToken;
 };
 
 const testReadById = async () => {

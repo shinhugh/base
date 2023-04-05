@@ -16,10 +16,10 @@ public class PersistentSessionManager implements PersistentSessionService {
     private final Gson gson = new Gson();
 
     @Override
-    public String create(Authority authority, PersistentSession persistentSession) {
+    public PersistentSession create(Authority authority, PersistentSession persistentSession) {
         Object[] args = new Object[1];
         args[0] = persistentSession;
-        return parseStringFromObject(makeRequest("create", authority, args));
+        return parsePersistentSessionFromObject(makeRequest("create", authority, args));
     }
 
     @Override
@@ -103,16 +103,6 @@ public class PersistentSessionManager implements PersistentSessionService {
         }
         if (object instanceof Double) {
             return (long) (double) object;
-        }
-        throw new ClassCastException();
-    }
-
-    private String parseStringFromObject(Object object) {
-        if (object == null) {
-            return null;
-        }
-        if (object instanceof String) {
-            return (String) object;
         }
         throw new ClassCastException();
     }

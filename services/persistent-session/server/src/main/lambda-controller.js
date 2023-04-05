@@ -19,28 +19,28 @@ const handler = async (request) => {
         switch(request.function) {
           case 'create':
             return await (async () => {
-              const persistentSession = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
-              return await persistentSessionService.create(request.authority, persistentSession);
+              const inputPersistentSession = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
+              return await persistentSessionService.create(request.authority, inputPersistentSession);
             })();
           case 'readById':
             return await (async () => {
-              const id = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
-              return await persistentSessionService.readById(request.authority, id);
+              const inputId = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
+              return await persistentSessionService.readById(request.authority, inputId);
             })();
           case 'readByRefreshToken':
             return await (async () => {
-              const refreshToken = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
-              return await persistentSessionService.readByRefreshToken(request.authority, refreshToken);
+              const inputRefreshToken = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
+              return await persistentSessionService.readByRefreshToken(request.authority, inputRefreshToken);
             })();
           case 'deleteByUserAccountId':
             return await (async () => {
-              const userAccountId = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
-              return await persistentSessionService.deleteByUserAccountId(request.authority, userAccountId);
+              const inputUserAccountId = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
+              return await persistentSessionService.deleteByUserAccountId(request.authority, inputUserAccountId);
             })();
           case 'deleteByRefreshToken':
             return await (async () => {
-              const refreshToken = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
-              return await persistentSessionService.deleteByRefreshToken(request.authority, refreshToken);
+              const inputRefreshToken = (request.arguments != null && request.arguments.length >= 1) ? request.arguments?.[0] : undefined;
+              return await persistentSessionService.deleteByRefreshToken(request.authority, inputRefreshToken);
             })();
           default:
             throw new IllegalArgumentError();

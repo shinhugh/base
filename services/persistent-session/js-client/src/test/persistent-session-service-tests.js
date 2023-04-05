@@ -2,15 +2,13 @@ import { PersistentSessionService } from '../main/persistent-session-service.js'
 import { Role } from '../main/role.js';
 
 const testCreate = async () => {
-  const currentTime = Math.floor(Date.now() / 1000);
-  const persistentSession = {
+  const inputPersistentSession = {
     userAccountId: sessionUserAccountId,
-    roles: sessionRoles,
-    refreshToken: sessionRefreshToken,
-    creationTime: currentTime,
-    expirationTime: currentTime + sessionDuration
+    roles: sessionRoles
   };
-  id = await persistentSessionService.create(authority, persistentSession);
+  const output = await persistentSessionService.create(authority, inputPersistentSession);
+  id = output.id;
+  refreshToken = output.refreshToken;
 };
 
 const testReadById = async () => {
@@ -18,7 +16,7 @@ const testReadById = async () => {
 };
 
 const testReadByRefreshToken = async () => {
-  await persistentSessionService.readByRefreshToken(authority, sessionRefreshToken);
+  await persistentSessionService.readByRefreshToken(authority, refreshToken);
 };
 
 const testDeleteByUserAccountId = async () => {
@@ -26,7 +24,7 @@ const testDeleteByUserAccountId = async () => {
 };
 
 const testDeleteByRefreshToken = async () => {
-  await persistentSessionService.deleteByRefreshToken(authority, sessionRefreshToken);
+  await persistentSessionService.deleteByRefreshToken(authority, refreshToken);
 };
 
 const authority = {
@@ -34,8 +32,6 @@ const authority = {
 };
 const sessionUserAccountId = 'd1da9b21-5106-49b5-8ff1-6f3137fdf403';
 const sessionRoles = Role.User | Role.Admin;
-const sessionRefreshToken = 'xt02bgf0srkdb6g572eqcww6umdaik9566bt42axzs67aw9jd3bul6zspaktf8pp2k7lob6tmihmdutzmszvztyrlzj3xdqyx1eipffml19ph1b9a7w5mjk32hq4vsrh';
-const sessionDuration = 600;
 const persistentSessionService = new PersistentSessionService();
 const tests = [
   { name: 'Create', run: testCreate },
@@ -45,6 +41,7 @@ const tests = [
   { name: 'DeleteByRefreshToken', run: testDeleteByRefreshToken },
 ];
 let id;
+let refreshToken;
 
 export {
   tests

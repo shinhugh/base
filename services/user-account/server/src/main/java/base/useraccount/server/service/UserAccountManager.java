@@ -347,7 +347,7 @@ public class UserAccountManager implements UserAccountService {
     }
 
     private String hashPassword(String password, String salt) {
-        MessageDigest digest = null;
+        MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException error) {

@@ -3,15 +3,17 @@ package base.useraccount.client.model;
 public class UserAccount {
     private String id;
     private String name;
+    private String password;
     private String passwordHash;
     private String passwordSalt;
     private short roles;
 
     public UserAccount() { }
 
-    public UserAccount(String id, String name, String passwordHash, String passwordSalt, short roles) {
+    public UserAccount(String id, String name, String password, String passwordHash, String passwordSalt, short roles) {
         this.id = id;
         this.name = name;
+        this.password = password;
         this.passwordHash = passwordHash;
         this.passwordSalt = passwordSalt;
         this.roles = roles;
@@ -31,6 +33,14 @@ public class UserAccount {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getPasswordHash() {

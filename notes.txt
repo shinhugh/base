@@ -50,6 +50,9 @@ TODO:
     [DONE]
   - Clients should expect above changes
 
+- IdentificationService, LoginService, and LogoutService should be updated to
+  reflect above changes
+
 - every service controller should expose the same API format
   invoke(functionName, authority, arguments)
   functionName: string
