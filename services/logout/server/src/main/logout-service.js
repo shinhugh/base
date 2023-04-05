@@ -23,7 +23,7 @@ class LogoutService {
       throw new IllegalArgumentError();
     }
     try {
-      await this.#persistentSessionService.deleteByRefreshToken(systemAuthority, refreshToken);
+      await this.#persistentSessionService.deleteByRefreshToken(authority, refreshToken);
     }
     catch { }
   }
@@ -48,7 +48,6 @@ const validateAuthority = (authority) => {
   return true;
 };
 
-const systemAuthority = { roles: Role.System };
 const idLength = 36;
 const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;

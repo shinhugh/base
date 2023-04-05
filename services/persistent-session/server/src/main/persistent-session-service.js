@@ -43,6 +43,9 @@ class PersistentSessionService {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
+      throw new AccessDeniedError();
+    }
     if (persistentSession == null || !validatePersistentSession(persistentSession)) {
       throw new IllegalArgumentError();
     }
@@ -114,6 +117,9 @@ class PersistentSessionService {
   async readByRefreshToken(authority, refreshToken) {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
+      throw new AccessDeniedError();
     }
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
       throw new IllegalArgumentError();
