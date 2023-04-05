@@ -1,72 +1,10 @@
 TODO:
 
-- all create() and update() functions ignore values in unrelated/unused fields
-  [DONE]
-
-- Remove all idLength constants
-  Any comparison with idLength should be replaced with proper UUID validation
-  e.g. validateAuthority()
-  [DONE]
-
-- PersistentSessionService should understand more about business logic
-  Not just a dumb data layer service
-  - create() should return full object instead of just ID string
-    [DONE]
-  - create() should only take in userAccountId and roles; everything else is
-    internally generated
-    [DONE]
-  - Input string arguments: validate specific string lengths and allowed chars
-    [DONE]
-  - Controller should expect above changes
-    [DONE]
-  - Tests should expect above changes
-    [DONE]
-  - Clients and respective tests should expect above changes
-    [DONE]
-
-- UserAccountService should understand more about business logic
-  Not just a dumb data layer service
-  - UserAccount model should include (plain) password field
-    [DONE]
-  - create() should return full object instead of just ID string
-    erase passwordHash and passwordSalt if authority doesn't have System role
-    [DONE]
-  - create() should only take in name, password, and roles; everything else is
-    internally generated
-    [DONE]
-  - update() should return full object instead of void
-    erase passwordHash and passwordSalt if authority doesn't have System role
-    [DONE]
-  - update() should only take in name, password, and roles; everything else is
-    internally generated
-    [DONE]
-  - readById() and readByName() should erase passwordHash and passwordSalt if
-    authority doesn't have System role
-    [DONE]
-  - Input string arguments: validate specific string lengths and allowed chars
-    [DONE]
-  - Controller should expect above changes
-    [DONE]
-  - Tests should expect above changes
-    [DONE]
-  - Clients and respective tests should expect above changes
-    [DONE]
-
-- IdentificationService, LoginService, and LogoutService should be updated to
-  reflect above changes
-  [DONE]
-
-- Never use generic catch without granular error/exception type check
-  [DONE]
-
-- Handle other runtime errors/exceptions
-  [DONE]
-
 - every service controller should expose the same API format
   invoke(functionName, authority, arguments)
   functionName: string
   authority (optional): {
-    id: string (36 characters) (optional)
+    id: string (valid UUID) (optional)
     roles: number (unsigned 8-bit integer) (optional)
     authTime: number (unsigned 32-bit integer) (optional)
   }
