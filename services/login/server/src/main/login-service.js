@@ -87,7 +87,27 @@ class LoginService {
     if (typeof refreshToken !== 'string') {
       throw new IllegalArgumentError();
     }
-    // TODO: Implement
+    const persistentSession = await (async () => {
+      try {
+        return await this.#persistentSessionService.readByRefreshToken(refreshToken);
+      }
+      catch {
+        throw new AccessDeniedError();
+      }
+    })();
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (persistentSession.expirationTime <= currentTime) {
+      throw new AccessDeniedError();
+    }
+    const idToken = jwt.sign({
+      sessionId: persistentSession.id,
+      exp: currentTime + jwtDuration
+    }, this.#encryptionInfo.secretKey, {
+      algorithm: this.#encryptionInfo.algorithm
+    });
+    return {
+      idToken: idToken
+    };
   }
 }
 
