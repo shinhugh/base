@@ -1,9 +1,6 @@
 package base.useraccount.server.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "UserAccounts")
@@ -13,6 +10,8 @@ public class UserAccount {
     private String id;
     @Column(name = "Name", nullable = false, unique = true)
     private String name;
+    @Transient
+    private String password;
     @Column(name = "PasswordHash", nullable = false)
     private String passwordHash;
     @Column(name = "PasswordSalt", nullable = false)
@@ -22,9 +21,10 @@ public class UserAccount {
 
     public UserAccount() { }
 
-    public UserAccount(String id, String name, String passwordHash, String passwordSalt, short roles) {
+    public UserAccount(String id, String name, String password, String passwordHash, String passwordSalt, short roles) {
         this.id = id;
         this.name = name;
+        this.password = password;
         this.passwordHash = passwordHash;
         this.passwordSalt = passwordSalt;
         this.roles = roles;
@@ -44,6 +44,14 @@ public class UserAccount {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getPasswordHash() {

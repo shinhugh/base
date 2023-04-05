@@ -1,3 +1,4 @@
+import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { IllegalArgumentError, AccessDeniedError } from './errors.js';
 import { Role } from './role.js';
@@ -86,7 +87,7 @@ const validateAuthority = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && (typeof authority.id !== 'string' || authority.id.length != idLength)) {
+  if (authority.id != null && (typeof authority.id !== 'string' || !validateUuid(authority.id))) {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
@@ -98,7 +99,6 @@ const validateAuthority = (authority) => {
   return true;
 };
 
-const idLength = 36;
 const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
 

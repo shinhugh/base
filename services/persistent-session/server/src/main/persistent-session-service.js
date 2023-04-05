@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { v4 as generateUuid, validate as validateUuid } from 'uuid';
 import { Sequelize, DataTypes } from 'sequelize';
 import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './errors.js';
 import { Role } from './role.js';
@@ -34,11 +34,8 @@ class PersistentSessionService {
   // authority.roles: number (unsigned 8-bit integer) (optional)
   // authority.authTime: number (unsigned 32-bit integer) (optional)
   // persistentSession: object
-  // persistentSession.userAccountId: string
+  // persistentSession.userAccountId: string (36 characters)
   // persistentSession.roles: number (unsigned 8-bit integer)
-  // persistentSession.refreshToken: string
-  // persistentSession.creationTime: number (unsigned 32-bit integer)
-  // persistentSession.expirationTime: number (unsigned 32-bit integer)
   async create(authority, persistentSession) {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
@@ -49,16 +46,17 @@ class PersistentSessionService {
     if (persistentSession == null || !validatePersistentSession(persistentSession)) {
       throw new IllegalArgumentError();
     }
+    const currentTime = Math.floor(Date.now() / 1000);
     const entry = {
       userAccountId: persistentSession.userAccountId,
       roles: persistentSession.roles,
-      refreshToken: persistentSession.refreshToken,
-      creationTime: persistentSession.creationTime,
-      expirationTime: persistentSession.expirationTime
+      creationTime: currentTime,
+      expirationTime: currentTime + sessionDuration
     };
     await this.#openSequelize(this.#databaseInfo);
     try {
       entry.id = await this.#generateId();
+      entry.refreshToken = await this.#generateRefreshToken();
       try {
         await this.#sequelize.models.persistentSessions.create(entry);
       }
@@ -68,7 +66,7 @@ class PersistentSessionService {
         }
         throw e;
       }
-      return entry.id;
+      return entry;
     }
     finally {
       await this.#closeSequelize();
@@ -88,7 +86,7 @@ class PersistentSessionService {
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
       throw new AccessDeniedError();
     }
-    if (typeof id !== 'string' || id.length > idLength) {
+    if (typeof id !== 'string' || !validateUuid(id)) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -121,7 +119,7 @@ class PersistentSessionService {
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
       throw new AccessDeniedError();
     }
-    if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
+    if (refreshToken == null || !validateRefreshToken(refreshToken)) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -154,7 +152,7 @@ class PersistentSessionService {
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
       throw new AccessDeniedError();
     }
-    if (typeof userAccountId !== 'string' || userAccountId.length > idLength) {
+    if (typeof userAccountId !== 'string' || !validateUuid(userAccountId)) {
       throw new IllegalArgumentError();
     }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin)) {
@@ -185,7 +183,7 @@ class PersistentSessionService {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
-    if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
+    if (refreshToken == null || !validateRefreshToken(refreshToken)) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
@@ -202,15 +200,27 @@ class PersistentSessionService {
   }
 
   async #generateId() {
-    let id = randomUUID();
+    let id = generateUuid();
     while (await this.#sequelize.models.persistentSessions.findOne({
       where: {
         id: id
       }
-    })) {
-      id = randomUUID();
+    }) != null) {
+      id = generateUuid();
     }
     return id;
+  }
+
+  async #generateRefreshToken() {
+    let refreshToken = generateRandomString(refreshTokenAllowedChars, refreshTokenLength);
+    while (await this.#sequelize.models.persistentSessions.findOne({
+      where: {
+        refreshToken: refreshToken
+      }
+    }) != null) {
+      refreshToken = generateRandomString(refreshTokenAllowedChars, refreshTokenLength);
+    }
+    return refreshToken;
   }
 
   async #openSequelize(databaseInfo) {
@@ -283,7 +293,7 @@ const validateAuthority = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && (typeof authority.id !== 'string' || authority.id.length != idLength)) {
+  if (authority.id != null && (typeof authority.id !== 'string' || !validateUuid(authority.id))) {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
@@ -302,29 +312,47 @@ const validatePersistentSession = (persistentSession) => {
   if (typeof persistentSession !== 'object') {
     return false;
   }
-  if (typeof persistentSession.userAccountId !== 'string' || persistentSession.userAccountId.length > idLength) {
+  if (typeof persistentSession.userAccountId !== 'string' || !validateUuid(persistentSession.userAccountId)) {
     return false;
   }
   if (!Number.isInteger(persistentSession.roles) || persistentSession.roles < 0 || persistentSession.roles > rolesMaxValue) {
     return false;
   }
-  if (typeof persistentSession.refreshToken !== 'string' || persistentSession.refreshToken.length > refreshTokenMaxLength) {
+  return true;
+};
+
+const validateRefreshToken = (refreshToken) => {
+  if (refreshToken == null) {
+    return true;
+  }
+  if (typeof refreshToken !== 'string') {
     return false;
   }
-  if (!Number.isInteger(persistentSession.creationTime) || persistentSession.creationTime < 0 || persistentSession.creationTime > timeMaxValue) {
+  if (refreshToken.length != refreshTokenLength) {
     return false;
   }
-  if (!Number.isInteger(persistentSession.expirationTime) || persistentSession.expirationTime < 0 || persistentSession.expirationTime > timeMaxValue) {
-    return false;
+  for (const letter of refreshToken) {
+    if (refreshTokenAllowedChars.indexOf(letter) < 0) {
+      return false;
+    }
   }
   return true;
 };
 
+const generateRandomString = (pool, length) => {
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += pool.charAt(Math.floor(Math.random() * pool.length));
+  }
+  return result;
+};
+
 const maxPortNumber = 65535;
-const idLength = 36;
 const rolesMaxValue = 255;
-const refreshTokenMaxLength = 128;
 const timeMaxValue = 4294967295;
+const sessionDuration = 1209600;
+const refreshTokenAllowedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const refreshTokenLength = 128;
 const sequelizeOptions = {
   dialect: 'mysql',
   logging: false,

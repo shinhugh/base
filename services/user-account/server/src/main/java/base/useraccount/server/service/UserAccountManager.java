@@ -4,16 +4,24 @@ import base.useraccount.server.model.IllegalArgumentException;
 import base.useraccount.server.model.*;
 import jakarta.persistence.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.UUID;
 
 public class UserAccountManager implements UserAccountService {
-    private static final int ID_LENGTH = 36;
     private static final short ROLES_MAX_VALUE = 255;
     private static final long TIME_MAX_VALUE = 4294967295L;
+    private static final int NAME_MIN_LENGTH = 4;
     private static final int NAME_MAX_LENGTH = 32;
-    private static final int PASSWORD_HASH_MAX_LENGTH = 64;
-    private static final int PASSWORD_SALT_MAX_LENGTH = 32;
+    private static final String NAME_ALLOWED_CHARS = "-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+    private static final int PASSWORD_MIN_LENGTH = 8;
+    private static final int PASSWORD_MAX_LENGTH = 32;
+    private static final String PASSWORD_ALLOWED_CHARS = " !\\\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+    private static final int PASSWORD_SALT_LENGTH = 32;
+    private static final String PASSWORD_SALT_ALLOWED_CHARS = PASSWORD_ALLOWED_CHARS;
+    private static final byte[] HEX_CHARS = "0123456789abcdef".getBytes(StandardCharsets.US_ASCII);
     private final EntityManagerFactory entityManagerFactory;
 
     public UserAccountManager(Map<String, String> databaseInfo) {
@@ -24,13 +32,16 @@ public class UserAccountManager implements UserAccountService {
     }
 
     @Override
-    public String create(Authority authority, UserAccount userAccount) {
+    public UserAccount create(Authority authority, UserAccount userAccount) {
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
         if (userAccount == null || !validateUserAccount(userAccount)) {
             throw new IllegalArgumentException();
         }
+        String passwordSalt = generateRandomString(PASSWORD_SALT_ALLOWED_CHARS, PASSWORD_SALT_LENGTH);
+        String passwordHash = hashPassword(userAccount.getPassword(), passwordSalt);
+        UserAccount entry = new UserAccount(null, userAccount.getName(), null, passwordHash, passwordSalt, userAccount.getRoles());
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             UserAccount match = null;
@@ -44,10 +55,14 @@ public class UserAccountManager implements UserAccountService {
                 entityManager.getTransaction().rollback();
                 throw new ConflictException();
             }
-            UserAccount entry = new UserAccount(generateId(entityManager), userAccount.getName(), userAccount.getPasswordHash(), userAccount.getPasswordSalt(), userAccount.getRoles());
+            entry.setId(generateId(entityManager));
             entityManager.merge(entry);
             entityManager.getTransaction().commit();
-            return entry.getId();
+            if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
+                entry.setPasswordHash(null);
+                entry.setPasswordSalt(null);
+            }
+            return entry;
         }
         finally {
             entityManager.close();
@@ -66,7 +81,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || id.length() > ID_LENGTH) {
+        if (id == null || !validateId(id)) {
             throw new IllegalArgumentException();
         }
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
@@ -87,6 +102,10 @@ public class UserAccountManager implements UserAccountService {
             if (match == null) {
                 throw new NotFoundException();
             }
+            if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
+                match.setPasswordHash(null);
+                match.setPasswordSalt(null);
+            }
             return match;
         }
         finally {
@@ -106,7 +125,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (name == null || name.length() > NAME_MAX_LENGTH) {
+        if (name == null || !validateName(name)) {
             throw new IllegalArgumentException();
         }
         String queryString = "from UserAccount as x where x.name = :name";
@@ -130,6 +149,10 @@ public class UserAccountManager implements UserAccountService {
             if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
                 throw new AccessDeniedException();
             }
+            if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
+                match.setPasswordHash(null);
+                match.setPasswordSalt(null);
+            }
             return match;
         }
         finally {
@@ -138,7 +161,7 @@ public class UserAccountManager implements UserAccountService {
     }
 
     @Override
-    public void updateById(Authority authority, String id, UserAccount userAccount) {
+    public UserAccount updateById(Authority authority, String id, UserAccount userAccount) {
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
@@ -149,7 +172,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || id.length() > ID_LENGTH) {
+        if (id == null || !validateId(id)) {
             throw new IllegalArgumentException();
         }
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
@@ -158,6 +181,8 @@ public class UserAccountManager implements UserAccountService {
         if (userAccount == null || !validateUserAccount(userAccount)) {
             throw new IllegalArgumentException();
         }
+        String passwordSalt = generateRandomString(PASSWORD_SALT_ALLOWED_CHARS, PASSWORD_SALT_LENGTH);
+        String passwordHash = hashPassword(userAccount.getPassword(), passwordSalt);
         String queryString = "from UserAccount as x where x.id = :id";
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
@@ -174,10 +199,15 @@ public class UserAccountManager implements UserAccountService {
                 throw new NotFoundException();
             }
             match.setName(userAccount.getName());
-            match.setPasswordHash(userAccount.getPasswordHash());
-            match.setPasswordSalt(userAccount.getPasswordSalt());
+            match.setPasswordHash(passwordHash);
+            match.setPasswordSalt(passwordSalt);
             match.setRoles(userAccount.getRoles());
             entityManager.getTransaction().commit();
+            if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
+                match.setPasswordHash(null);
+                match.setPasswordSalt(null);
+            }
+            return match;
         }
         finally {
             entityManager.close();
@@ -196,7 +226,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || id.length() > ID_LENGTH) {
+        if (id == null || !validateId(id)) {
             throw new IllegalArgumentException();
         }
         if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
@@ -231,11 +261,24 @@ public class UserAccountManager implements UserAccountService {
         return (authority.getRoles() & roles) != 0;
     }
 
+    private boolean validateId(String id) {
+        if (id == null) {
+            return true;
+        }
+        try {
+            UUID.fromString(id);
+        }
+        catch (java.lang.IllegalArgumentException ex) {
+            return false;
+        }
+        return true;
+    }
+
     private boolean validateAuthority(Authority authority) {
         if (authority == null) {
             return true;
         }
-        if (authority.getId() != null && authority.getId().length() != ID_LENGTH) {
+        if (authority.getId() != null && !validateId(authority.getId())) {
             return false;
         }
         if (authority.getRoles() < 0 || authority.getRoles() > ROLES_MAX_VALUE) {
@@ -248,16 +291,43 @@ public class UserAccountManager implements UserAccountService {
         if (userAccount == null) {
             return true;
         }
-        if (userAccount.getName() == null || userAccount.getName().length() > NAME_MAX_LENGTH) {
+        if (userAccount.getName() == null || !validateName(userAccount.getName())) {
             return false;
         }
-        if (userAccount.getPasswordHash() == null || userAccount.getPasswordHash().length() > PASSWORD_HASH_MAX_LENGTH) {
-            return false;
-        }
-        if (userAccount.getPasswordSalt() == null || userAccount.getPasswordSalt().length() > PASSWORD_SALT_MAX_LENGTH) {
+        if (userAccount.getPassword() == null || !validatePassword(userAccount.getPassword())) {
             return false;
         }
         return userAccount.getRoles() >= 0 && userAccount.getRoles() <= ROLES_MAX_VALUE;
+    }
+
+    private boolean validateName(String name) {
+        if (name == null) {
+            return true;
+        }
+        if (name.length() < NAME_MIN_LENGTH || name.length() > NAME_MAX_LENGTH) {
+            return false;
+        }
+        for (char letter : name.toCharArray()) {
+            if (NAME_ALLOWED_CHARS.indexOf(letter) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean validatePassword(String password) {
+        if (password == null) {
+            return true;
+        }
+        if (password.length() < PASSWORD_MIN_LENGTH || password.length() > PASSWORD_MAX_LENGTH) {
+            return false;
+        }
+        for (char letter : password.toCharArray()) {
+            if (PASSWORD_ALLOWED_CHARS.indexOf(letter) < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String generateId(EntityManager entityManager) {
@@ -266,5 +336,34 @@ public class UserAccountManager implements UserAccountService {
             id = UUID.randomUUID().toString();
         }
         return id;
+    }
+
+    private String generateRandomString(String pool, int length) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            result.append(pool.charAt((int) (Math.random() * pool.length())));
+        }
+        return result.toString();
+    }
+
+    private String hashPassword(String password, String salt) {
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException error) {
+            throw new RuntimeException("Internal error");
+        }
+        byte[] bytes = digest.digest((password + salt).getBytes(StandardCharsets.UTF_8));
+        return hexString(bytes);
+    }
+
+    private String hexString(byte[] bytes) {
+        byte[] builder = new byte[bytes.length * 2];
+        for (int i = 0; i < bytes.length; i++) {
+            int b = Byte.toUnsignedInt(bytes[i]);
+            builder[i * 2] = HEX_CHARS[b >>> 4];
+            builder[i * 2 + 1] = HEX_CHARS[b & 0x0F];
+        }
+        return new String(builder, StandardCharsets.UTF_8);
     }
 }

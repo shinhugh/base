@@ -21,29 +21,29 @@ public class UserAccountController {
             Object[] arguments = request.getArguments() == null ? new Object[0] : request.getArguments();
             switch (request.function) {
                 case "create": {
-                    UserAccount userAccount = parseUserAccountFromObject(arguments.length > 0 ? arguments[0] : null);
-                    String id = userAccountService.create(request.getAuthority(), userAccount);
-                    return new Response(null, id);
+                    UserAccount inputUserAccount = parseUserAccountFromObject(arguments.length > 0 ? arguments[0] : null);
+                    UserAccount output = userAccountService.create(request.getAuthority(), inputUserAccount);
+                    return new Response(null, output);
                 }
                 case "readById": {
-                    String id = parseStringFromObject(arguments.length > 0 ? arguments[0] : null);
-                    UserAccount userAccount = userAccountService.readById(request.getAuthority(), id);
-                    return new Response(null, userAccount);
+                    String inputId = parseStringFromObject(arguments.length > 0 ? arguments[0] : null);
+                    UserAccount output = userAccountService.readById(request.getAuthority(), inputId);
+                    return new Response(null, output);
                 }
                 case "readByName": {
-                    String name = parseStringFromObject(arguments.length > 0 ? arguments[0] : null);
-                    UserAccount userAccount = userAccountService.readByName(request.getAuthority(), name);
-                    return new Response(null, userAccount);
+                    String inputName = parseStringFromObject(arguments.length > 0 ? arguments[0] : null);
+                    UserAccount output = userAccountService.readByName(request.getAuthority(), inputName);
+                    return new Response(null, output);
                 }
                 case "updateById": {
-                    String id = parseStringFromObject(arguments.length > 0 ? arguments[0] : null);
-                    UserAccount userAccount = parseUserAccountFromObject(arguments.length > 1 ? arguments[1] : null);
-                    userAccountService.updateById(request.getAuthority(), id, userAccount);
-                    return new Response(null, null);
+                    String inputId = parseStringFromObject(arguments.length > 0 ? arguments[0] : null);
+                    UserAccount inputUserAccount = parseUserAccountFromObject(arguments.length > 1 ? arguments[1] : null);
+                    UserAccount output = userAccountService.updateById(request.getAuthority(), inputId, inputUserAccount);
+                    return new Response(null, output);
                 }
                 case "deleteById": {
-                    String id = parseStringFromObject(arguments.length > 0 ? arguments[0] : null);
-                    userAccountService.deleteById(request.getAuthority(), id);
+                    String inputId = parseStringFromObject(arguments.length > 0 ? arguments[0] : null);
+                    userAccountService.deleteById(request.getAuthority(), inputId);
                     return new Response(null, null);
                 }
                 default: {
@@ -142,10 +142,11 @@ public class UserAccountController {
             Map<String, Object> map = (Map<String, Object>) object;
             String id = (String) map.get("id");
             String name = (String) map.get("name");
+            String password = (String) map.get("password");
             String passwordHash = (String) map.get("passwordHash");
             String passwordSalt = (String) map.get("passwordSalt");
             short roles = parseShortFromObject(map.get("roles"));
-            return new UserAccount(id, name, passwordHash, passwordSalt, roles);
+            return new UserAccount(id, name, password, passwordHash, passwordSalt, roles);
         }
         catch (ClassCastException ex) {
             throw new ClassCastException();

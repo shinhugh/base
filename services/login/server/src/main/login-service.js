@@ -1,6 +1,7 @@
+import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { createHash } from 'crypto';
-import { IllegalArgumentError, AccessDeniedError, ConflictError } from './errors.js';
+import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './errors.js';
 import { Role } from './role.js';
 import { PersistentSessionService } from './persistent-session-service.js';
 import { UserAccountService } from './user-account-service.js';
@@ -85,15 +86,15 @@ class LoginService {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
-    if (typeof refreshToken !== 'string') {
-      throw new IllegalArgumentError();
-    }
     const persistentSession = await (async () => {
       try {
         return await this.#persistentSessionService.readByRefreshToken(systemAuthority, refreshToken);
       }
-      catch {
-        throw new AccessDeniedError();
+      catch (e) {
+        if (e instanceof NotFoundError) {
+          throw new AccessDeniedError();
+        }
+        throw e;
       }
     })();
     const currentTime = Math.floor(Date.now() / 1000);
@@ -136,7 +137,7 @@ const validateAuthority = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && (typeof authority.id !== 'string' || authority.id.length != idLength)) {
+  if (authority.id != null && (typeof authority.id !== 'string' || !validateUuid(authority.id))) {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
@@ -177,7 +178,6 @@ const generateRandomString = (pool, length) => {
 };
 
 const systemAuthority = { roles: Role.System };
-const idLength = 36;
 const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
 const refreshTokenAllowedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';

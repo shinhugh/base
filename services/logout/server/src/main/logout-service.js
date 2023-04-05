@@ -1,3 +1,4 @@
+import { validate as validateUuid } from 'uuid';
 import { IllegalArgumentError } from './errors.js';
 import { Role } from './role.js';
 import { PersistentSessionService } from './persistent-session-service.js';
@@ -16,12 +17,6 @@ class LogoutService {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
-    if (refreshToken == null) {
-      return;
-    }
-    if (typeof refreshToken !== 'string') {
-      throw new IllegalArgumentError();
-    }
     try {
       await this.#persistentSessionService.deleteByRefreshToken(authority, refreshToken);
     }
@@ -36,7 +31,7 @@ const validateAuthority = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && (typeof authority.id !== 'string' || authority.id.length != idLength)) {
+  if (authority.id != null && (typeof authority.id !== 'string' || !validateUuid(authority.id))) {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
@@ -48,7 +43,6 @@ const validateAuthority = (authority) => {
   return true;
 };
 
-const idLength = 36;
 const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
 
