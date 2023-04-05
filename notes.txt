@@ -1,6 +1,25 @@
 TODO:
 
-- unprotected services should require System role
+- PersistentSessionService should understand more about business logic
+  Not just a dumb data layer service
+  - create() should return full object instead of just ID string
+  - create() should only take in userAccountId and roles; everything else is
+    internally generated
+  - Input string arguments: validate specific string lengths and allowed chars
+
+- UserAccountService should understand more about business logic
+  Not just a dumb data layer service
+  - create() should return full object instead of just ID string
+    erase passwordHash and passwordSalt if authority doesn't have System role
+  - update() should return full object instead of void
+    erase passwordHash and passwordSalt if authority doesn't have System role
+  - UserAccount model should include (plain) password field
+  - create() should only take in name, password, and roles; everything else is
+    internally generated
+  - readById() and readByName() should erase passwordHash and passwordSalt if
+    authority doesn't have System role
+  - Input string arguments: validate specific string lengths and allowed chars
+
 - every service controller should expose the same API format
   invoke(functionName, authority, arguments)
   functionName: string
@@ -10,6 +29,8 @@ TODO:
     authTime: number (unsigned 32-bit integer) (optional)
   }
   arguments: [any] (optional)
+
+- all create() and update() functions ignore values in unrelated/unused fields
 
 
 Test entry for PersistentSessions table:
