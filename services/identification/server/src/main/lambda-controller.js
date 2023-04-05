@@ -1,5 +1,5 @@
-import { PersistentSessionService } from "./persistent-session-service";
-import { IdentificationService } from "./identification-service";
+import { PersistentSessionService } from './persistent-session-service';
+import { IdentificationService } from './identification-service';
 
 const handler = async (event) => {
   // TODO: Extract ID token from request
