@@ -1,6 +1,6 @@
+import { createHash } from 'crypto';
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
-import { createHash } from 'crypto';
 import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './errors.js';
 import { Role } from './role.js';
 import { PersistentSessionService } from './persistent-session-service.js';
@@ -40,44 +40,30 @@ class LoginService {
       try {
         return await this.#userAccountService.readByName(systemAuthority, credentials.name);
       }
-      catch {
-        throw new AccessDeniedError();
+      catch (e) {
+        if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
+          throw new AccessDeniedError();
+        }
+        throw e;
       }
     })();
     const passwordHash = hashPassword(credentials.password, userAccount.passwordSalt);
     if (passwordHash !== userAccount.passwordHash) {
       throw new AccessDeniedError();
     }
-    let refreshToken = generateRandomString(refreshTokenAllowedChars, refreshTokenLength);
-    const currentTime = Math.floor(Date.now() / 1000);
-    const sessionId = await (async () => {
-      while (true) {
-        try {
-          return await this.#persistentSessionService.create(systemAuthority, {
-            userAccountId: userAccount.id,
-            roles: userAccount.roles,
-            refreshToken: refreshToken,
-            creationTime: currentTime,
-            expirationTime: currentTime + persistentSessionDuration
-          });
-        }
-        catch (e) {
-          if (!(e instanceof ConflictError)) {
-            throw e;
-          }
-          refreshToken = generateRandomString(refreshTokenAllowedChars, refreshTokenLength);
-        }
-      }
-    })();
+    const persistentSession = await this.#persistentSessionService.create(systemAuthority, {
+      userAccountId: userAccount.id,
+      roles: userAccount.roles
+    });
     const idToken = jwt.sign({
-      sessionId: sessionId,
-      iat: currentTime,
-      exp: currentTime + jwtDuration
+      sessionId: persistentSession.id,
+      iat: persistentSession.creationTime,
+      exp: persistentSession.creationTime + jwtDuration
     }, this.#encryptionInfo.secretKey, {
       algorithm: this.#encryptionInfo.algorithm
     });
     return {
-      refreshToken: refreshToken,
+      refreshToken: persistentSession.refreshToken,
       idToken: idToken
     };
   }
@@ -86,12 +72,15 @@ class LoginService {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
+    if (typeof refreshToken !== 'string') {
+      throw new IllegalArgumentError();
+    }
     const persistentSession = await (async () => {
       try {
         return await this.#persistentSessionService.readByRefreshToken(systemAuthority, refreshToken);
       }
       catch (e) {
-        if (e instanceof NotFoundError) {
+        if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
           throw new AccessDeniedError();
         }
         throw e;
@@ -169,20 +158,9 @@ const hashPassword = (password, salt) => {
   return createHash('sha256').update(password + salt).digest('hex');
 };
 
-const generateRandomString = (pool, length) => {
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += pool.charAt(Math.floor(Math.random() * pool.length));
-  }
-  return result;
-};
-
 const systemAuthority = { roles: Role.System };
 const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
-const refreshTokenAllowedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-const refreshTokenLength = 128;
-const persistentSessionDuration = 1209600;
 const jwtDuration = 86400;
 
 export {

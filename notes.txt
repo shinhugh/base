@@ -54,6 +54,13 @@ TODO:
 
 - IdentificationService, LoginService, and LogoutService should be updated to
   reflect above changes
+  [DONE]
+
+- Never use generic catch without granular error/exception type check
+  [DONE]
+
+- Handle other runtime errors/exceptions
+  [DONE]
 
 - every service controller should expose the same API format
   invoke(functionName, authority, arguments)

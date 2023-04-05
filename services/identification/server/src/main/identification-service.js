@@ -1,6 +1,6 @@
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
-import { IllegalArgumentError, AccessDeniedError } from './errors.js';
+import { IllegalArgumentError, AccessDeniedError, NotFoundError } from './errors.js';
 import { Role } from './role.js';
 import { PersistentSessionService } from './persistent-session-service.js';
 
@@ -26,9 +26,6 @@ class IdentificationService {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
-    if (authority == null || authority.roles == null || (authority.roles & Role.System) == 0) {
-      throw new AccessDeniedError();
-    }
     if (typeof token !== 'string') {
       throw new IllegalArgumentError();
     }
@@ -47,10 +44,13 @@ class IdentificationService {
     }
     const persistentSession = await (async () => {
       try {
-        return await this.#persistentSessionService.readById(authority, tokenPayload.sessionId);
+        return await this.#persistentSessionService.readById(systemAuthority, tokenPayload.sessionId);
       }
-      catch {
-        return null;
+      catch (e) {
+        if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
+          return null;
+        }
+        throw e;
       }
     })();
     if (persistentSession == null || persistentSession.expirationTime <= (Date.now() / 1000)) {
@@ -99,6 +99,7 @@ const validateAuthority = (authority) => {
   return true;
 };
 
+const systemAuthority = { roles: Role.System };
 const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
 

@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
+import { Role } from '../main/role.js';
 import { PersistentSessionService } from '../main/persistent-session-service.js';
 import { IdentificationService } from '../main/identification-service.js';
-import { Role } from '../main/role.js';
 
 const testIdentify = async () => {
   const result = await identificationService.identify(authority, token);

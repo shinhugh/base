@@ -351,7 +351,7 @@ public class UserAccountManager implements UserAccountService {
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException error) {
-            throw new RuntimeException("Internal error");
+            throw new RuntimeException();
         }
         byte[] bytes = digest.digest((password + salt).getBytes(StandardCharsets.UTF_8));
         return hexString(bytes);

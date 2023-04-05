@@ -1,6 +1,5 @@
 import { validate as validateUuid } from 'uuid';
 import { IllegalArgumentError } from './errors.js';
-import { Role } from './role.js';
 import { PersistentSessionService } from './persistent-session-service.js';
 
 class LogoutService {
