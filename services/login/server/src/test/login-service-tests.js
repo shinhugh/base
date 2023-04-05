@@ -3,7 +3,11 @@ import { PersistentSessionService } from '../main/persistent-session-service.js'
 import { UserAccountService } from '../main/user-account-service.js';
 import { LoginService } from '../main/login-service.js';
 
-const testLogin = async () => {
+const testLoginViaCredentials = async () => {
+  // TODO: Implement
+};
+
+const testLoginViaRefreshToken = async () => {
   // TODO: Implement
 };
 
@@ -16,7 +20,8 @@ const loginService = new LoginService(persistentSessionService, userAccountServi
   secretKey: secretKey
 });
 const tests = [
-  { name: 'Identify', run: testIdentify },
+  { name: 'LoginViaCredentials', run: testLoginViaCredentials },
+  { name: 'LoginViaRefreshToken', run: testLoginViaRefreshToken },
 ];
 
 export {
