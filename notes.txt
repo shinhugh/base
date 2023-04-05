@@ -1,5 +1,6 @@
 TODO:
 
+- unprotected services should require System role
 - every service controller should expose the same API format
   invoke(functionName, authority, arguments)
   functionName: string

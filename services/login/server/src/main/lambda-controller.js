@@ -1,6 +1,6 @@
-import { PersistentSessionService } from './persistent-session-service';
-import { UserAccountService } from './user-account-service';
-import { LoginService } from './login-service';
+import { PersistentSessionService } from './persistent-session-service.js';
+import { UserAccountService } from './user-account-service.js';
+import { LoginService } from './login-service.js';
 
 const handler = async (event) => {
   // TODO: Implement
