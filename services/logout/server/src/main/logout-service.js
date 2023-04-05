@@ -22,7 +22,10 @@ class LogoutService {
     if (typeof refreshToken !== 'string') {
       throw new IllegalArgumentError();
     }
-    await this.#persistentSessionService.deleteByRefreshToken(systemAuthority, refreshToken);
+    try {
+      await this.#persistentSessionService.deleteByRefreshToken(systemAuthority, refreshToken);
+    }
+    catch { }
   }
 }
 
