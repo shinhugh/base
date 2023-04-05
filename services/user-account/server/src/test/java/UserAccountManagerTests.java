@@ -7,9 +7,9 @@ import java.util.Map;
 
 public class UserAccountManagerTests {
     private static final Authority AUTHORITY = new Authority(null, Role.SYSTEM, 0);
-    private static final String ACCOUNT_NAME = "qwer";
-    private static final String ACCOUNT_PASSWORD = "Qwer!234";
-    private static final short ACCOUNT_ROLES = (short) (Role.USER | Role.ADMIN);
+    private static final String USERACCOUNT_NAME = "qwer";
+    private static final String USERACCOUNT_PASSWORD = "Qwer!234";
+    private static final short USERACCOUNT_ROLES = (short) (Role.USER | Role.ADMIN);
     private static final String DB_HOST = "localhost";
     private static final int DB_PORT = 3306;
     private static final String DB_DATABASE = "base";
@@ -31,7 +31,7 @@ public class UserAccountManagerTests {
     private static class CreateTest implements Test.Runnable {
         @Override
         public void run() {
-            UserAccount inputUserAccount = new UserAccount(null, ACCOUNT_NAME, ACCOUNT_PASSWORD, null, null, ACCOUNT_ROLES);
+            UserAccount inputUserAccount = new UserAccount(null, USERACCOUNT_NAME, USERACCOUNT_PASSWORD, null, null, USERACCOUNT_ROLES);
             id = userAccountManager.create(AUTHORITY, inputUserAccount).getId();
         }
     }
@@ -46,14 +46,14 @@ public class UserAccountManagerTests {
     private static class ReadByNameTest implements Test.Runnable {
         @Override
         public void run() {
-            userAccountManager.readByName(AUTHORITY, ACCOUNT_NAME);
+            userAccountManager.readByName(AUTHORITY, USERACCOUNT_NAME);
         }
     }
 
     private static class UpdateByIdTest implements Test.Runnable {
         @Override
         public void run() {
-            UserAccount inputUserAccount = new UserAccount(null, "changed", ACCOUNT_PASSWORD, null, null, ACCOUNT_ROLES);
+            UserAccount inputUserAccount = new UserAccount(null, "changed", USERACCOUNT_PASSWORD, null, null, USERACCOUNT_ROLES);
             userAccountManager.updateById(AUTHORITY, id, inputUserAccount);
         }
     }
