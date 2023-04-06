@@ -135,6 +135,8 @@ request body must contain the user's credentials in JSON format as such:
 }
 ```
 
+`my_username` and `my_password` should be replaced with the user's credentials.
+
 If the credentials are valid, the server will respond with status code 200. The
 body will contain the refresh and ID tokens in JSON format as such:
 
@@ -158,6 +160,9 @@ request body must contain the refresh token in JSON format as such:
 }
 ```
 
+`some_refresh_token` should be replaced with the refresh token received from the
+server.
+
 If the token is valid, the server will respond with status code 200. The body
 will contain the ID token in JSON format as such:
 
@@ -172,7 +177,7 @@ If the token is invalid, the server will respond with status code 401.
 ### Logout
 
 The client should send a `POST` request to the `/api/logout` endpoint. The
-request body must contain the refresh token in JSON format as such:
+request body should contain the refresh token in JSON format as such:
 
 ```
 {
@@ -180,8 +185,12 @@ request body must contain the refresh token in JSON format as such:
 }
 ```
 
+`some_refresh_token` should be replaced with the refresh token received from the
+server.
+
 The server will unconditionally respond with status code 200, even if the
-request body is malformed and no action is taken.
+refresh token is invalid or the request body is malformed and no action is
+taken.
 
 Note that the ID token is not sent; there is no need to notify the server that
 an ID token should be revoked. The authentication service treats an ID token as
