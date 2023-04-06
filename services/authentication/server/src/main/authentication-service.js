@@ -147,7 +147,7 @@ class AuthenticationService {
       throw new IllegalArgumentError();
     }
     try {
-      await this.#persistentSessionService.deleteByRefreshToken(authority, refreshToken);
+      await this.#persistentSessionRepository.deleteByRefreshToken(authority, refreshToken);
     }
     catch { }
   }
