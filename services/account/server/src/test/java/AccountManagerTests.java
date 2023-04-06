@@ -9,9 +9,9 @@ public class AccountManagerTests {
     private static final String ACCOUNT_PASSWORD = "Qwer!234";
     private static final short ACCOUNT_ROLES = (short) (Role.USER | Role.ADMIN);
     private static final AccountManager accountManager = new AccountManager();
-    private static String id;
+    private static String accountId;
 
-    public static Test[] tests = new Test[]{
+    public static final Test[] tests = new Test[]{
             new Test("Create", new CreateTest()),
             new Test("ReadById", new ReadByIdTest()),
             new Test("ReadByName", new ReadByNameTest()),
@@ -23,14 +23,14 @@ public class AccountManagerTests {
         @Override
         public void run() {
             Account inputAccount = new Account(null, ACCOUNT_NAME, ACCOUNT_PASSWORD, ACCOUNT_ROLES);
-            id = accountManager.create(AUTHORITY, inputAccount).getId();
+            accountId = accountManager.create(AUTHORITY, inputAccount).getId();
         }
     }
 
     private static class ReadByIdTest implements Test.Runnable {
         @Override
         public void run() {
-            accountManager.readById(AUTHORITY, id);
+            accountManager.readById(AUTHORITY, accountId);
         }
     }
 
@@ -45,14 +45,14 @@ public class AccountManagerTests {
         @Override
         public void run() {
             Account inputAccount = new Account(null, "changed", ACCOUNT_PASSWORD, ACCOUNT_ROLES);
-            accountManager.updateById(AUTHORITY, id, inputAccount);
+            accountManager.updateById(AUTHORITY, accountId, inputAccount);
         }
     }
 
     private static class DeleteByIdTest implements Test.Runnable {
         @Override
         public void run() {
-            accountManager.deleteById(AUTHORITY, id);
+            accountManager.deleteById(AUTHORITY, accountId);
         }
     }
 }

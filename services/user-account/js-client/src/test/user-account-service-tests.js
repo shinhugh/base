@@ -1,5 +1,5 @@
-import { UserAccountService } from '../main/user-account-service.js';
 import { Role } from '../main/role.js';
+import { UserAccountService } from '../main/user-account-service.js';
 
 const testCreate = async () => {
   const inputUserAccount = {
@@ -7,11 +7,11 @@ const testCreate = async () => {
     password: accountPassword,
     roles: accountRoles
   };
-  id = (await userAccountService.create(authority, inputUserAccount)).id;
+  userAccountId = (await userAccountService.create(authority, inputUserAccount)).id;
 };
 
 const testReadById = async () => {
-  await userAccountService.readById(authority, id);
+  await userAccountService.readById(authority, userAccountId);
 };
 
 const testReadByName = async () => {
@@ -24,11 +24,11 @@ const testUpdateById = async () => {
     password: accountPassword,
     roles: accountRoles
   };
-  await userAccountService.updateById(authority, id, inputUserAccount);
+  await userAccountService.updateById(authority, userAccountId, inputUserAccount);
 };
 
 const testDeleteById = async () => {
-  await userAccountService.deleteById(authority, id);
+  await userAccountService.deleteById(authority, userAccountId);
 };
 
 const authority = {
@@ -38,6 +38,8 @@ const accountName = 'qwer';
 const accountPassword = 'Qwer!234';
 const accountRoles = Role.User | Role.Admin;
 const userAccountService = new UserAccountService();
+let userAccountId;
+
 const tests = [
   { name: 'Create', run: testCreate },
   { name: 'ReadById', run: testReadById },
@@ -45,7 +47,6 @@ const tests = [
   { name: 'UpdateById', run: testUpdateById },
   { name: 'DeleteById', run: testDeleteById },
 ];
-let id;
 
 export {
   tests

@@ -1,5 +1,5 @@
-import { PersistentSessionService } from '../main/persistent-session-service.js';
 import { Role } from '../main/role.js';
+import { PersistentSessionService } from '../main/persistent-session-service.js';
 
 const testCreate = async () => {
   const inputPersistentSession = {
@@ -7,16 +7,16 @@ const testCreate = async () => {
     roles: sessionRoles
   };
   const output = await persistentSessionService.create(authority, inputPersistentSession);
-  id = output.id;
-  refreshToken = output.refreshToken;
+  persistentSessionId = output.id;
+  persistentSessionRefreshToken = output.refreshToken;
 };
 
 const testReadById = async () => {
-  await persistentSessionService.readById(authority, id);
+  await persistentSessionService.readById(authority, persistentSessionId);
 };
 
 const testReadByRefreshToken = async () => {
-  await persistentSessionService.readByRefreshToken(authority, refreshToken);
+  await persistentSessionService.readByRefreshToken(authority, persistentSessionRefreshToken);
 };
 
 const testDeleteByUserAccountId = async () => {
@@ -24,7 +24,7 @@ const testDeleteByUserAccountId = async () => {
 };
 
 const testDeleteByRefreshToken = async () => {
-  await persistentSessionService.deleteByRefreshToken(authority, refreshToken);
+  await persistentSessionService.deleteByRefreshToken(authority, persistentSessionRefreshToken);
 };
 
 const authority = {
@@ -33,6 +33,9 @@ const authority = {
 const sessionUserAccountId = 'd1da9b21-5106-49b5-8ff1-6f3137fdf403';
 const sessionRoles = Role.User | Role.Admin;
 const persistentSessionService = new PersistentSessionService();
+let persistentSessionId;
+let persistentSessionRefreshToken;
+
 const tests = [
   { name: 'Create', run: testCreate },
   { name: 'ReadById', run: testReadById },
@@ -40,8 +43,6 @@ const tests = [
   { name: 'DeleteByUserAccountId', run: testDeleteByUserAccountId },
   { name: 'DeleteByRefreshToken', run: testDeleteByRefreshToken },
 ];
-let id;
-let refreshToken;
 
 export {
   tests

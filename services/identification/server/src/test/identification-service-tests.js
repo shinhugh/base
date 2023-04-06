@@ -3,15 +3,25 @@ import { Role } from '../main/role.js';
 import { PersistentSessionService } from '../main/persistent-session-service.js';
 import { IdentificationService } from '../main/identification-service.js';
 
+// PersistentSession table must contain the following entry:
+// {
+//   id: '00000000-0000-0000-0000-000000000000',
+//   userAccountId: '00000000-0000-0000-0000-000000000000',
+//   roles: 6,
+//   refreshToken: '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+//   creationTime: 0,
+//   expirationTime: 4294967295
+// }
+
 const testIdentify = async () => {
   const result = await identificationService.identify(authority, token);
-  if (result.id !== accountId) {
+  if (result.id !== persistentSession.userAccountId) {
     throw new Error('Actual does not match expected: id');
   }
-  if (result.roles != roles) {
+  if (result.roles != persistentSession.roles) {
     throw new Error('Actual does not match expected: roles');
   }
-  if (result.authTime != authTime) {
+  if (result.authTime != persistentSession.creationTime) {
     throw new Error('Actual does not match expected: authTime');
   }
 };
@@ -19,15 +29,17 @@ const testIdentify = async () => {
 const authority = {
   roles: Role.System
 };
-const accountId = '00000000-0000-0000-0000-000000000000';
-const roles = 6;
-const authTime = 0;
-const sessionId = '00000000-0000-0000-0000-000000000000';
+const persistentSession = {
+  id: '00000000-0000-0000-0000-000000000000',
+  userAccountId: '00000000-0000-0000-0000-000000000000',
+  roles: 6,
+  creationTime: 0
+};
 const algorithm = 'HS256';
 const secretKey = Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64');
 const token = jwt.sign({
-  sessionId: sessionId,
-  exp: Math.floor(Date.now() / 1000 + 3600)
+  sessionId: persistentSession.id,
+  exp: Math.floor(Date.now() / 1000) + 60
 }, secretKey, {
   algorithm: algorithm
 });
@@ -36,6 +48,7 @@ const identificationService = new IdentificationService(persistentSessionService
   algorithm: algorithm,
   secretKey: secretKey
 });
+
 const tests = [
   { name: 'Identify', run: testIdentify },
 ];
