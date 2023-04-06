@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2023-04-06T20:49:17.012Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0" etag="4a8h5KC5XBOeSJW4UQiY" version="21.1.4" type="device" pages="7">
+<mxfile host="app.diagrams.net" modified="2023-04-06T20:53:13.415Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0" etag="_TZORvt7HWWyX43N-8Pc" version="21.1.5" type="device" pages="7">
   <diagram name="Old" id="4avrkyJrO1HF61GQWn7J">
     <mxGraphModel dx="3131" dy="1673" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -908,7 +908,7 @@
     </mxGraphModel>
   </diagram>
   <diagram name="Account delete flow" id="sNTgp73dgGKHzuOuSzXR">
-    <mxGraphModel dx="5131" dy="2473" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="6130" dy="2847" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="F3mcDIOz91e7l_nF7Si1-0" />
         <mxCell id="F3mcDIOz91e7l_nF7Si1-1" parent="F3mcDIOz91e7l_nF7Si1-0" />
@@ -944,9 +944,6 @@
         </mxCell>
         <mxCell id="F3mcDIOz91e7l_nF7Si1-12" value="Identify" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;fixedSize=1;strokeWidth=2;fontSize=14;fontFamily=Lucida Console;" parent="F3mcDIOz91e7l_nF7Si1-2" vertex="1">
           <mxGeometry y="440" width="160" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="F3mcDIOz91e7l_nF7Si1-13" value="Login" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;fixedSize=1;strokeWidth=2;fontSize=14;fontFamily=Lucida Console;" parent="F3mcDIOz91e7l_nF7Si1-2" vertex="1">
-          <mxGeometry x="160" y="440" width="160" height="40" as="geometry" />
         </mxCell>
         <mxCell id="F3mcDIOz91e7l_nF7Si1-14" value="Logout" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;fixedSize=1;strokeWidth=2;fontSize=14;fontFamily=Lucida Console;" parent="F3mcDIOz91e7l_nF7Si1-2" vertex="1">
           <mxGeometry x="320" y="440" width="160" height="40" as="geometry" />
@@ -989,15 +986,6 @@
             <mxPoint x="-560" y="1119.29" as="sourcePoint" />
             <mxPoint x="-400" y="1119.29" as="targetPoint" />
           </mxGeometry>
-        </mxCell>
-        <mxCell id="F3mcDIOz91e7l_nF7Si1-26" value="Create" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;fixedSize=1;strokeWidth=2;fontSize=14;fontFamily=Lucida Console;" parent="F3mcDIOz91e7l_nF7Si1-16" vertex="1">
-          <mxGeometry x="160" y="440" width="160" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="F3mcDIOz91e7l_nF7Si1-27" value="Read" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;fixedSize=1;strokeWidth=2;fontSize=14;fontFamily=Lucida Console;" parent="F3mcDIOz91e7l_nF7Si1-16" vertex="1">
-          <mxGeometry y="440" width="160" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="F3mcDIOz91e7l_nF7Si1-28" value="Update" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;fixedSize=1;strokeWidth=2;fontSize=14;fontFamily=Lucida Console;" parent="F3mcDIOz91e7l_nF7Si1-16" vertex="1">
-          <mxGeometry x="320" y="440" width="160" height="40" as="geometry" />
         </mxCell>
         <mxCell id="F3mcDIOz91e7l_nF7Si1-29" value="Delete" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;fixedSize=1;strokeWidth=2;fontSize=14;fontFamily=Lucida Console;" parent="F3mcDIOz91e7l_nF7Si1-16" vertex="1">
           <mxGeometry x="480" y="440" width="160" height="40" as="geometry" />
