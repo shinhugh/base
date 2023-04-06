@@ -142,12 +142,22 @@ class AuthenticationService {
     };
   }
 
-  async logout(authority, refreshToken) {
+  async logoutViaRefreshToken(authority, refreshToken) {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
     try {
       await this.#persistentSessionRepository.deleteByRefreshToken(authority, refreshToken);
+    }
+    catch { }
+  }
+
+  async logoutViaUserAccountId(authority, userAccountId) {
+    if (!validateAuthority(authority)) {
+      throw new IllegalArgumentError();
+    }
+    try {
+      await this.#persistentSessionRepository.deleteByUserAccountId(authority, userAccountId);
     }
     catch { }
   }
