@@ -102,6 +102,10 @@ whether a request should be processed.
 
 ![Flow diagram](docs/identification-flow.png)
 
+### Account delete
+
+![Flow diagram](docs/account-delete-flow.png)
+
 ## Client-server communication
 
 Although this foundation takes care of authentication on the back-end, an
@@ -130,8 +134,10 @@ request body must contain the user's credentials in JSON format as such:
 
 ```
 {
-  "name": "my_username",
-  "password": "my_password"
+  "credentials": {
+    "name": "my_username",
+    "password": "my_password"
+  }
 }
 ```
 
