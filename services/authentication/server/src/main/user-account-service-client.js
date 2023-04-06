@@ -1,26 +1,7 @@
 class UserAccountServiceClient {
-  async create(authority, userAccount) {
-    // TODO: Implement
-    return generateMockUserAccount();
-  }
-
-  async readById(authority, id) {
-    // TODO: Implement
-    return generateMockUserAccount();
-  }
-
   async readByName(authority, name) {
     // TODO: Implement
     return generateMockUserAccount();
-  }
-
-  async updateById(authority, id, userAccount) {
-    // TODO: Implement
-    return generateMockUserAccount();
-  }
-
-  async deleteById(authority, id) {
-    // TODO: Implement
   }
 }
 
