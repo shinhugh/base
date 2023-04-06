@@ -10,6 +10,15 @@ TODO:
   }
   arguments: [any] (optional)
 
+- move business logic out of PersistentSessionRepository into
+  AuthenticationService
+  - remove authority from PersistentSessionRepository
+  - move value generation
+  - move allowed char checking and UUID validation
+  - keep database-imposed type and min/max validation
+
+- implement UserAccountServiceClient
+
 
 Test entry for PersistentSessions table:
 
