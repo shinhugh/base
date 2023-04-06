@@ -1,6 +1,6 @@
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
-import { IllegalArgumentError, AccessDeniedError, NotFoundError } from './errors.js';
+import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './errors.js';
 import { Role } from './role.js';
 import { PersistentSessionRepository } from './persistent-session-repository.js';
 import { UserAccountServiceClient } from './user-account-service-client.js';
@@ -32,6 +32,9 @@ class AuthenticationService {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
+      throw new AccessDeniedError();
+    }
     if (typeof token !== 'string') {
       throw new IllegalArgumentError();
     }
@@ -50,7 +53,7 @@ class AuthenticationService {
     }
     const persistentSession = await (async () => {
       try {
-        return await this.#persistentSessionRepository.readById(systemAuthority, tokenPayload.sessionId);
+        return await this.#persistentSessionRepository.readById(tokenPayload.sessionId);
       }
       catch (e) {
         if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
@@ -91,10 +94,26 @@ class AuthenticationService {
     if (passwordHash !== userAccount.passwordHash) {
       throw new AccessDeniedError();
     }
-    const persistentSession = await this.#persistentSessionRepository.create(systemAuthority, {
-      userAccountId: userAccount.id,
-      roles: userAccount.roles
-    });
+    const persistentSession = await (async () => {
+      while (true) {
+        const refreshToken = generateRandomString(refreshTokenAllowedChars, refreshTokenLength);
+        const currentTime = Math.floor(Date.now() / 1000);
+        try {
+          return await this.#persistentSessionRepository.create({
+            userAccountId: userAccount.id,
+            roles: userAccount.roles,
+            refreshToken: refreshToken,
+            creationTime: currentTime,
+            expirationTime: currentTime + sessionDuration
+          });
+        }
+        catch (e) {
+          if (!(e instanceof ConflictError)) {
+            throw e;
+          }
+        }
+      }
+    })();
     const idToken = jwt.sign({
       sessionId: persistentSession.id,
       iat: persistentSession.creationTime,
@@ -117,7 +136,7 @@ class AuthenticationService {
     }
     const persistentSession = await (async () => {
       try {
-        return await this.#persistentSessionRepository.readByRefreshToken(systemAuthority, refreshToken);
+        return await this.#persistentSessionRepository.readByRefreshToken(refreshToken);
       }
       catch (e) {
         if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
@@ -147,7 +166,7 @@ class AuthenticationService {
       throw new IllegalArgumentError();
     }
     try {
-      await this.#persistentSessionRepository.deleteByRefreshToken(authority, refreshToken);
+      await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
     }
     catch { }
   }
@@ -156,8 +175,19 @@ class AuthenticationService {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
+      throw new AccessDeniedError();
+    }
+    if (typeof userAccountId !== 'string' || !validateUuid(userAccountId)) {
+      throw new IllegalArgumentError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin)) {
+      if (authority.id !== userAccountId) {
+        throw new AccessDeniedError();
+      }
+    }
     try {
-      await this.#persistentSessionRepository.deleteByUserAccountId(authority, userAccountId);
+      await this.#persistentSessionRepository.deleteByUserAccountId(userAccountId);
     }
     catch { }
   }
@@ -214,13 +244,37 @@ const validateCredentials = (credentials) => {
   return true;
 };
 
+const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
+  if (!validateAuthority(authority) || (roles != null && (!Number.isInteger(roles) || roles < 0 || roles > rolesMaxValue))) {
+    throw new IllegalArgumentError();
+  }
+  if (roles == null || roles == 0) {
+    return true;
+  }
+  if (authority == null || authority.roles == null) {
+    return false;
+  }
+  return (authority.roles & roles) != 0;
+};
+
 const hashPassword = (password, salt) => {
   return createHash('sha256').update(password + salt).digest('hex');
+};
+
+const generateRandomString = (pool, length) => {
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += pool.charAt(Math.floor(Math.random() * pool.length));
+  }
+  return result;
 };
 
 const systemAuthority = { roles: Role.System };
 const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
+const refreshTokenAllowedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const refreshTokenLength = 128;
+const sessionDuration = 1209600;
 const jwtDuration = 86400;
 
 export {
