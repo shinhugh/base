@@ -72,11 +72,42 @@ class AuthenticationService {
     };
   }
 
-  async loginViaCredentials(authority, credentials) {
+  async login(authority, loginInfo) {
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
-    if (credentials == null || !validateCredentials(credentials)) {
+    if (loginInfo == null || typeof loginInfo !== 'object') {
+      throw new IllegalArgumentError();
+    }
+    if (loginInfo.credentials != null) {
+      return await this.#loginViaCredentials(authority, loginInfo.credentials);
+    }
+    if (loginInfo.refreshToken != null) {
+      return await this.#loginViaRefreshToken(authority, loginInfo.refreshToken);
+    }
+    throw new IllegalArgumentError();
+  }
+
+  async logout(authority, logoutInfo) {
+    if (!validateAuthority(authority)) {
+      throw new IllegalArgumentError();
+    }
+    if (logoutInfo == null || typeof logoutInfo !== 'object') {
+      throw new IllegalArgumentError();
+    }
+    if (logoutInfo.userAccountId != null) {
+      await this.#logoutViaUserAccountId(authority, logoutInfo.userAccountId);
+      return;
+    }
+    if (logoutInfo.refreshToken != null) {
+      await this.#logoutViaRefreshToken(authority, logoutInfo.refreshToken);
+      return;
+    }
+    throw new IllegalArgumentError();
+  }
+
+  async #loginViaCredentials(authority, credentials) {
+    if (!validateCredentials(credentials)) {
       throw new IllegalArgumentError();
     }
     const userAccount = await (async () => {
@@ -127,10 +158,7 @@ class AuthenticationService {
     };
   }
 
-  async loginViaRefreshToken(authority, refreshToken) {
-    if (!validateAuthority(authority)) {
-      throw new IllegalArgumentError();
-    }
+  async #loginViaRefreshToken(authority, refreshToken) {
     if (typeof refreshToken !== 'string') {
       throw new IllegalArgumentError();
     }
@@ -161,20 +189,7 @@ class AuthenticationService {
     };
   }
 
-  async logoutViaRefreshToken(authority, refreshToken) {
-    if (!validateAuthority(authority)) {
-      throw new IllegalArgumentError();
-    }
-    try {
-      await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
-    }
-    catch { }
-  }
-
-  async logoutViaUserAccountId(authority, userAccountId) {
-    if (!validateAuthority(authority)) {
-      throw new IllegalArgumentError();
-    }
+  async #logoutViaUserAccountId(authority, userAccountId) {
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
       throw new AccessDeniedError();
     }
@@ -188,6 +203,13 @@ class AuthenticationService {
     }
     try {
       await this.#persistentSessionRepository.deleteByUserAccountId(userAccountId);
+    }
+    catch { }
+  }
+
+  async #logoutViaRefreshToken(authority, refreshToken) {
+    try {
+      await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
     }
     catch { }
   }
