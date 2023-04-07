@@ -1,7 +1,7 @@
-import { PersistentSessionRepository } from './persistent-session-repository.js';
-import { UserAccountServiceClient } from './user-account-service-client.js';
-import { AuthenticationService } from './authentication-service.js';
-import { AuthenticationController } from './authentication-controller.js';
+import { PersistentSessionRepository } from './repository/persistent-session-repository.js';
+import { UserAccountServiceClient } from './service/user-account-service-client.js';
+import { AuthenticationService } from './service/authentication-service.js';
+import { AuthenticationController } from './controller/authentication-controller.js';
 
 const handler = async (event) => {
   // TODO: Implement

@@ -1,9 +1,9 @@
 import { createHash } from 'crypto';
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
-import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './errors.js';
-import { Role } from './role.js';
-import { PersistentSessionRepository } from './persistent-session-repository.js';
+import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from '../model/errors.js';
+import { Role } from '../model/role.js';
+import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
 import { UserAccountServiceClient } from './user-account-service-client.js';
 
 class AuthenticationService {

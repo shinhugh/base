@@ -1,6 +1,6 @@
 import { v4 as generateUuid } from 'uuid';
 import { Sequelize, DataTypes } from 'sequelize';
-import { IllegalArgumentError, NotFoundError, ConflictError } from './errors.js';
+import { IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
 
 class PersistentSessionRepository {
   #sequelize;
