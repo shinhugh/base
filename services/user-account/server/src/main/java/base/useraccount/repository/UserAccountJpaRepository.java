@@ -1,9 +1,9 @@
-package base.useraccount.server.repository;
+package base.useraccount.repository;
 
-import base.useraccount.server.model.ConflictException;
-import base.useraccount.server.model.IllegalArgumentException;
-import base.useraccount.server.model.NotFoundException;
-import base.useraccount.server.model.UserAccount;
+import base.useraccount.model.ConflictException;
+import base.useraccount.model.IllegalArgumentException;
+import base.useraccount.model.NotFoundException;
+import base.useraccount.model.UserAccount;
 import jakarta.persistence.*;
 
 import java.util.Map;
@@ -81,14 +81,14 @@ public class UserAccountJpaRepository implements UserAccountRepository {
         UserAccount entry = new UserAccount(null, userAccount.getName(), null, userAccount.getPasswordHash(), userAccount.getPasswordSalt(), userAccount.getRoles());
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            UserAccount match = null;
+            UserAccount conflict = null;
             entityManager.getTransaction().begin();
             TypedQuery<UserAccount> query = entityManager.createQuery("from UserAccount as x where x.name = :name", UserAccount.class);
             try {
-                match = query.setParameter("name", userAccount.getName()).getSingleResult();
+                conflict = query.setParameter("name", userAccount.getName()).getSingleResult();
             }
             catch (NoResultException ignored) { }
-            if (match != null) {
+            if (conflict != null) {
                 entityManager.getTransaction().rollback();
                 throw new ConflictException();
             }
@@ -147,6 +147,16 @@ public class UserAccountJpaRepository implements UserAccountRepository {
             if (userAccount == null || !validateUserAccount(userAccount)) {
                 entityManager.getTransaction().rollback();
                 throw new IllegalArgumentException();
+            }
+            UserAccount conflict = null;
+            query = entityManager.createQuery("from UserAccount as x where x.name = :name", UserAccount.class);
+            try {
+                conflict = query.setParameter("name", userAccount.getName()).getSingleResult();
+            }
+            catch (NoResultException ignored) { }
+            if (conflict != null) {
+                entityManager.getTransaction().rollback();
+                throw new ConflictException();
             }
             match.setName(userAccount.getName());
             match.setPasswordHash(userAccount.getPasswordHash());

@@ -1,6 +1,6 @@
-package base.useraccount.server.controller;
+package base.useraccount.controller;
 
-import base.useraccount.server.service.UserAccountService;
+import base.useraccount.service.UserAccountService;
 
 public class UserAccountController {
     private final UserAccountService userAccountService;

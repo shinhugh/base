@@ -1,4 +1,4 @@
-package base.useraccount.server.model;
+package base.useraccount.model;
 
 public class Role {
     public static short SYSTEM = (short) Math.pow(2, 0);

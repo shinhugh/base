@@ -1,12 +1,12 @@
-import base.useraccount.server.model.Authority;
-import base.useraccount.server.model.Role;
-import base.useraccount.server.model.UserAccount;
-import base.useraccount.server.repository.UserAccountJpaRepository;
-import base.useraccount.server.repository.UserAccountRepository;
-import base.useraccount.server.service.AuthenticationServiceBridge;
-import base.useraccount.server.service.AuthenticationServiceClient;
-import base.useraccount.server.service.UserAccountManager;
-import base.useraccount.server.service.UserAccountService;
+import base.useraccount.model.Authority;
+import base.useraccount.model.Role;
+import base.useraccount.model.UserAccount;
+import base.useraccount.repository.UserAccountJpaRepository;
+import base.useraccount.repository.UserAccountRepository;
+import base.useraccount.service.AuthenticationServiceBridge;
+import base.useraccount.service.AuthenticationServiceClient;
+import base.useraccount.service.UserAccountManager;
+import base.useraccount.service.UserAccountService;
 
 import java.util.Map;
 
@@ -26,6 +26,7 @@ public class UserAccountManagerTests {
     private static final AuthenticationServiceClient authenticationServiceClient = new AuthenticationServiceBridge();
     private static final UserAccountService userAccountManager = new UserAccountManager(userAccountRepository, authenticationServiceClient);
     private static String userAccountId;
+    private static String userAccountName;
 
     public static final Test[] tests = new Test[]{
             new Test("Create", new CreateTest()),
@@ -52,7 +53,8 @@ public class UserAccountManagerTests {
     private static class UpdateTest implements Test.Runnable {
         @Override
         public void run() {
-            UserAccount inputUserAccount = new UserAccount(null, "changed", USERACCOUNT_PASSWORD, null, null, USERACCOUNT_ROLES);
+            userAccountName = "changed";
+            UserAccount inputUserAccount = new UserAccount(null, userAccountName, USERACCOUNT_PASSWORD, null, null, USERACCOUNT_ROLES);
             userAccountManager.update(AUTHORITY, userAccountId, USERACCOUNT_NAME, inputUserAccount);
         }
     }
@@ -60,7 +62,7 @@ public class UserAccountManagerTests {
     private static class DeleteTest implements Test.Runnable {
         @Override
         public void run() {
-            userAccountManager.delete(AUTHORITY, userAccountId, USERACCOUNT_NAME);
+            userAccountManager.delete(AUTHORITY, userAccountId, userAccountName);
         }
     }
 }

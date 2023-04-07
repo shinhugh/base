@@ -1,8 +1,8 @@
-package base.useraccount.server.service;
+package base.useraccount.service;
 
-import base.useraccount.server.model.IllegalArgumentException;
-import base.useraccount.server.model.*;
-import base.useraccount.server.repository.UserAccountRepository;
+import base.useraccount.model.IllegalArgumentException;
+import base.useraccount.model.*;
+import base.useraccount.repository.UserAccountRepository;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

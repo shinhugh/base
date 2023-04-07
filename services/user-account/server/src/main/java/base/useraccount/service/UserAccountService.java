@@ -1,7 +1,7 @@
-package base.useraccount.server.service;
+package base.useraccount.service;
 
-import base.useraccount.server.model.Authority;
-import base.useraccount.server.model.UserAccount;
+import base.useraccount.model.Authority;
+import base.useraccount.model.UserAccount;
 
 public interface UserAccountService {
     UserAccount read(Authority authority, String id, String name);

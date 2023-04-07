@@ -1,4 +1,4 @@
-package base.useraccount.server.model;
+package base.useraccount.model;
 
 import jakarta.persistence.*;
 

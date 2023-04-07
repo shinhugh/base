@@ -1,11 +1,11 @@
-package base.useraccount.server.controller;
+package base.useraccount.controller;
 
-import base.useraccount.server.repository.UserAccountJpaRepository;
-import base.useraccount.server.repository.UserAccountRepository;
-import base.useraccount.server.service.AuthenticationServiceBridge;
-import base.useraccount.server.service.AuthenticationServiceClient;
-import base.useraccount.server.service.UserAccountManager;
-import base.useraccount.server.service.UserAccountService;
+import base.useraccount.repository.UserAccountJpaRepository;
+import base.useraccount.repository.UserAccountRepository;
+import base.useraccount.service.AuthenticationServiceBridge;
+import base.useraccount.service.AuthenticationServiceClient;
+import base.useraccount.service.UserAccountManager;
+import base.useraccount.service.UserAccountService;
 
 import java.util.Map;
 

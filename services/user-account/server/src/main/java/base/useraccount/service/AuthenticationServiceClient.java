@@ -1,6 +1,6 @@
-package base.useraccount.server.service;
+package base.useraccount.service;
 
-import base.useraccount.server.model.Authority;
+import base.useraccount.model.Authority;
 
 public interface AuthenticationServiceClient {
     void logout(Authority authority, String userAccountId);

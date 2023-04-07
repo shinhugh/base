@@ -1,6 +1,6 @@
-package base.useraccount.server.repository;
+package base.useraccount.repository;
 
-import base.useraccount.server.model.UserAccount;
+import base.useraccount.model.UserAccount;
 
 public interface UserAccountRepository {
     UserAccount read(String id, String name);
