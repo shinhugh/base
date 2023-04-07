@@ -28,7 +28,7 @@ public class UserAccountManagerTests {
     private static String userAccountId;
     private static String userAccountName;
 
-    public static final Test[] tests = new Test[]{
+    public static final Test[] tests = new Test[] {
             new Test("Create", new CreateTest()),
             new Test("Read", new ReadTest()),
             new Test("Update", new UpdateTest()),

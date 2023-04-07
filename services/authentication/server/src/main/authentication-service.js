@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './errors.js';
