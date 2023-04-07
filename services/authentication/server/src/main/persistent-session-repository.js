@@ -2,8 +2,8 @@ import { Sequelize, DataTypes } from 'sequelize';
 import { IllegalArgumentError, NotFoundError, ConflictError } from './errors.js';
 
 class PersistentSessionRepository {
-  #databaseInfo;
   #sequelize;
+  #databaseInfo;
 
   constructor(databaseInfo) {
     if (databaseInfo == null || !validateDatabaseInfo(databaseInfo)) {

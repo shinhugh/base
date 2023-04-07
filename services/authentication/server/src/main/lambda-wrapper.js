@@ -7,7 +7,6 @@ const handler = async (event) => {
   // TODO: Implement
 };
 
-const userAccountServiceClient = new UserAccountServiceClient();
 const persistentSessionRepository = new PersistentSessionRepository({
   host: process.env.AUTH_DB_HOST,
   port: Number(process.env.AUTH_DB_PORT),
@@ -15,6 +14,7 @@ const persistentSessionRepository = new PersistentSessionRepository({
   username: process.env.AUTH_DB_USERNAME,
   password: process.env.AUTH_DB_PASSWORD
 });
+const userAccountServiceClient = new UserAccountServiceClient();
 const authenticationService = new AuthenticationService(persistentSessionRepository, userAccountServiceClient, {
   algorithm: process.env.AUTH_ALGORITHM,
   secretKey: Buffer.from(process.env.AUTH_SECRET_KEY, 'base64')

@@ -2,33 +2,72 @@ package base.useraccount.server.service;
 
 import base.useraccount.server.model.IllegalArgumentException;
 import base.useraccount.server.model.*;
-import jakarta.persistence.*;
+import base.useraccount.server.repository.UserAccountRepository;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
 import java.util.UUID;
 
 public class UserAccountManager implements UserAccountService {
     private static final short ROLES_MAX_VALUE = 255;
     private static final long TIME_MAX_VALUE = 4294967295L;
+    private static final String NAME_ALLOWED_CHARS = "-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
     private static final int NAME_MIN_LENGTH = 4;
     private static final int NAME_MAX_LENGTH = 32;
-    private static final String NAME_ALLOWED_CHARS = "-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+    private static final String PASSWORD_ALLOWED_CHARS = " !\\\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
     private static final int PASSWORD_MIN_LENGTH = 8;
     private static final int PASSWORD_MAX_LENGTH = 32;
-    private static final String PASSWORD_ALLOWED_CHARS = " !\\\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-    private static final int PASSWORD_SALT_LENGTH = 32;
     private static final String PASSWORD_SALT_ALLOWED_CHARS = PASSWORD_ALLOWED_CHARS;
+    private static final int PASSWORD_SALT_LENGTH = 32;
     private static final byte[] HEX_CHARS = "0123456789abcdef".getBytes(StandardCharsets.US_ASCII);
-    private final EntityManagerFactory entityManagerFactory;
+    private final UserAccountRepository userAccountRepository;
+    private final AuthenticationServiceClient authenticationServiceClient;
 
-    public UserAccountManager(Map<String, String> databaseInfo) {
-        if (databaseInfo == null) {
+    public UserAccountManager(UserAccountRepository userAccountRepository, AuthenticationServiceClient authenticationServiceClient) {
+        this.userAccountRepository = userAccountRepository;
+        this.authenticationServiceClient = authenticationServiceClient;
+    }
+
+    @Override
+    public UserAccount read(Authority authority, String id, String name) {
+        if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        entityManagerFactory = Persistence.createEntityManagerFactory("base", databaseInfo);
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
+            throw new AccessDeniedException();
+        }
+        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
+        if (onlyAuthorizedAsUser && authority.getId() == null) {
+            throw new AccessDeniedException();
+        }
+        if (id == null && name == null) {
+            throw new IllegalArgumentException();
+        }
+        if (!validateUuid(id)) {
+            throw new IllegalArgumentException();
+        }
+        if (!validateName(name)) {
+            throw new IllegalArgumentException();
+        }
+        UserAccount match;
+        try {
+            match = userAccountRepository.read(id, name);
+        }
+        catch (NotFoundException ex) {
+            if (onlyAuthorizedAsUser) {
+                throw new AccessDeniedException();
+            }
+            throw ex;
+        }
+        if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
+            throw new AccessDeniedException();
+        }
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
+            match.setPasswordHash(null);
+            match.setPasswordSalt(null);
+        }
+        return match;
     }
 
     @Override
@@ -42,35 +81,16 @@ public class UserAccountManager implements UserAccountService {
         String passwordSalt = generateRandomString(PASSWORD_SALT_ALLOWED_CHARS, PASSWORD_SALT_LENGTH);
         String passwordHash = hashPassword(userAccount.getPassword(), passwordSalt);
         UserAccount entry = new UserAccount(null, userAccount.getName(), null, passwordHash, passwordSalt, userAccount.getRoles());
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        try {
-            UserAccount match = null;
-            entityManager.getTransaction().begin();
-            TypedQuery<UserAccount> query = entityManager.createQuery("from UserAccount as x where x.name = :name", UserAccount.class);
-            try {
-                match = query.setParameter("name", userAccount.getName()).getSingleResult();
-            }
-            catch (NoResultException ignored) { }
-            if (match != null) {
-                entityManager.getTransaction().rollback();
-                throw new ConflictException();
-            }
-            entry.setId(generateId(entityManager));
-            entityManager.merge(entry);
-            entityManager.getTransaction().commit();
-            if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
-                entry.setPasswordHash(null);
-                entry.setPasswordSalt(null);
-            }
-            return entry;
+        entry = userAccountRepository.create(entry);
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
+            entry.setPasswordHash(null);
+            entry.setPasswordSalt(null);
         }
-        finally {
-            entityManager.close();
-        }
+        return entry;
     }
 
     @Override
-    public UserAccount readById(Authority authority, String id) {
+    public UserAccount update(Authority authority, String id, String name, UserAccount userAccount) {
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
@@ -81,101 +101,26 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || !validateId(id)) {
+        if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
-        if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
-            throw new AccessDeniedException();
+        if (!validateUuid(id)) {
+            throw new IllegalArgumentException();
         }
-        String queryString = "from UserAccount as x where x.id = :id";
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        if (!validateName(name)) {
+            throw new IllegalArgumentException();
+        }
+        UserAccount match;
         try {
-            UserAccount match = null;
-            entityManager.getTransaction().begin();
-            TypedQuery<UserAccount> query = entityManager.createQuery(queryString, UserAccount.class);
-            query.setParameter("id", id);
-            try {
-                match = query.getSingleResult();
-            }
-            catch (NoResultException ignored) { }
-            entityManager.getTransaction().rollback();
-            if (match == null) {
-                throw new NotFoundException();
-            }
-            if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
-                match.setPasswordHash(null);
-                match.setPasswordSalt(null);
-            }
-            return match;
+            match = userAccountRepository.read(id, name);
         }
-        finally {
-            entityManager.close();
-        }
-    }
-
-    @Override
-    public UserAccount readByName(Authority authority, String name) {
-        if (!validateAuthority(authority)) {
-            throw new IllegalArgumentException();
-        }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
-            throw new AccessDeniedException();
-        }
-        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
-        if (onlyAuthorizedAsUser && authority.getId() == null) {
-            throw new AccessDeniedException();
-        }
-        if (name == null || !validateName(name)) {
-            throw new IllegalArgumentException();
-        }
-        String queryString = "from UserAccount as x where x.name = :name";
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        try {
-            UserAccount match = null;
-            entityManager.getTransaction().begin();
-            TypedQuery<UserAccount> query = entityManager.createQuery(queryString, UserAccount.class);
-            query.setParameter("name", name);
-            try {
-                match = query.getSingleResult();
-            }
-            catch (NoResultException ignored) { }
-            entityManager.getTransaction().rollback();
-            if (match == null) {
-                if (onlyAuthorizedAsUser) {
-                    throw new AccessDeniedException();
-                }
-                throw new NotFoundException();
-            }
-            if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
+        catch (NotFoundException ex) {
+            if (onlyAuthorizedAsUser) {
                 throw new AccessDeniedException();
             }
-            if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
-                match.setPasswordHash(null);
-                match.setPasswordSalt(null);
-            }
-            return match;
+            throw ex;
         }
-        finally {
-            entityManager.close();
-        }
-    }
-
-    @Override
-    public UserAccount updateById(Authority authority, String id, UserAccount userAccount) {
-        if (!validateAuthority(authority)) {
-            throw new IllegalArgumentException();
-        }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
-            throw new AccessDeniedException();
-        }
-        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
-        if (onlyAuthorizedAsUser && authority.getId() == null) {
-            throw new AccessDeniedException();
-        }
-        if (id == null || !validateId(id)) {
-            throw new IllegalArgumentException();
-        }
-        if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
+        if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
         if (userAccount == null || !validateUserAccount(userAccount)) {
@@ -183,39 +128,18 @@ public class UserAccountManager implements UserAccountService {
         }
         String passwordSalt = generateRandomString(PASSWORD_SALT_ALLOWED_CHARS, PASSWORD_SALT_LENGTH);
         String passwordHash = hashPassword(userAccount.getPassword(), passwordSalt);
-        String queryString = "from UserAccount as x where x.id = :id";
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        try {
-            UserAccount match = null;
-            entityManager.getTransaction().begin();
-            TypedQuery<UserAccount> query = entityManager.createQuery(queryString, UserAccount.class);
-            query.setParameter("id", id);
-            try {
-                match = query.getSingleResult();
-            }
-            catch (NoResultException ignored) { }
-            if (match == null) {
-                entityManager.getTransaction().rollback();
-                throw new NotFoundException();
-            }
-            match.setName(userAccount.getName());
-            match.setPasswordHash(passwordHash);
-            match.setPasswordSalt(passwordSalt);
-            match.setRoles(userAccount.getRoles());
-            entityManager.getTransaction().commit();
-            if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
-                match.setPasswordHash(null);
-                match.setPasswordSalt(null);
-            }
-            return match;
+        UserAccount entry = new UserAccount(null, userAccount.getName(), null, passwordHash, passwordSalt, userAccount.getRoles());
+        entry = userAccountRepository.update(id, name, entry);
+        authenticationServiceClient.logout(authority, match.getId());
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
+            entry.setPasswordHash(null);
+            entry.setPasswordSalt(null);
         }
-        finally {
-            entityManager.close();
-        }
+        return entry;
     }
 
     @Override
-    public void deleteById(Authority authority, String id) {
+    public void delete(Authority authority, String id, String name) {
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
@@ -226,42 +150,33 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (id == null || !validateId(id)) {
+        if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
-        if (onlyAuthorizedAsUser && !id.equals(authority.getId())) {
+        if (!validateUuid(id)) {
+            throw new IllegalArgumentException();
+        }
+        if (!validateName(name)) {
+            throw new IllegalArgumentException();
+        }
+        UserAccount match;
+        try {
+            match = userAccountRepository.read(id, name);
+        }
+        catch (NotFoundException ex) {
+            if (onlyAuthorizedAsUser) {
+                throw new AccessDeniedException();
+            }
+            throw ex;
+        }
+        if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        try {
-            entityManager.getTransaction().begin();
-            UserAccount userAccount = entityManager.find(UserAccount.class, id);
-            if (userAccount == null) {
-                entityManager.getTransaction().rollback();
-                return;
-            }
-            entityManager.remove(userAccount);
-            entityManager.getTransaction().commit();
-        }
-        finally {
-            entityManager.close();
-        }
+        userAccountRepository.delete(id, name);
+        authenticationServiceClient.logout(authority, match.getId());
     }
 
-    private boolean verifyAuthorityContainsAtLeastOneRole(Authority authority, short roles) {
-        if (!validateAuthority(authority) || roles < 0 || roles > ROLES_MAX_VALUE) {
-            throw new IllegalArgumentException();
-        }
-        if (roles == 0) {
-            return true;
-        }
-        if (authority == null) {
-            return false;
-        }
-        return (authority.getRoles() & roles) != 0;
-    }
-
-    private boolean validateId(String id) {
+    private boolean validateUuid(String id) {
         if (id == null) {
             return true;
         }
@@ -278,7 +193,7 @@ public class UserAccountManager implements UserAccountService {
         if (authority == null) {
             return true;
         }
-        if (authority.getId() != null && !validateId(authority.getId())) {
+        if (authority.getId() != null && !validateUuid(authority.getId())) {
             return false;
         }
         if (authority.getRoles() < 0 || authority.getRoles() > ROLES_MAX_VALUE) {
@@ -330,15 +245,20 @@ public class UserAccountManager implements UserAccountService {
         return true;
     }
 
-    private String generateId(EntityManager entityManager) {
-        String id = UUID.randomUUID().toString();
-        while (entityManager.find(UserAccount.class, id) != null) {
-            id = UUID.randomUUID().toString();
+    private boolean verifyAuthorityContainsAtLeastOneRole(Authority authority, short roles) {
+        if (!validateAuthority(authority) || roles < 0 || roles > ROLES_MAX_VALUE) {
+            throw new IllegalArgumentException();
         }
-        return id;
+        if (roles == 0) {
+            return true;
+        }
+        if (authority == null) {
+            return false;
+        }
+        return (authority.getRoles() & roles) != 0;
     }
 
-    private String generateRandomString(String pool, int length) {
+    private static String generateRandomString(String pool, int length) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < length; i++) {
             result.append(pool.charAt((int) (Math.random() * pool.length())));
@@ -346,7 +266,7 @@ public class UserAccountManager implements UserAccountService {
         return result.toString();
     }
 
-    private String hashPassword(String password, String salt) {
+    private static String hashPassword(String password, String salt) {
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
@@ -357,7 +277,7 @@ public class UserAccountManager implements UserAccountService {
         return hexString(bytes);
     }
 
-    private String hexString(byte[] bytes) {
+    private static String hexString(byte[] bytes) {
         byte[] builder = new byte[bytes.length * 2];
         for (int i = 0; i < bytes.length; i++) {
             int b = Byte.toUnsignedInt(bytes[i]);
