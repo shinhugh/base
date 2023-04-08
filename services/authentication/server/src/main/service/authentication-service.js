@@ -51,11 +51,11 @@ class AuthenticationService {
     })();
     const persistentSession = await (async () => {
       try {
-        return (await this.#persistentSessionRepository.readByIdAndRefreshToken(tokenPayload.sessionId, undefined))[0];
+        return (await this.#persistentSessionRepository.readById(tokenPayload.sessionId))[0];
       }
       catch (e) {
         if (e instanceof IllegalArgumentError) {
-          return null;
+          return undefined;
         }
         throw e;
       }
@@ -162,11 +162,11 @@ class AuthenticationService {
     }
     const persistentSession = await (async () => {
       try {
-        return (await this.#persistentSessionRepository.readByIdAndRefreshToken(undefined, refreshToken))[0];
+        return (await this.#persistentSessionRepository.readByRefreshToken(refreshToken))[0];
       }
       catch (e) {
         if (e instanceof IllegalArgumentError) {
-          return null;
+          return undefined;
         }
         throw e;
       }
@@ -202,12 +202,12 @@ class AuthenticationService {
         throw new AccessDeniedError();
       }
     }
-    await this.#persistentSessionRepository.deleteByUserAccountIdAndRefreshToken(userAccountId, undefined);
+    await this.#persistentSessionRepository.deleteByUserAccountId(userAccountId);
   }
 
   async #logoutViaRefreshToken(authority, refreshToken) {
     try {
-      await this.#persistentSessionRepository.deleteByUserAccountIdAndRefreshToken(undefined, refreshToken);
+      await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
     }
     catch (e) {
       if (e instanceof IllegalArgumentError) {
