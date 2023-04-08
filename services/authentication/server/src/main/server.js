@@ -17,7 +17,9 @@ class Server {
       type: () => { return true; }
     }));
     this.#app.disable('x-powered-by');
-    app.all('/*', this.#handle);
+    this.#app.all('/*', async (req, res) => {
+      await handleRequest(req, res, this.#endpoints);
+    });
     this.#endpoints = { };
     for (const path in endpoints) {
       this.#endpoints[path] = { };
@@ -30,56 +32,6 @@ class Server {
 
   start() {
     this.#app.listen(this.#port);
-  }
-
-  async #handle(req, res) {
-    const request = {
-      path: req.path,
-      method: req.method,
-      headers: req.headers,
-      query: req.query
-    };
-    if (req.headers['content-length'] != null) {
-      request.body = req.body;
-    }
-    const response = await (async () => {
-      try {
-        if (this.#endpoints[request.path] == null) {
-          return {
-            status: 404
-          };
-        }
-        const endpoint = (() => {
-          for (const method in this.#endpoints[request.path]) {
-            if (method.toLowerCase() === request.method.toLowerCase()) {
-              return this.#endpoints[request.path][method];
-            }
-          }
-          return undefined;
-        })();
-        if (endpoint == null) {
-          return {
-            status: 405
-          };
-        }
-        return await endpoint(request);
-      }
-      catch {
-        return {
-          status: 500
-        };
-      }
-    })();
-    res.status(response.status);
-    for (const headerName in response.headers) {
-      res.set(headerName, response.headers[headerName]);
-    }
-    if (response.body == null) {
-      res.end();
-    }
-    else {
-      res.send(response.body);
-    }
   }
 }
 
@@ -101,6 +53,56 @@ const validateEndpoints = (endpoints) => {
     }
   }
   return true;
+};
+
+const handleRequest = async (req, res, endpoints) => {
+  const request = {
+    path: req.path,
+    method: req.method,
+    headers: req.headers,
+    query: req.query
+  };
+  if (req.headers['content-length'] != null) {
+    request.body = req.body;
+  }
+  const response = await (async () => {
+    try {
+      if (endpoints[request.path] == null) {
+        return {
+          status: 404
+        };
+      }
+      const endpoint = (() => {
+        for (const method in endpoints[request.path]) {
+          if (method.toLowerCase() === request.method.toLowerCase()) {
+            return endpoints[request.path][method];
+          }
+        }
+        return undefined;
+      })();
+      if (endpoint == null) {
+        return {
+          status: 405
+        };
+      }
+      return await endpoint(request);
+    }
+    catch {
+      return {
+        status: 500
+      };
+    }
+  })();
+  res.status(response.status);
+  for (const headerName in response.headers) {
+    res.set(headerName, response.headers[headerName]);
+  }
+  if (response.body == null) {
+    res.end();
+  }
+  else {
+    res.send(response.body);
+  }
 };
 
 const portMaxValue = 65535;

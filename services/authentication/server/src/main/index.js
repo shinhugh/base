@@ -36,13 +36,19 @@ const authenticationService = new AuthenticationService(persistentSessionReposit
 const authenticationController = new AuthenticationController(authenticationService);
 const server = new Server({
   '/identify': {
-    get: authenticationController.identify
+    get: async (request) => {
+      return await authenticationController.identify(request);
+    }
   },
   '/login': {
-    post: authenticationController.login
+    post: async (request) => {
+      return await authenticationController.login(request);
+    }
   },
   '/logout': {
-    post: authenticationController.logout
+    post: async (request) => {
+      return await authenticationController.logout(request);
+    }
   }
 }, config.server.port);
 
