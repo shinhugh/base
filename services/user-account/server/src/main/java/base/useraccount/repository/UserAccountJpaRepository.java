@@ -19,7 +19,7 @@ public class UserAccountJpaRepository implements UserAccountRepository {
 
     public UserAccountJpaRepository(Map<String, String> databaseInfo) {
         if (databaseInfo == null) {
-            throw new IllegalArgumentException();
+            throw new RuntimeException();
         }
         entityManagerFactory = Persistence.createEntityManagerFactory("base", databaseInfo);
     }

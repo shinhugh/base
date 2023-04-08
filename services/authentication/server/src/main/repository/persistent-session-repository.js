@@ -8,7 +8,7 @@ class PersistentSessionRepository {
 
   constructor(databaseInfo) {
     if (databaseInfo == null || !validateDatabaseInfo(databaseInfo)) {
-      throw new IllegalArgumentError();
+      throw new Error();
     }
     this.#databaseInfo = {
       host: databaseInfo.host,

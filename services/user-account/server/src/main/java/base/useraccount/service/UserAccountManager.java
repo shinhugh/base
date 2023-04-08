@@ -25,6 +25,12 @@ public class UserAccountManager implements UserAccountService {
     private final AuthenticationServiceClient authenticationServiceClient;
 
     public UserAccountManager(UserAccountRepository userAccountRepository, AuthenticationServiceClient authenticationServiceClient) {
+        if (userAccountRepository == null) {
+            throw new RuntimeException();
+        }
+        if (authenticationServiceClient == null) {
+            throw new RuntimeException();
+        }
         this.userAccountRepository = userAccountRepository;
         this.authenticationServiceClient = authenticationServiceClient;
     }
