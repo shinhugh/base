@@ -1,6 +1,6 @@
 import { v4 as generateUuid } from 'uuid';
 import { Sequelize, DataTypes } from 'sequelize';
-import { IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
+import { IllegalArgumentError, ConflictError } from '../model/errors.js';
 
 class PersistentSessionRepository {
   #sequelize;
@@ -166,7 +166,7 @@ const validateDatabaseInfo = (databaseInfo) => {
   if (typeof databaseInfo.host !== 'string') {
     return false;
   }
-  if (!Number.isInteger(databaseInfo.port) || databaseInfo.port < 0 || databaseInfo.port > maxPortNumber) {
+  if (!Number.isInteger(databaseInfo.port) || databaseInfo.port < 0 || databaseInfo.port > portMaxValue) {
     return false;
   }
   if (typeof databaseInfo.database !== 'string') {
@@ -206,7 +206,7 @@ const validatePersistentSession = (persistentSession) => {
   return true;
 };
 
-const maxPortNumber = 65535;
+const portMaxValue = 65535;
 const idMaxLength = 36;
 const userAccountIdMaxLength = 36;
 const rolesMaxValue = 255;

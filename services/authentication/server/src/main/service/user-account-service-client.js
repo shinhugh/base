@@ -5,7 +5,10 @@ class UserAccountServiceClient {
     if (endpointInfo == null || !validateEndpointInfo(endpointInfo)) {
       throw new Error();
     }
-    this.#endpointInfo = endpointInfo;
+    this.#endpointInfo = {
+      host: endpointInfo.host,
+      port: endpointInfo.port
+    };
   }
 
   async readByName(authority, name) {
@@ -24,7 +27,7 @@ const validateEndpointInfo = (endpointInfo) => {
   if (typeof endpointInfo.host !== 'string') {
     return false;
   }
-  if (!Number.isInteger(endpointInfo.port) || endpointInfo.port < 0 || endpointInfo.port > maxPortNumber) {
+  if (!Number.isInteger(endpointInfo.port) || endpointInfo.port < 0 || endpointInfo.port > portMaxValue) {
     return false;
   }
   return true;
@@ -40,7 +43,7 @@ const generateMockUserAccount = () => { // TODO: Remove
   };
 };
 
-const maxPortNumber = 65535;
+const portMaxValue = 65535;
 
 export {
   UserAccountServiceClient
