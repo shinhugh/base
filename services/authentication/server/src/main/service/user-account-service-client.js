@@ -1,9 +1,34 @@
 class UserAccountServiceClient {
+  #endpointInfo;
+
+  constructor(endpointInfo) {
+    if (endpointInfo == null || !validateEndpointInfo(endpointInfo)) {
+      throw new Error();
+    }
+    this.#endpointInfo = endpointInfo;
+  }
+
   async readByName(authority, name) {
+    return generateMockUserAccount(); // TODO: Remove
     // TODO: Implement
-    return generateMockUserAccount();
   }
 }
+
+const validateEndpointInfo = (endpointInfo) => {
+  if (endpointInfo == null) {
+    return true;
+  }
+  if (typeof endpointInfo !== 'object') {
+    return false;
+  }
+  if (typeof endpointInfo.host !== 'string') {
+    return false;
+  }
+  if (!Number.isInteger(endpointInfo.port) || endpointInfo.port < 0 || endpointInfo.port > maxPortNumber) {
+    return false;
+  }
+  return true;
+};
 
 const generateMockUserAccount = () => { // TODO: Remove
   return {
@@ -14,6 +39,8 @@ const generateMockUserAccount = () => { // TODO: Remove
     roles: 6
   };
 };
+
+const maxPortNumber = 65535;
 
 export {
   UserAccountServiceClient

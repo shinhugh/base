@@ -4,28 +4,42 @@ import { UserAccountServiceClient } from './service/user-account-service-client.
 import { AuthenticationService } from './service/authentication-service.js';
 import { AuthenticationController } from './controller/authentication-controller.js';
 
-const algorithm = 'HS256';
-const secretKey = Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64');
-const persistentSessionRepository = new PersistentSessionRepository({
-  host: 'localhost',
-  port: 3306,
-  database: 'base',
-  username: 'root',
-  password: ''
-});
-const userAccountServiceClient = new UserAccountServiceClient();
+// Use environment variables for production; hard-coded for testing only
+const config = {
+  persistence: {
+    host: 'localhost',
+    port: 3306,
+    database: 'base',
+    username: 'root',
+    password: ''
+  },
+  userAccountService: {
+    host: 'localhost',
+    port: 3001
+  },
+  encryption: {
+    algorithm: 'HS256',
+    secretKey: 'Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=',
+    secretKeyEncoding: 'base64'
+  },
+  server: {
+    port: 3000
+  }
+};
+
+const persistentSessionRepository = new PersistentSessionRepository(config.persistence);
+const userAccountServiceClient = new UserAccountServiceClient(config.userAccountService);
 const authenticationService = new AuthenticationService(persistentSessionRepository, userAccountServiceClient, {
-  algorithm: algorithm,
-  secretKey: secretKey
+  algorithm: config.encryption.algorithm,
+  secretKey: Buffer.from(config.encryption.secretKey, config.encryption.secretKeyEncoding)
 });
 const authenticationController = new AuthenticationController(authenticationService);
-const port = 3000;
 const app = express();
+
 app.use(express.raw({
   type: () => { return true; }
 }));
 app.disable('x-powered-by');
-
 app.all('/*', async (req, res) => {
   const request = {
     path: req.path,
@@ -48,7 +62,6 @@ app.all('/*', async (req, res) => {
     res.send(response.body);
   }
 });
-
-app.listen(port, () => {
-  console.log('Listening on port ' + port);
+app.listen(config.server.port, () => {
+  console.log('Listening on port ' + config.server.port);
 });
