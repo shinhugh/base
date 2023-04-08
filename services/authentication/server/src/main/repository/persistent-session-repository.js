@@ -19,36 +19,6 @@ class PersistentSessionRepository {
     };
   }
 
-  async create(persistentSession) {
-    if (persistentSession == null || !validatePersistentSession(persistentSession)) {
-      throw new IllegalArgumentError();
-    }
-    const entry = {
-      userAccountId: persistentSession.userAccountId,
-      roles: persistentSession.roles,
-      refreshToken: persistentSession.refreshToken,
-      creationTime: persistentSession.creationTime,
-      expirationTime: persistentSession.expirationTime
-    };
-    await this.#openSequelize(this.#databaseInfo);
-    try {
-      entry.id = await this.#generateId();
-      try {
-        await this.#sequelize.models.persistentSessions.create(entry);
-      }
-      catch (e) {
-        if (e instanceof Sequelize.ValidationError) {
-          throw new ConflictError();
-        }
-        throw e;
-      }
-      return entry;
-    }
-    finally {
-      await this.#closeSequelize();
-    }
-  }
-
   async readById(id) {
     if (typeof id !== 'string' || id.length > idMaxLength) {
       throw new IllegalArgumentError();
@@ -83,6 +53,36 @@ class PersistentSessionRepository {
       });
       if (entry == null) {
         throw new NotFoundError();
+      }
+      return entry;
+    }
+    finally {
+      await this.#closeSequelize();
+    }
+  }
+
+  async create(persistentSession) {
+    if (persistentSession == null || !validatePersistentSession(persistentSession)) {
+      throw new IllegalArgumentError();
+    }
+    const entry = {
+      userAccountId: persistentSession.userAccountId,
+      roles: persistentSession.roles,
+      refreshToken: persistentSession.refreshToken,
+      creationTime: persistentSession.creationTime,
+      expirationTime: persistentSession.expirationTime
+    };
+    await this.#openSequelize(this.#databaseInfo);
+    try {
+      entry.id = await this.#generateId();
+      try {
+        await this.#sequelize.models.persistentSessions.create(entry);
+      }
+      catch (e) {
+        if (e instanceof Sequelize.ValidationError) {
+          throw new ConflictError();
+        }
+        throw e;
       }
       return entry;
     }

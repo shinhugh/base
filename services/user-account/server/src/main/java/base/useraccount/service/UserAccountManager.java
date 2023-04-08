@@ -56,16 +56,14 @@ public class UserAccountManager implements UserAccountService {
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        UserAccount match;
-        try {
-            match = userAccountRepository.read(id, name);
-        }
-        catch (NotFoundException ex) {
+        UserAccount[] matches = userAccountRepository.read(id, name);
+        if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
                 throw new AccessDeniedException();
             }
-            throw ex;
+            throw new NotFoundException();
         }
+        UserAccount match = matches[0];
         if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
@@ -116,16 +114,14 @@ public class UserAccountManager implements UserAccountService {
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        UserAccount match;
-        try {
-            match = userAccountRepository.read(id, name);
-        }
-        catch (NotFoundException ex) {
+        UserAccount[] matches = userAccountRepository.read(id, name);
+        if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
                 throw new AccessDeniedException();
             }
-            throw ex;
+            throw new NotFoundException();
         }
+        UserAccount match = matches[0];
         if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
@@ -165,16 +161,14 @@ public class UserAccountManager implements UserAccountService {
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        UserAccount match;
-        try {
-            match = userAccountRepository.read(id, name);
-        }
-        catch (NotFoundException ex) {
+        UserAccount[] matches = userAccountRepository.read(id, name);
+        if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
                 throw new AccessDeniedException();
             }
-            throw ex;
+            throw new NotFoundException();
         }
+        UserAccount match = matches[0];
         if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }

@@ -10,6 +10,12 @@ TODO:
   }
   arguments: [any] (optional)
 
+- generalize CRUD operations on persistent-session-repository
+  - merge functions and eliminate "By..."
+  - expose all possible queries as parameters
+  - change read() to return list
+  - change delete() to return number of deleted entries
+
 - implement full executable for authentication service
 
 - implement full executable for UserAccount service

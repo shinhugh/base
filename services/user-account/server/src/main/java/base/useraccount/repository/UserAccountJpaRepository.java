@@ -6,6 +6,7 @@ import base.useraccount.model.NotFoundException;
 import base.useraccount.model.UserAccount;
 import jakarta.persistence.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,7 +26,7 @@ public class UserAccountJpaRepository implements UserAccountRepository {
     }
 
     @Override
-    public UserAccount read(String id, String name) {
+    public UserAccount[] read(String id, String name) {
         if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
@@ -49,7 +50,6 @@ public class UserAccountJpaRepository implements UserAccountRepository {
         }
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            UserAccount match = null;
             entityManager.getTransaction().begin();
             TypedQuery<UserAccount> query = entityManager.createQuery(queryString, UserAccount.class);
             if (id != null) {
@@ -58,15 +58,9 @@ public class UserAccountJpaRepository implements UserAccountRepository {
             if (name != null) {
                 query.setParameter("name", name);
             }
-            try {
-                match = query.getSingleResult();
-            }
-            catch (NoResultException ignored) { }
+            List<UserAccount> matches = query.getResultList();
             entityManager.getTransaction().rollback();
-            if (match == null) {
-                throw new NotFoundException();
-            }
-            return match;
+            return matches.toArray(new UserAccount[0]);
         }
         finally {
             entityManager.close();
@@ -171,7 +165,7 @@ public class UserAccountJpaRepository implements UserAccountRepository {
     }
 
     @Override
-    public void delete(String id, String name) {
+    public int delete(String id, String name) {
         if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
@@ -195,7 +189,6 @@ public class UserAccountJpaRepository implements UserAccountRepository {
         }
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            UserAccount match = null;
             entityManager.getTransaction().begin();
             TypedQuery<UserAccount> query = entityManager.createQuery(queryString, UserAccount.class);
             if (id != null) {
@@ -204,16 +197,12 @@ public class UserAccountJpaRepository implements UserAccountRepository {
             if (name != null) {
                 query.setParameter("name", name);
             }
-            try {
-                match = query.getSingleResult();
+            List<UserAccount> matches = query.getResultList();
+            for (UserAccount match : matches) {
+                entityManager.remove(match);
             }
-            catch (NoResultException ignored) { }
-            if (match == null) {
-                entityManager.getTransaction().rollback();
-                return;
-            }
-            entityManager.remove(match);
             entityManager.getTransaction().commit();
+            return matches.size();
         }
         finally {
             entityManager.close();
