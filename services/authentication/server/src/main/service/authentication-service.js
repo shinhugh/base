@@ -303,8 +303,7 @@ const timeMaxValue = 4294967295;
 const refreshTokenAllowedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const refreshTokenLength = 128;
 const sessionDuration = 1209600;
-// const jwtDuration = 86400;
-const jwtDuration = 5;
+const jwtDuration = 86400;
 
 export {
   AuthenticationService
