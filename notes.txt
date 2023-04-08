@@ -1,10 +1,10 @@
 TODO:
 
-- implement full executable for authentication service
-
 - implement full executable for UserAccount service
 
 - implement UserAccountServiceClient
+
+- implement AuthenticationServiceBridge
 
 
 
