@@ -12,7 +12,5 @@ public class UserAccountController {
         this.userAccountService = userAccountService;
     }
 
-    public void handle() { // TODO
-        // TODO
-    }
+    // TODO: Implement
 }

@@ -18,11 +18,11 @@ public class UserAccountJpaRepository implements UserAccountRepository {
     private static final short ROLES_MAX_VALUE = 255;
     private final EntityManagerFactory entityManagerFactory;
 
-    public UserAccountJpaRepository(Map<String, String> databaseInfo) {
-        if (databaseInfo == null) {
+    public UserAccountJpaRepository(Map<String, String> databaseConfig) {
+        if (databaseConfig == null) {
             throw new RuntimeException();
         }
-        entityManagerFactory = Persistence.createEntityManagerFactory("base", databaseInfo);
+        entityManagerFactory = Persistence.createEntityManagerFactory("base", databaseConfig);
     }
 
     @Override

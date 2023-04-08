@@ -4,18 +4,18 @@ import { IllegalArgumentError, ConflictError } from '../model/errors.js';
 
 class PersistentSessionRepository {
   #sequelize;
-  #databaseInfo;
+  #databaseConfig;
 
-  constructor(databaseInfo) {
-    if (databaseInfo == null || !validateDatabaseInfo(databaseInfo)) {
+  constructor(databaseConfig) {
+    if (databaseConfig == null || !validateDatabaseConfig(databaseConfig)) {
       throw new Error();
     }
-    this.#databaseInfo = {
-      host: databaseInfo.host,
-      port: databaseInfo.port,
-      database: databaseInfo.database,
-      username: databaseInfo.username,
-      password: databaseInfo.password
+    this.#databaseConfig = {
+      host: databaseConfig.host,
+      port: databaseConfig.port,
+      database: databaseConfig.database,
+      username: databaseConfig.username,
+      password: databaseConfig.password
     };
   }
 
@@ -23,7 +23,7 @@ class PersistentSessionRepository {
     if (typeof id !== 'string' || id.length > idMaxLength) {
       throw new IllegalArgumentError();
     }
-    await this.#openSequelize(this.#databaseInfo);
+    await this.#openSequelize(this.#databaseConfig);
     try {
       const matches = await this.#sequelize.models.persistentSessions.findAll({
         where: {
@@ -41,7 +41,7 @@ class PersistentSessionRepository {
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
       throw new IllegalArgumentError();
     }
-    await this.#openSequelize(this.#databaseInfo);
+    await this.#openSequelize(this.#databaseConfig);
     try {
       const matches = await this.#sequelize.models.persistentSessions.findAll({
         where: {
@@ -66,7 +66,7 @@ class PersistentSessionRepository {
       creationTime: persistentSession.creationTime,
       expirationTime: persistentSession.expirationTime
     };
-    await this.#openSequelize(this.#databaseInfo);
+    await this.#openSequelize(this.#databaseConfig);
     try {
       entry.id = await this.#generateId();
       try {
@@ -89,7 +89,7 @@ class PersistentSessionRepository {
     if (typeof userAccountId !== 'string' || userAccountId.length > userAccountIdMaxLength) {
       throw new IllegalArgumentError();
     }
-    await this.#openSequelize(this.#databaseInfo);
+    await this.#openSequelize(this.#databaseConfig);
     try {
       return await this.#sequelize.models.persistentSessions.destroy({
         where: {
@@ -106,7 +106,7 @@ class PersistentSessionRepository {
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
       throw new IllegalArgumentError();
     }
-    await this.#openSequelize(this.#databaseInfo);
+    await this.#openSequelize(this.#databaseConfig);
     try {
       return await this.#sequelize.models.persistentSessions.destroy({
         where: {
@@ -131,14 +131,14 @@ class PersistentSessionRepository {
     return id;
   }
 
-  async #openSequelize(databaseInfo) {
+  async #openSequelize(databaseConfig) {
     if (this.#sequelize == null) {
       this.#sequelize = new Sequelize({
-        host: databaseInfo.host,
-        port: databaseInfo.port,
-        database: databaseInfo.database,
-        username: databaseInfo.username,
-        password: databaseInfo.password,
+        host: databaseConfig.host,
+        port: databaseConfig.port,
+        database: databaseConfig.database,
+        username: databaseConfig.username,
+        password: databaseConfig.password,
         dialect: sequelizeOptions.dialect,
         logging: sequelizeOptions.logging,
         pool: sequelizeOptions.pool
@@ -156,26 +156,26 @@ class PersistentSessionRepository {
   }
 }
 
-const validateDatabaseInfo = (databaseInfo) => {
-  if (databaseInfo == null) {
+const validateDatabaseConfig = (databaseConfig) => {
+  if (databaseConfig == null) {
     return true;
   }
-  if (typeof databaseInfo !== 'object') {
+  if (typeof databaseConfig !== 'object') {
     return false;
   }
-  if (typeof databaseInfo.host !== 'string') {
+  if (typeof databaseConfig.host !== 'string') {
     return false;
   }
-  if (!Number.isInteger(databaseInfo.port) || databaseInfo.port < 0 || databaseInfo.port > portMaxValue) {
+  if (!Number.isInteger(databaseConfig.port) || databaseConfig.port < 0 || databaseConfig.port > portMaxValue) {
     return false;
   }
-  if (typeof databaseInfo.database !== 'string') {
+  if (typeof databaseConfig.database !== 'string') {
     return false;
   }
-  if (typeof databaseInfo.username !== 'string') {
+  if (typeof databaseConfig.username !== 'string') {
     return false;
   }
-  if (typeof databaseInfo.password !== 'string') {
+  if (typeof databaseConfig.password !== 'string') {
     return false;
   }
   return true;

@@ -1,3 +1,5 @@
+package base.useraccount.test;
+
 public class Test {
     private final String name;
     private final Runnable runnable;

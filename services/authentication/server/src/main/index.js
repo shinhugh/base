@@ -17,10 +17,13 @@ const config = {
     host: 'localhost',
     port: 3001
   },
-  encryption: {
+  tokenEncryption: {
     algorithm: 'HS256',
     secretKey: 'Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=',
     secretKeyEncoding: 'base64'
+  },
+  passwordHash: {
+    algorithm: 'sha256'
   },
   server: {
     port: 3000
@@ -30,9 +33,9 @@ const config = {
 const persistentSessionRepository = new PersistentSessionRepository(config.persistence);
 const userAccountServiceClient = new UserAccountServiceClient(config.userAccountService);
 const authenticationService = new AuthenticationService(persistentSessionRepository, userAccountServiceClient, {
-  algorithm: config.encryption.algorithm,
-  secretKey: Buffer.from(config.encryption.secretKey, config.encryption.secretKeyEncoding)
-});
+  algorithm: config.tokenEncryption.algorithm,
+  secretKey: Buffer.from(config.tokenEncryption.secretKey, config.tokenEncryption.secretKeyEncoding)
+}, config.passwordHash);
 const authenticationController = new AuthenticationController(authenticationService);
 const server = new Server({
   '/identify': {

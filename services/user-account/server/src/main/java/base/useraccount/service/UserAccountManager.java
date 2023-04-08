@@ -7,6 +7,8 @@ import base.useraccount.repository.UserAccountRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
+import java.util.Map;
 import java.util.UUID;
 
 public class UserAccountManager implements UserAccountService {
@@ -23,16 +25,25 @@ public class UserAccountManager implements UserAccountService {
     private static final byte[] HEX_CHARS = "0123456789abcdef".getBytes(StandardCharsets.US_ASCII);
     private final UserAccountRepository userAccountRepository;
     private final AuthenticationServiceClient authenticationServiceClient;
+    private final MessageDigest digest;
 
-    public UserAccountManager(UserAccountRepository userAccountRepository, AuthenticationServiceClient authenticationServiceClient) {
+    public UserAccountManager(UserAccountRepository userAccountRepository, AuthenticationServiceClient authenticationServiceClient, Map<String, String> passwordHashConfig) {
         if (userAccountRepository == null) {
             throw new RuntimeException();
         }
         if (authenticationServiceClient == null) {
             throw new RuntimeException();
         }
+        if (passwordHashConfig == null || !validatePasswordHashConfig(passwordHashConfig)) {
+            throw new RuntimeException();
+        }
         this.userAccountRepository = userAccountRepository;
         this.authenticationServiceClient = authenticationServiceClient;
+        try {
+            digest = MessageDigest.getInstance(passwordHashConfig.get("algorithm"));
+        } catch (NoSuchAlgorithmException error) {
+            throw new RuntimeException();
+        }
     }
 
     @Override
@@ -176,6 +187,16 @@ public class UserAccountManager implements UserAccountService {
         authenticationServiceClient.logout(authority, match.getId());
     }
 
+    private boolean validatePasswordHashConfig(Map<String, String> passwordHashConfig) {
+        if (passwordHashConfig == null) {
+            return true;
+        }
+        if (!passwordHashConfig.containsKey("algorithm")) {
+            return false;
+        }
+        return Security.getAlgorithms("MessageDigest").contains(passwordHashConfig.get("algorithm"));
+    }
+
     private boolean validateUuid(String id) {
         if (id == null) {
             return true;
@@ -258,23 +279,18 @@ public class UserAccountManager implements UserAccountService {
         return (authority.getRoles() & roles) != 0;
     }
 
+    private String hashPassword(String password, String salt) {
+        digest.reset();
+        byte[] bytes = digest.digest((password + salt).getBytes(StandardCharsets.UTF_8));
+        return hexString(bytes);
+    }
+
     private static String generateRandomString(String pool, int length) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < length; i++) {
             result.append(pool.charAt((int) (Math.random() * pool.length())));
         }
         return result.toString();
-    }
-
-    private static String hashPassword(String password, String salt) {
-        MessageDigest digest;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException error) {
-            throw new RuntimeException();
-        }
-        byte[] bytes = digest.digest((password + salt).getBytes(StandardCharsets.UTF_8));
-        return hexString(bytes);
     }
 
     private static String hexString(byte[] bytes) {

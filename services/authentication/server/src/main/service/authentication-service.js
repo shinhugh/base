@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHash, getHashes } from 'crypto';
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
@@ -9,23 +9,30 @@ import { UserAccountServiceClient } from './user-account-service-client.js';
 class AuthenticationService {
   #persistentSessionRepository;
   #userAccountServiceClient;
-  #encryptionInfo;
+  #tokenEncryptionConfig;
+  #passwordHashConfig;
 
-  constructor(persistentSessionRepository, userAccountServiceClient, encryptionInfo) {
+  constructor(persistentSessionRepository, userAccountServiceClient, tokenEncryptionConfig, passwordHashConfig) {
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
       throw new Error();
     }
     if (!(userAccountServiceClient instanceof UserAccountServiceClient)) {
       throw new Error();
     }
-    if (encryptionInfo == null || !validateEncryptionInfo(encryptionInfo)) {
+    if (tokenEncryptionConfig == null || !validateTokenEncryptionConfig(tokenEncryptionConfig)) {
+      throw new Error();
+    }
+    if (passwordHashConfig == null || !validatePasswordHashConfig(passwordHashConfig)) {
       throw new Error();
     }
     this.#persistentSessionRepository = persistentSessionRepository;
     this.#userAccountServiceClient = userAccountServiceClient;
-    this.#encryptionInfo = {
-      algorithm: encryptionInfo.algorithm,
-      secretKey: encryptionInfo.secretKey
+    this.#tokenEncryptionConfig = {
+      algorithm: tokenEncryptionConfig.algorithm,
+      secretKey: tokenEncryptionConfig.secretKey
+    };
+    this.#passwordHashConfig = {
+      algorithm: passwordHashConfig.algorithm
     };
   }
 
@@ -41,8 +48,8 @@ class AuthenticationService {
     }
     const tokenPayload = (() => {
       try {
-        return jwt.verify(token, this.#encryptionInfo.secretKey, {
-          algorithms: [this.#encryptionInfo.algorithm]
+        return jwt.verify(token, this.#tokenEncryptionConfig.secretKey, {
+          algorithms: [this.#tokenEncryptionConfig.algorithm]
         });
       }
       catch {
@@ -113,7 +120,7 @@ class AuthenticationService {
     }
     const userAccount = await (async () => {
       try {
-        return await this.#userAccountServiceClient.readByName(systemAuthority, credentials.name);
+        return await this.#userAccountServiceClient.read(systemAuthority, credentials.name);
       }
       catch (e) {
         if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
@@ -122,7 +129,7 @@ class AuthenticationService {
         throw e;
       }
     })();
-    const passwordHash = hashPassword(credentials.password, userAccount.passwordSalt);
+    const passwordHash = hashPassword(this.#passwordHashConfig.algorithm, credentials.password, userAccount.passwordSalt);
     if (passwordHash !== userAccount.passwordHash) {
       throw new AccessDeniedError();
     }
@@ -150,8 +157,8 @@ class AuthenticationService {
       sessionId: persistentSession.id,
       iat: persistentSession.creationTime,
       exp: persistentSession.creationTime + jwtDuration
-    }, this.#encryptionInfo.secretKey, {
-      algorithm: this.#encryptionInfo.algorithm
+    }, this.#tokenEncryptionConfig.secretKey, {
+      algorithm: this.#tokenEncryptionConfig.algorithm
     });
     return {
       refreshToken: persistentSession.refreshToken,
@@ -185,8 +192,8 @@ class AuthenticationService {
       sessionId: persistentSession.id,
       iat: currentTime,
       exp: currentTime + jwtDuration
-    }, this.#encryptionInfo.secretKey, {
-      algorithm: this.#encryptionInfo.algorithm
+    }, this.#tokenEncryptionConfig.secretKey, {
+      algorithm: this.#tokenEncryptionConfig.algorithm
     });
     return {
       idToken: idToken
@@ -221,17 +228,33 @@ class AuthenticationService {
   }
 }
 
-const validateEncryptionInfo = (encryptionInfo) => {
-  if (encryptionInfo == null) {
+const validateTokenEncryptionConfig = (tokenEncryptionConfig) => {
+  if (tokenEncryptionConfig == null) {
     return true;
   }
-  if (typeof encryptionInfo !== 'object') {
+  if (typeof tokenEncryptionConfig !== 'object') {
     return false;
   }
-  if (typeof encryptionInfo.algorithm !== 'string') {
+  if (typeof tokenEncryptionConfig.algorithm !== 'string') {
     return false;
   }
-  if (!(encryptionInfo.secretKey instanceof Buffer)) {
+  if (!(tokenEncryptionConfig.secretKey instanceof Buffer)) {
+    return false;
+  }
+  return true;
+};
+
+const validatePasswordHashConfig = (passwordHashConfig) => {
+  if (passwordHashConfig == null) {
+    return true;
+  }
+  if (typeof passwordHashConfig !== 'object') {
+    return false;
+  }
+  if (typeof passwordHashConfig.algorithm !== 'string') {
+    return false;
+  }
+  if (getHashes().indexOf(passwordHashConfig.algorithm) < 0) {
     return false;
   }
   return true;
@@ -285,8 +308,8 @@ const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
   return (authority.roles & roles) != 0;
 };
 
-const hashPassword = (password, salt) => {
-  return createHash('sha256').update(password + salt).digest('hex');
+const hashPassword = (algorithm, password, salt) => {
+  return createHash(algorithm).update(password + salt).digest('hex');
 };
 
 const generateRandomString = (pool, length) => {

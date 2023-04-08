@@ -1,33 +1,33 @@
 class UserAccountServiceClient {
-  #endpointInfo;
+  #endpointConfig;
 
-  constructor(endpointInfo) {
-    if (endpointInfo == null || !validateEndpointInfo(endpointInfo)) {
+  constructor(endpointConfig) {
+    if (endpointConfig == null || !validateEndpointConfig(endpointConfig)) {
       throw new Error();
     }
-    this.#endpointInfo = {
-      host: endpointInfo.host,
-      port: endpointInfo.port
+    this.#endpointConfig = {
+      host: endpointConfig.host,
+      port: endpointConfig.port
     };
   }
 
-  async readByName(authority, name) {
+  async read(authority, name) {
     return generateMockUserAccount(); // TODO: Remove
     // TODO: Implement
   }
 }
 
-const validateEndpointInfo = (endpointInfo) => {
-  if (endpointInfo == null) {
+const validateEndpointConfig = (endpointConfig) => {
+  if (endpointConfig == null) {
     return true;
   }
-  if (typeof endpointInfo !== 'object') {
+  if (typeof endpointConfig !== 'object') {
     return false;
   }
-  if (typeof endpointInfo.host !== 'string') {
+  if (typeof endpointConfig.host !== 'string') {
     return false;
   }
-  if (!Number.isInteger(endpointInfo.port) || endpointInfo.port < 0 || endpointInfo.port > portMaxValue) {
+  if (!Number.isInteger(endpointConfig.port) || endpointConfig.port < 0 || endpointConfig.port > portMaxValue) {
     return false;
   }
   return true;
