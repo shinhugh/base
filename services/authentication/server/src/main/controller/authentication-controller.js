@@ -25,6 +25,9 @@ class AuthenticationController {
         return await invokeAndInterceptDomainError(async () => {
           return {
             status: 200,
+            headers: {
+              'content-type': 'application/json'
+            },
             body: Buffer.from(JSON.stringify(await this.#authenticationService.identify(authority, token)))
           };
         });
@@ -51,6 +54,9 @@ class AuthenticationController {
         return await invokeAndInterceptDomainError(async () => {
           return {
             status: 200,
+            headers: {
+              'content-type': 'application/json'
+            },
             body: Buffer.from(JSON.stringify(await this.#authenticationService.login(authority, loginInfo)))
           }
         });
@@ -75,9 +81,9 @@ class AuthenticationController {
         }
         const authority = parseAuthority(request);
         return await invokeAndInterceptDomainError(async () => {
+          await this.#authenticationService.logout(authority, logoutInfo);
           return {
-            status: 200,
-            body: Buffer.from(JSON.stringify(await this.#authenticationService.logout(authority, logoutInfo)))
+            status: 200
           }
         });
       }

@@ -24,21 +24,28 @@ const app = express();
 app.use(express.raw({
   type: () => { return true; }
 }));
+app.disable('x-powered-by');
 
 app.all('/*', async (req, res) => {
   const request = {
     path: req.path,
     method: req.method,
     headers: req.headers,
-    query: req.query,
-    body: req.headers['content-length'] == null ? undefined : req.body
+    query: req.query
   };
+  if (req.headers['content-length'] != null) {
+    request.body = req.body;
+  }
   const response = await authenticationController.handle(request);
+  res.status(response.status);
+  for (const headerName in response.headers) {
+    res.set(headerName, response.headers[headerName]);
+  }
   if (response.body == null) {
-    res.status(response.status).end();
+    res.end();
   }
   else {
-    res.status(response.status).send(response.body);
+    res.send(response.body);
   }
 });
 

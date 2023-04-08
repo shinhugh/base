@@ -29,13 +29,19 @@ class PersistentSessionRepository {
     if (refreshToken != null && (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength)) {
       throw new IllegalArgumentError();
     }
+    const query = {
+      id: id,
+      refreshToken: refreshToken
+    };
+    for (const key in query) {
+      if (query[key] == null) {
+        delete query[key];
+      }
+    }
     await this.#openSequelize(this.#databaseInfo);
     try {
       const matches = await this.#sequelize.models.persistentSessions.findAll({
-        where: {
-          id: id ?? undefined,
-          refreshToken: refreshToken ?? undefined
-        }
+        where: query
       });
       return matches;
     }
@@ -84,13 +90,19 @@ class PersistentSessionRepository {
     if (refreshToken != null && (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength)) {
       throw new IllegalArgumentError();
     }
+    const query = {
+      userAccountId: userAccountId,
+      refreshToken: refreshToken
+    };
+    for (const key in query) {
+      if (query[key] == null) {
+        delete query[key];
+      }
+    }
     await this.#openSequelize(this.#databaseInfo);
     try {
       return await this.#sequelize.models.persistentSessions.destroy({
-        where: {
-          userAccountId: userAccountId ?? undefined,
-          refreshToken: refreshToken ?? undefined
-        }
+        where: query
       });
     }
     finally {
