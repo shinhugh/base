@@ -49,6 +49,9 @@ class AuthenticationService {
         return null;
       }
     })();
+    if (tokenPayload == null) {
+      return { };
+    }
     const persistentSession = await (async () => {
       try {
         return (await this.#persistentSessionRepository.readById(tokenPayload.sessionId))[0];
@@ -300,7 +303,8 @@ const timeMaxValue = 4294967295;
 const refreshTokenAllowedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const refreshTokenLength = 128;
 const sessionDuration = 1209600;
-const jwtDuration = 86400;
+// const jwtDuration = 86400;
+const jwtDuration = 5;
 
 export {
   AuthenticationService
