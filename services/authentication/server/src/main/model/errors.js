@@ -1,13 +1,13 @@
-class IllegalArgumentError extends Error {
+class AccessDeniedError extends Error {
   constructor() {
-    super(illegalArgumentErrorMessage);
+    super(accessDeniedErrorMessage);
     this.name = this.constructor.name;
   }
 }
 
-class AccessDeniedError extends Error {
+class IllegalArgumentError extends Error {
   constructor() {
-    super(accessDeniedErrorMessage);
+    super(illegalArgumentErrorMessage);
     this.name = this.constructor.name;
   }
 }
@@ -26,14 +26,14 @@ class ConflictError extends Error {
   }
 }
 
-const illegalArgumentErrorMessage = 'Illegal argument';
 const accessDeniedErrorMessage = 'Access denied';
+const illegalArgumentErrorMessage = 'Illegal argument';
 const notFoundErrorMessage = 'Not found';
 const conflictErrorMessage = 'Conflict';
 
 export {
-  IllegalArgumentError,
   AccessDeniedError,
+  IllegalArgumentError,
   NotFoundError,
   ConflictError
 };

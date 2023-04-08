@@ -10,13 +10,6 @@ TODO:
   }
   arguments: [any] (optional)
 
-- only service and repository top-level public functions/methods should throw
-  domain errors/exceptions
-  - constructors should throw plain Error/RuntimeException
-  - subroutines should throw other subclass of Error/RuntimeException
-  - top-level public functions/methods should catch and translate these into
-    domain errors/exceptions, except for those propagated from repositories
-
 - implement full executable for authentication service
 
 - implement full executable for UserAccount service

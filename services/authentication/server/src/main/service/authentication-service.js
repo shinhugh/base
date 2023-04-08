@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
-import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from '../model/errors.js';
+import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
 import { Role } from '../model/role.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
 import { UserAccountServiceClient } from './user-account-service-client.js';
@@ -13,13 +13,13 @@ class AuthenticationService {
 
   constructor(persistentSessionRepository, userAccountServiceClient, encryptionInfo) {
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
-      throw new IllegalArgumentError();
+      throw new Error();
     }
     if (!(userAccountServiceClient instanceof UserAccountServiceClient)) {
-      throw new IllegalArgumentError();
+      throw new Error();
     }
     if (encryptionInfo == null || !validateEncryptionInfo(encryptionInfo)) {
-      throw new IllegalArgumentError();
+      throw new Error();
     }
     this.#persistentSessionRepository = persistentSessionRepository;
     this.#userAccountServiceClient = userAccountServiceClient;
@@ -31,7 +31,7 @@ class AuthenticationService {
 
   async identify(authority, token) {
     if (!validateAuthority(authority)) {
-      throw new IllegalArgumentError();
+      throw new Error();
     }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
       throw new AccessDeniedError();
@@ -75,7 +75,7 @@ class AuthenticationService {
 
   async login(authority, loginInfo) {
     if (!validateAuthority(authority)) {
-      throw new IllegalArgumentError();
+      throw new Error();
     }
     if (loginInfo == null || typeof loginInfo !== 'object') {
       throw new IllegalArgumentError();
@@ -91,7 +91,7 @@ class AuthenticationService {
 
   async logout(authority, logoutInfo) {
     if (!validateAuthority(authority)) {
-      throw new IllegalArgumentError();
+      throw new Error();
     }
     if (logoutInfo == null || typeof logoutInfo !== 'object') {
       throw new IllegalArgumentError();
@@ -269,7 +269,7 @@ const validateCredentials = (credentials) => {
 
 const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
   if (!validateAuthority(authority) || (roles != null && (!Number.isInteger(roles) || roles < 0 || roles > rolesMaxValue))) {
-    throw new IllegalArgumentError();
+    throw new Error();
   }
   if (roles == null || roles == 0) {
     return true;

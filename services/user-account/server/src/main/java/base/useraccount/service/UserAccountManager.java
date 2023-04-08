@@ -32,7 +32,7 @@ public class UserAccountManager implements UserAccountService {
     @Override
     public UserAccount read(Authority authority, String id, String name) {
         if (!validateAuthority(authority)) {
-            throw new IllegalArgumentException();
+            throw new RuntimeException();
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
@@ -73,7 +73,7 @@ public class UserAccountManager implements UserAccountService {
     @Override
     public UserAccount create(Authority authority, UserAccount userAccount) {
         if (!validateAuthority(authority)) {
-            throw new IllegalArgumentException();
+            throw new RuntimeException();
         }
         if (userAccount == null || !validateUserAccount(userAccount)) {
             throw new IllegalArgumentException();
@@ -92,7 +92,7 @@ public class UserAccountManager implements UserAccountService {
     @Override
     public UserAccount update(Authority authority, String id, String name, UserAccount userAccount) {
         if (!validateAuthority(authority)) {
-            throw new IllegalArgumentException();
+            throw new RuntimeException();
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
@@ -141,7 +141,7 @@ public class UserAccountManager implements UserAccountService {
     @Override
     public void delete(Authority authority, String id, String name) {
         if (!validateAuthority(authority)) {
-            throw new IllegalArgumentException();
+            throw new RuntimeException();
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
@@ -247,7 +247,7 @@ public class UserAccountManager implements UserAccountService {
 
     private boolean verifyAuthorityContainsAtLeastOneRole(Authority authority, short roles) {
         if (!validateAuthority(authority) || roles < 0 || roles > ROLES_MAX_VALUE) {
-            throw new IllegalArgumentException();
+            throw new RuntimeException();
         }
         if (roles == 0) {
             return true;
