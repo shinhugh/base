@@ -6,10 +6,22 @@ class AuthenticationController {
   #controller = new Controller({
     '/identify': {
       get: async (request) => {
-        // TODO: Verify that content-type is correct
-        // TODO: Keep error order in mind
+        // TODO: Order of errors is wrong
+        if (request.headers?.['content-type'] !== 'application/json') {
+          return {
+            status: 400
+          }
+        }
+        let token;
+        try {
+          token = JSON.parse(request.body.toString());
+        }
+        catch {
+          return {
+            status: 400
+          };
+        }
         const authority = parseAuthority(request);
-        const token = JSON.parse(request.body.toString()); // TODO: Handle parse error
         return await invokeAndInterceptDomainError(async () => {
           return {
             status: 200,
@@ -20,10 +32,22 @@ class AuthenticationController {
     },
     '/login': {
       post: async (request) => {
-        // TODO: Verify that content-type is correct
-        // TODO: Keep error order in mind
+        // TODO: Order of errors is wrong
+        if (request.headers?.['content-type'] !== 'application/json') {
+          return {
+            status: 400
+          }
+        }
+        let loginInfo;
+        try {
+          loginInfo = JSON.parse(request.body.toString());
+        }
+        catch {
+          return {
+            status: 400
+          };
+        }
         const authority = parseAuthority(request);
-        const loginInfo = JSON.parse(request.body.toString()); // TODO: Handle parse error
         return await invokeAndInterceptDomainError(async () => {
           return {
             status: 200,
@@ -34,10 +58,22 @@ class AuthenticationController {
     },
     '/logout': {
       post: async (request) => {
-        // TODO: Verify that content-type is correct
-        // TODO: Keep error order in mind
+        // TODO: Order of errors is wrong
+        if (request.headers?.['content-type'] !== 'application/json') {
+          return {
+            status: 400
+          }
+        }
+        let logoutInfo;
+        try {
+          logoutInfo = JSON.parse(request.body.toString());
+        }
+        catch {
+          return {
+            status: 400
+          };
+        }
         const authority = parseAuthority(request);
-        const logoutInfo = JSON.parse(request.body.toString()); // TODO: Handle parse error
         return await invokeAndInterceptDomainError(async () => {
           return {
             status: 200,
@@ -81,7 +117,6 @@ const invokeAndInterceptDomainError = async (routine) => {
     return await routine();
   }
   catch (e) {
-    console.debug(e); // DEBUG
     if (e instanceof IllegalArgumentError) {
       return {
         status: 400
