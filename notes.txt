@@ -1,26 +1,11 @@
 TODO:
 
-- every service controller should expose the same API format
-  invoke(functionName, authority, arguments)
-  functionName: string
-  authority (optional): {
-    id: string (valid UUID) (optional)
-    roles: number (unsigned 8-bit integer) (optional)
-    authTime: number (unsigned 32-bit integer) (optional)
-  }
-  arguments: [any] (optional)
-
-- generalize CRUD operations on persistent-session-repository
-  - merge functions and eliminate "By..."
-  - expose all possible queries as parameters
-  - change read() to return list
-  - change delete() to return number of deleted entries
-
 - implement full executable for authentication service
 
 - implement full executable for UserAccount service
 
 - implement UserAccountServiceClient
+
 
 
 Test entry for PersistentSessions table:

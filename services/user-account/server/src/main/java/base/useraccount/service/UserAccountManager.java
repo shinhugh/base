@@ -56,7 +56,7 @@ public class UserAccountManager implements UserAccountService {
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        UserAccount[] matches = userAccountRepository.read(id, name);
+        UserAccount[] matches = userAccountRepository.readByIdAndName(id, name);
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
                 throw new AccessDeniedException();
@@ -114,7 +114,7 @@ public class UserAccountManager implements UserAccountService {
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        UserAccount[] matches = userAccountRepository.read(id, name);
+        UserAccount[] matches = userAccountRepository.readByIdAndName(id, name);
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
                 throw new AccessDeniedException();
@@ -131,7 +131,7 @@ public class UserAccountManager implements UserAccountService {
         String passwordSalt = generateRandomString(PASSWORD_SALT_ALLOWED_CHARS, PASSWORD_SALT_LENGTH);
         String passwordHash = hashPassword(userAccount.getPassword(), passwordSalt);
         UserAccount entry = new UserAccount(null, userAccount.getName(), null, passwordHash, passwordSalt, userAccount.getRoles());
-        entry = userAccountRepository.update(id, name, entry);
+        entry = userAccountRepository.updateByIdAndName(id, name, entry);
         authenticationServiceClient.logout(authority, match.getId());
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
             entry.setPasswordHash(null);
@@ -161,7 +161,7 @@ public class UserAccountManager implements UserAccountService {
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        UserAccount[] matches = userAccountRepository.read(id, name);
+        UserAccount[] matches = userAccountRepository.readByIdAndName(id, name);
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
                 throw new AccessDeniedException();
@@ -172,7 +172,7 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
-        userAccountRepository.delete(id, name);
+        userAccountRepository.deleteByIdAndName(id, name);
         authenticationServiceClient.logout(authority, match.getId());
     }
 

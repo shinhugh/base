@@ -19,42 +19,25 @@ class PersistentSessionRepository {
     };
   }
 
-  async readById(id) {
-    if (typeof id !== 'string' || id.length > idMaxLength) {
+  async readByIdAndRefreshToken(id, refreshToken) {
+    if (id == null && refreshToken == null) {
+      throw new IllegalArgumentError();
+    }
+    if (id != null && (typeof id !== 'string' || id.length > idMaxLength)) {
+      throw new IllegalArgumentError();
+    }
+    if (refreshToken != null && (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength)) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
     try {
-      const entry = await this.#sequelize.models.persistentSessions.findOne({
+      const matches = await this.#sequelize.models.persistentSessions.findAll({
         where: {
-          id: id
+          id: id ?? undefined,
+          refreshToken: refreshToken ?? undefined
         }
       });
-      if (entry == null) {
-        throw new NotFoundError();
-      }
-      return entry;
-    }
-    finally {
-      await this.#closeSequelize();
-    }
-  }
-
-  async readByRefreshToken(refreshToken) {
-    if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
-      throw new IllegalArgumentError();
-    }
-    await this.#openSequelize(this.#databaseInfo);
-    try {
-      const entry = await this.#sequelize.models.persistentSessions.findOne({
-        where: {
-          refreshToken: refreshToken
-        }
-      });
-      if (entry == null) {
-        throw new NotFoundError();
-      }
-      return entry;
+      return matches;
     }
     finally {
       await this.#closeSequelize();
@@ -91,32 +74,22 @@ class PersistentSessionRepository {
     }
   }
 
-  async deleteByUserAccountId(userAccountId) {
-    if (typeof userAccountId !== 'string' || userAccountId.length > userAccountIdMaxLength) {
+  async deleteByUserAccountIdAndRefreshToken(userAccountId, refreshToken) {
+    if (userAccountId == null && refreshToken == null) {
+      throw new IllegalArgumentError();
+    }
+    if (userAccountId != null && (typeof userAccountId !== 'string' || userAccountId.length > userAccountIdMaxLength)) {
+      throw new IllegalArgumentError();
+    }
+    if (refreshToken != null && (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength)) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#databaseInfo);
     try {
-      await this.#sequelize.models.persistentSessions.destroy({
+      return await this.#sequelize.models.persistentSessions.destroy({
         where: {
-          userAccountId: userAccountId
-        }
-      });
-    }
-    finally {
-      await this.#closeSequelize();
-    }
-  }
-
-  async deleteByRefreshToken(refreshToken) {
-    if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
-      throw new IllegalArgumentError();
-    }
-    await this.#openSequelize(this.#databaseInfo);
-    try {
-      await this.#sequelize.models.persistentSessions.destroy({
-        where: {
-          refreshToken: refreshToken
+          userAccountId: userAccountId ?? undefined,
+          refreshToken: refreshToken ?? undefined
         }
       });
     }

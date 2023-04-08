@@ -26,7 +26,7 @@ public class UserAccountJpaRepository implements UserAccountRepository {
     }
 
     @Override
-    public UserAccount[] read(String id, String name) {
+    public UserAccount[] readByIdAndName(String id, String name) {
         if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
@@ -97,7 +97,7 @@ public class UserAccountJpaRepository implements UserAccountRepository {
     }
 
     @Override
-    public UserAccount update(String id, String name, UserAccount userAccount) {
+    public UserAccount updateByIdAndName(String id, String name, UserAccount userAccount) {
         if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
@@ -165,7 +165,7 @@ public class UserAccountJpaRepository implements UserAccountRepository {
     }
 
     @Override
-    public int delete(String id, String name) {
+    public int deleteByIdAndName(String id, String name) {
         if (id == null && name == null) {
             throw new IllegalArgumentException();
         }

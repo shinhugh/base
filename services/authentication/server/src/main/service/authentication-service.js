@@ -49,15 +49,12 @@ class AuthenticationService {
         return null;
       }
     })();
-    if (tokenPayload == null) {
-      return { };
-    }
     const persistentSession = await (async () => {
       try {
-        return await this.#persistentSessionRepository.readById(tokenPayload.sessionId);
+        return (await this.#persistentSessionRepository.readByIdAndRefreshToken(tokenPayload.sessionId, undefined))[0];
       }
       catch (e) {
-        if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
+        if (e instanceof IllegalArgumentError) {
           return null;
         }
         throw e;
@@ -165,15 +162,18 @@ class AuthenticationService {
     }
     const persistentSession = await (async () => {
       try {
-        return await this.#persistentSessionRepository.readByRefreshToken(refreshToken);
+        return (await this.#persistentSessionRepository.readByIdAndRefreshToken(undefined, refreshToken))[0];
       }
       catch (e) {
-        if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
-          throw new AccessDeniedError();
+        if (e instanceof IllegalArgumentError) {
+          return null;
         }
         throw e;
       }
     })();
+    if (persistentSession == null) {
+      throw new AccessDeniedError();
+    }
     const currentTime = Math.floor(Date.now() / 1000);
     if (persistentSession.expirationTime <= currentTime) {
       throw new AccessDeniedError();
@@ -202,17 +202,19 @@ class AuthenticationService {
         throw new AccessDeniedError();
       }
     }
-    try {
-      await this.#persistentSessionRepository.deleteByUserAccountId(userAccountId);
-    }
-    catch { }
+    await this.#persistentSessionRepository.deleteByUserAccountIdAndRefreshToken(userAccountId, undefined);
   }
 
   async #logoutViaRefreshToken(authority, refreshToken) {
     try {
-      await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
+      await this.#persistentSessionRepository.deleteByUserAccountIdAndRefreshToken(undefined, refreshToken);
     }
-    catch { }
+    catch (e) {
+      if (e instanceof IllegalArgumentError) {
+        return;
+      }
+      throw e;
+    }
   }
 }
 
