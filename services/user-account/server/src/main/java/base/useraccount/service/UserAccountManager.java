@@ -41,7 +41,7 @@ public class UserAccountManager implements UserAccountService {
         this.authenticationServiceClient = authenticationServiceClient;
         try {
             digest = MessageDigest.getInstance(passwordHashConfig.get("algorithm"));
-        } catch (NoSuchAlgorithmException error) {
+        } catch (NoSuchAlgorithmException ex) {
             throw new RuntimeException();
         }
     }

@@ -1,6 +1,6 @@
 import { createHash, getHashes } from 'crypto';
 import { validate as validateUuid } from 'uuid';
-import jwt from 'jsonwebtoken';
+import jwt, { JsonWebTokenError, NotBeforeError, TokenExpiredError } from 'jsonwebtoken';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
 import { Role } from '../model/role.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
@@ -52,8 +52,11 @@ class AuthenticationService {
           algorithms: [this.#tokenEncryptionConfig.algorithm]
         });
       }
-      catch {
-        return null;
+      catch (e) {
+        if (e instanceof TokenExpiredError || e instanceof JsonWebTokenError || e instanceof NotBeforeError) {
+          return null;
+        }
+        throw e;
       }
     })();
     if (tokenPayload == null) {
@@ -313,11 +316,11 @@ const hashPassword = (algorithm, password, salt) => {
 };
 
 const generateRandomString = (pool, length) => {
-  let result = '';
+  let output = '';
   for (let i = 0; i < length; i++) {
-    result += pool.charAt(Math.floor(Math.random() * pool.length));
+    output += pool.charAt(Math.floor(Math.random() * pool.length));
   }
-  return result;
+  return output;
 };
 
 const systemAuthority = { roles: Role.System };

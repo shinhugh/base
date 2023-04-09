@@ -1,3 +1,4 @@
+import { validate as validateUuid } from 'uuid';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
 import { AuthenticationService } from '../service/authentication-service.js';
 
@@ -25,10 +26,13 @@ class AuthenticationController {
     try {
       token = JSON.parse(request.body.toString());
     }
-    catch {
-      return {
-        status: 400
-      };
+    catch (e) {
+      if (e instanceof SyntaxError) {
+        return {
+          status: 400
+        };
+      }
+      throw e;
     }
     const authority = parseAuthority(request);
     return await invokeAndInterceptDomainError(async () => {
@@ -56,10 +60,13 @@ class AuthenticationController {
     try {
       loginInfo = JSON.parse(request.body.toString());
     }
-    catch {
-      return {
-        status: 400
-      };
+    catch (e) {
+      if (e instanceof SyntaxError) {
+        return {
+          status: 400
+        };
+      }
+      throw e;
     }
     const authority = parseAuthority(request);
     return await invokeAndInterceptDomainError(async () => {
@@ -87,10 +94,13 @@ class AuthenticationController {
     try {
       logoutInfo = JSON.parse(request.body.toString());
     }
-    catch {
-      return {
-        status: 400
-      };
+    catch (e) {
+      if (e instanceof SyntaxError) {
+        return {
+          status: 400
+        };
+      }
+      throw e;
     }
     const authority = parseAuthority(request);
     return await invokeAndInterceptDomainError(async () => {
@@ -144,14 +154,17 @@ const validateRequest = (request) => {
 const parseAuthority = (request) => {
   const authority = {
     id: request.headers?.['authority-id'],
-    roles: request.headers?.['authority-roles'],
-    authTime: request.headers?.['authority-auth-time']
+    roles: Number(request.headers?.['authority-roles']),
+    authTime: Number(request.headers?.['authority-auth-time'])
   };
-  if (authority.roles != null) {
-    authority.roles = Number(authority.roles);
+  if (authority.id == null || !validateUuid(authority.id)) {
+    delete authority.id;
   }
-  if (authority.authTime != null) {
-    authority.authTime = Number(authority.authTime);
+  if (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue) {
+    delete authority.roles;
+  }
+  if (!Number.isInteger(authority.authTime) || authority.authTime < 0 || authority.authTime > timeMaxValue) {
+    delete authority.authTime;
   }
   return authority;
 };
@@ -184,6 +197,9 @@ const invokeAndInterceptDomainError = async (routine) => {
     throw e;
   }
 };
+
+const rolesMaxValue = 255;
+const timeMaxValue = 4294967295;
 
 export {
   AuthenticationController

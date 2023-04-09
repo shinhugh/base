@@ -72,8 +72,11 @@ const testLogin = async () => {
       algorithms: [config.tokenEncryption.algorithm]
     });
   }
-  catch {
-    throw new Error('Actual value does not match expected value: AuthenticationService.login(): Return value');
+  catch (e) {
+    if (e instanceof TokenExpiredError || e instanceof JsonWebTokenError || e instanceof NotBeforeError) {
+      throw new Error('Actual value does not match expected value: AuthenticationService.login(): Return value');
+    }
+    throw e;
   }
   persistentSessionRepositoryMock.resetSpy();
   persistentSessionRepositoryMock.readByRefreshTokenReturnValue = [ mockPersistentSession ];
@@ -91,8 +94,11 @@ const testLogin = async () => {
       algorithms: [config.tokenEncryption.algorithm]
     });
   }
-  catch {
-    throw new Error('Actual value does not match expected value: AuthenticationService.login(): Return value');
+  catch (e) {
+    if (e instanceof TokenExpiredError || e instanceof JsonWebTokenError || e instanceof NotBeforeError) {
+      throw new Error('Actual value does not match expected value: AuthenticationService.login(): Return value');
+    }
+    throw e;
   }
 };
 

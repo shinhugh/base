@@ -87,7 +87,8 @@ const handleRequest = async (req, res, endpoints) => {
       }
       return await endpoint(request);
     }
-    catch {
+    catch (e) {
+      console.log('Unexpected error: ' + e.message);
       return {
         status: 500
       };
