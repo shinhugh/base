@@ -1,8 +1,8 @@
 **/node_modules/
 **/target/
-**/.idea
-**/.iws
-**/.iml
-**/.ipr
-**/.aws-sam
+**/.idea/
+**/*.iws
+**/*.iml
+**/*.ipr
+**/.aws-sam/
 
