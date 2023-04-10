@@ -178,7 +178,9 @@ const config = {
     tokenAlgorithm: 'HS256',
     tokenSecretKey: 'Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=',
     tokenSecretKeyEncoding: 'base64',
-    passwordHashAlgorithm: 'sha256'
+    passwordHashAlgorithm: 'sha256',
+    persistentSessionDuration: 1209600,
+    volatileSessionDuration: 86400
   }
 };
 const mockPersistentSession = {

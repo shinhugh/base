@@ -26,7 +26,9 @@ class AuthenticationService {
     this.#config = {
       tokenAlgorithm: config.tokenAlgorithm,
       tokenSecretKey: config.tokenSecretKey,
-      passwordHashAlgorithm: config.passwordHashAlgorithm
+      passwordHashAlgorithm: config.passwordHashAlgorithm,
+      persistentSessionDuration: config.persistentSessionDuration,
+      volatileSessionDuration: config.volatileSessionDuration
     };
   }
 
@@ -140,7 +142,7 @@ class AuthenticationService {
             roles: account.roles,
             refreshToken: refreshToken,
             creationTime: currentTime,
-            expirationTime: currentTime + sessionDuration
+            expirationTime: config.persistentSessionDuration > 0 ? (currentTime + config.persistentSessionDuration) : timeMaxValue
           });
         }
         catch (e) {
@@ -153,7 +155,7 @@ class AuthenticationService {
     const idToken = jwt.sign({
       sessionId: persistentSession.id,
       iat: persistentSession.creationTime,
-      exp: persistentSession.creationTime + jwtDuration
+      exp: config.volatileSessionDuration > 0 ? (persistentSession.creationTime + config.volatileSessionDuration) : timeMaxValue
     }, this.#config.tokenSecretKey, {
       algorithm: this.#config.tokenAlgorithm
     });
@@ -188,7 +190,7 @@ class AuthenticationService {
     const idToken = jwt.sign({
       sessionId: persistentSession.id,
       iat: currentTime,
-      exp: currentTime + jwtDuration
+      exp: config.volatileSessionDuration > 0 ? (currentTime + config.volatileSessionDuration) : timeMaxValue
     }, this.#config.tokenSecretKey, {
       algorithm: this.#config.tokenAlgorithm
     });
@@ -242,6 +244,12 @@ const validateConfig = (config) => {
     return false;
   }
   if (getHashes().indexOf(config.passwordHashAlgorithm) < 0) {
+    return false;
+  }
+  if (!Number.isInteger(config.persistentSessionDuration) || config.persistentSessionDuration < 0 || config.persistentSessionDuration > timeMaxValue) {
+    return false;
+  }
+  if (!Number.isInteger(config.volatileSessionDuration) || config.volatileSessionDuration < 0 || config.volatileSessionDuration > timeMaxValue) {
     return false;
   }
   return true;
@@ -312,8 +320,6 @@ const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
 const refreshTokenAllowedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const refreshTokenLength = 128;
-const sessionDuration = 1209600; // TODO: Allow configuration
-const jwtDuration = 86400; // TODO: Allow configuration
 
 export {
   AuthenticationService
