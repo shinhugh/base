@@ -8,12 +8,23 @@ TODO:
   - implement UserAccountServiceClient
   - only accept requests from localhost
 
+- rename UserAccount to Account
+
 - gateway
   - listen on port 80
   - invoke /identify on authentication service endpoint
   - populate authority-* headers in original request using /identify payload
   - forward modified request to mapped service endpoint
   - track all ongoing requests to enable response forwarding
+
+- readme
+  - architecture diagram
+    - add system boundaries
+    - label services and gateway
+  - create diagrams for 2 configurations
+  - write "internal communication" section
+  - write "internal design of authentication service" section
+  - write "internal design of user account service" section
 
 
 
