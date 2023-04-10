@@ -15,7 +15,7 @@ const config = {
   },
   userAccountService: {
     host: 'localhost',
-    port: 3001
+    port: 8001
   },
   tokenEncryption: {
     algorithm: 'HS256',
@@ -26,7 +26,7 @@ const config = {
     algorithm: 'sha256'
   },
   server: {
-    port: 3000
+    port: 8000
   }
 };
 

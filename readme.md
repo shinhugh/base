@@ -20,20 +20,15 @@ can work with the information provided by the authentication service. There is
 no need for the developer to fret over things like credentials and tokens; the
 authentication service handles all of that entirely.
 
-## Architecture
+## Overview
 
 ![Architecture](docs/architecture.png)
 
 Upon an HTTP request arriving at the gateway, the gateway unconditionally
 forwards it to the authentication service. The service constructs an authority
-object, which contains the following information:
-
-- The ID of the client's user account
-- The roles held by the client's user account
-- The time of the login that started this session
-
-If the request does not contain a valid ID token, an empty authority object is
-generated.
+object, which contains information relevant to what actions the client is
+allowed to execute. If the request does not contain a valid ID token, an empty
+authority object is generated.
 
 The authentication service sends this authority object back to the gateway,
 which then forwards it to the request's original destination alongside the
@@ -41,7 +36,42 @@ request itself. The receiving service can then use this generated information to
 determine whether the client is authorized to perform the actions detailed by
 the request.
 
-There are diagrams below that describe the flows in greater detail.
+There are diagrams in the **Flows** section that describe the flows in greater
+detail.
+
+## The authority model
+
+An "authority", in the internal context of this architecture, is a chunk of
+information that gets sent alongside every request to every service. It is used
+by the service to determine whether the request should be accepted or denied. It
+is comprised of the following information:
+
+- **The identity of the caller**: This is the ID (UUID) of the user account that
+the authentication service has correlated with the client. This would be used
+by the service to allow reading of private data that is restricted to the owner
+user only.
+- **The roles of the caller**: This is a bit-flag represented in plain decimal
+form. Each bit represents a different role; a 1 signifies that the caller
+possesses the role. Starting from the least significant bit (right to left), the
+current roles are as following: system (1 / `001`), user (2 / `010`), and admin
+(4 / `100`). Thus, a client that is both a user and an administrator would have
+6 (`110`) as their role, whereas the system itself would operate with a 1
+(`001`).
+- **The time that the authentication was confirmed**: This is the point in time
+that the user provided their credentials to verify their identity and generate
+the ID token that is currently being used. This is used by certain services to
+allow access to more privileged actions. For example, the user account service
+restricts account modification and termination to sessions that are no older
+than 15 minutes; if it has been over 15 minutes since the login event, the
+session may still be valid, but the user account service will deny requests for
+account modification and termination. This protects the user from scenarios
+where a third party gains physical access to the user's device and tries to
+modify the user's password.
+
+Each service manages a different aspect of the application's domain, so each
+will have different rules and requirements that dictate what gets allowed and
+what gets denied. The authority construct is what supplies the service with the
+information it needs to make this decision.
 
 ## Configuration
 
@@ -85,13 +115,126 @@ services, should be allowed and hidden from the public.
 
 ## Internal communication
 
-*This section is under construction.*
+"Internal" communication refers to service-service and gateway-service
+communication. None of this traffic should be visible to the public. Note that
+there will likely be other headers involved than the ones listed (e.g.
+user-agent), but only the relevant ones are shown. Additionally, the listed
+values should be replaced with the appropriate values.
 
-## Client-server communication
+### Initial identification
 
-Although this foundation takes care of authentication on the back-end, an
-understanding of the protocol is still required to develop a compatible client
-application.
+The identification request is the very first piece of internal communication
+that occurs when a client's request arrives at the gateway. The gateway extracts
+the ID token from the authorization header of the client's request and sends a
+request with the following format to the authentication service:
+
+```
+GET /identify
+host: localhost:8000
+content-type: application/json
+content-length: 198
+
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXNzaW9uSWQiOiJiYzVkM2MyMi1mODNhLTRhNjctOTExMS1mZDhiZWJlMjRkYzUiLCJpYXQiOjE2ODExNDA4MTAsImV4cCI6MTY4MTIyNzIxMH0.P-V0W3HwrUMT7NotqxoWFgKIxbPAtAU8mPHnxQOCZPA"
+```
+
+The authentication service responds in the following format:
+
+```
+content-type: application/json
+content-length: 77
+
+{"id":"00000000-0000-0000-0000-000000000000","roles":6,"authTime":1681140810}
+```
+
+In the case that the client has provided an invalid ID token, the authentication
+service responds with the following:
+
+```
+content-type: application/json
+content-length: 2
+
+{}
+```
+
+### Request forwarding
+
+Once the gateway has acquired the identity information from the authentication
+service, the gateway modifies the original request by adding custom headers as
+such:
+
+```
+authority-id: 00000000-0000-0000-0000-000000000000
+authority-roles: 6
+authority-auth-time: 1681140810
+```
+
+This request, with the modified headers, is then sent to the destination
+service.
+
+In the case that the authentication service provides no identification
+information (i.e. the client sent an invalid ID token), the client's request is
+sent in its original unmodified state.
+
+### Inter-service requests
+
+There are many scenarios where a service may invoke another service. In such a
+scenario, the calling service must provide the original authority information
+crafted by the gateway. This allows the called service to determine whether the
+client is authorized to execute the action.
+
+This is very similar to the concept of subroutines in a normal software stack,
+where a piece of code invokes a function or method. The subroutine, although
+invoked by the parent code, should still be treated as if it was called by the
+top-most invocation. A simple diagram explains the concept:
+
+```
+a() -> b() -> c()
+```
+
+`a()` invokes `b()`, which in turn invokes `c()`. Despite `b()` being the
+immediate parent of `c()` in the calling chain, `c()` needs to consider the
+authority of `a()`.
+
+The format for this is identical to the requests forwarded from the gateway:
+
+```
+authority-id: 00000000-0000-0000-0000-000000000000
+authority-roles: 6
+authority-auth-time: 1681140810
+```
+
+### System override
+
+In some special cases, nested service calls may be done with a "system
+override", which is when the request is made with the `authority-roles` header
+being set to `1` (and the other `authority` headers being cleared). This is
+necessary for flows that require the system to execute a privileged action on
+behalf of the client.
+
+One such case would be the login flow, where the client makes an unauthenticated
+request. The authentication service needs to fetch the (hashed) credential
+information from the user account service, an action that the user account
+service would normally deny due to the lack of authority information. Thus, the
+authentication service proceeds with a system override and sets the
+`authority-roles` header to `1` in its request to the user account service.
+
+It's very important that any confidential data that is fetched in this manner
+do not get propagated back to the client. In the example with the login flow,
+the authentication service bypasses usual security measures to attain restricted
+information, but this information never leaves the service. It is used to
+verify the credentials provided by the client, then it is immediately discarded.
+
+These system overrides should be used sparingly, only utilized when deemed
+absolutely necessary after careful design. Most actions can be done with just
+the client's authority, and most actions that are denied due to the client's
+authority being insufficient ought to be denied.
+
+## External communication
+
+"External" communication refers to communication between the server and the
+client. Although this foundation takes care of authentication on the back-end,
+an understanding of the protocol is still required to develop a compatible
+client application.
 
 ### All requests
 

@@ -1,6 +1,6 @@
 import { createHash, getHashes } from 'crypto';
 import { validate as validateUuid } from 'uuid';
-import jwt, { JsonWebTokenError, NotBeforeError, TokenExpiredError } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
 import { Role } from '../model/role.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
@@ -53,7 +53,7 @@ class AuthenticationService {
         });
       }
       catch (e) {
-        if (e instanceof TokenExpiredError || e instanceof JsonWebTokenError || e instanceof NotBeforeError) {
+        if (e instanceof jwt.TokenExpiredError || e instanceof jwt.JsonWebTokenError || e instanceof jwt.NotBeforeError) {
           return null;
         }
         throw e;

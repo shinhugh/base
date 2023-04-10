@@ -73,7 +73,7 @@ const testLogin = async () => {
     });
   }
   catch (e) {
-    if (e instanceof TokenExpiredError || e instanceof JsonWebTokenError || e instanceof NotBeforeError) {
+    if (e instanceof jwt.TokenExpiredError || e instanceof jwt.JsonWebTokenError || e instanceof jwt.NotBeforeError) {
       throw new Error('Actual value does not match expected value: AuthenticationService.login(): Return value');
     }
     throw e;
@@ -95,7 +95,7 @@ const testLogin = async () => {
     });
   }
   catch (e) {
-    if (e instanceof TokenExpiredError || e instanceof JsonWebTokenError || e instanceof NotBeforeError) {
+    if (e instanceof jwt.TokenExpiredError || e instanceof jwt.JsonWebTokenError || e instanceof jwt.NotBeforeError) {
       throw new Error('Actual value does not match expected value: AuthenticationService.login(): Return value');
     }
     throw e;
