@@ -1,4 +1,3 @@
-import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { Role } from '../main/model/role.js';
 import { PersistentSessionRepositoryMock } from './mock/persistent-session-repository-mock.js';
@@ -11,8 +10,8 @@ const testIdentify = async () => {
   const token = jwt.sign({
     sessionId: mockPersistentSession.id,
     exp: Math.floor(Date.now() / 1000) + 60
-  }, Buffer.from(config.tokenEncryption.secretKey, config.tokenEncryption.secretKeyEncoding), {
-    algorithm: config.tokenEncryption.algorithm
+  }, Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding), {
+    algorithm: config.authenticationService.tokenAlgorithm
   });
   const output = await authenticationService.identify(authority, token);
   if (persistentSessionRepositoryMock.readByIdInvokeCount != 1) {
@@ -68,8 +67,8 @@ const testLogin = async () => {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.create(): persistentSession argument');
   }
   try {
-    jwt.verify(output.idToken, Buffer.from(config.tokenEncryption.secretKey, config.tokenEncryption.secretKeyEncoding), {
-      algorithms: [config.tokenEncryption.algorithm]
+    jwt.verify(output.idToken, Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding), {
+      algorithms: [config.authenticationService.tokenAlgorithm]
     });
   }
   catch (e) {
@@ -90,8 +89,8 @@ const testLogin = async () => {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readByRefreshToken(): refreshToken argument');
   }
   try {
-    jwt.verify(output.idToken, Buffer.from(config.tokenEncryption.secretKey, config.tokenEncryption.secretKeyEncoding), {
-      algorithms: [config.tokenEncryption.algorithm]
+    jwt.verify(output.idToken, Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding), {
+      algorithms: [config.authenticationService.tokenAlgorithm]
     });
   }
   catch (e) {
@@ -175,13 +174,11 @@ const verifyEqualityBetweenPersistentSessions = (first, second) => {
 };
 
 const config = {
-  tokenEncryption: {
-    algorithm: 'HS256',
-    secretKey: 'Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=',
-    secretKeyEncoding: 'base64'
-  },
-  passwordHash: {
-    algorithm: 'sha256'
+  authenticationService: {
+    tokenAlgorithm: 'HS256',
+    tokenSecretKey: 'Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=',
+    tokenSecretKeyEncoding: 'base64',
+    passwordHashAlgorithm: 'sha256'
   }
 };
 const mockPersistentSession = {
@@ -205,9 +202,10 @@ const authority = { roles: Role.System };
 const persistentSessionRepositoryMock = new PersistentSessionRepositoryMock();
 const userAccountServiceClientMock = new UserAccountServiceClientMock();
 const authenticationService = new AuthenticationService(persistentSessionRepositoryMock, userAccountServiceClientMock, {
-  algorithm: config.tokenEncryption.algorithm,
-  secretKey: Buffer.from(config.tokenEncryption.secretKey, config.tokenEncryption.secretKeyEncoding)
-}, config.passwordHash);
+  tokenAlgorithm: config.authenticationService.tokenAlgorithm,
+  tokenSecretKey: Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding),
+  passwordHashAlgorithm: config.authenticationService.passwordHashAlgorithm
+});
 
 const tests = [
   { name: 'Identify', run: testIdentify },

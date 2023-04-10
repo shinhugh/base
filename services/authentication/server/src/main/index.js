@@ -6,36 +6,35 @@ import { Server } from './server.js';
 
 // Use environment variables for production; hard-coded for testing only
 const config = {
-  persistence: {
+  persistentSessionRepository: {
     host: 'localhost',
     port: 3306,
     database: 'base',
     username: 'root',
     password: ''
   },
-  userAccountService: {
+  userAccountServiceClient: {
     host: 'localhost',
     port: 8001
   },
-  tokenEncryption: {
-    algorithm: 'HS256',
-    secretKey: 'Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=',
-    secretKeyEncoding: 'base64'
-  },
-  passwordHash: {
-    algorithm: 'sha256'
+  authenticationService: {
+    tokenAlgorithm: 'HS256',
+    tokenSecretKey: 'Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=',
+    tokenSecretKeyEncoding: 'base64',
+    passwordHashAlgorithm: 'sha256'
   },
   server: {
     port: 8000
   }
 };
 
-const persistentSessionRepository = new PersistentSessionRepository(config.persistence);
-const userAccountServiceClient = new UserAccountServiceClient(config.userAccountService);
+const persistentSessionRepository = new PersistentSessionRepository(config.persistentSessionRepository);
+const userAccountServiceClient = new UserAccountServiceClient(config.userAccountServiceClient);
 const authenticationService = new AuthenticationService(persistentSessionRepository, userAccountServiceClient, {
-  algorithm: config.tokenEncryption.algorithm,
-  secretKey: Buffer.from(config.tokenEncryption.secretKey, config.tokenEncryption.secretKeyEncoding)
-}, config.passwordHash);
+  tokenAlgorithm: config.authenticationService.tokenAlgorithm,
+  tokenSecretKey: Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding),
+  passwordHashAlgorithm: config.authenticationService.passwordHashAlgorithm
+});
 const authenticationController = new AuthenticationController(authenticationService);
 const server = new Server({
   '/identify': {

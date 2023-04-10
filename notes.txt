@@ -6,7 +6,6 @@ TODO:
 
 - authentication service
   - implement UserAccountServiceClient
-  - merge config objects
 
 - rename UserAccount to Account
 

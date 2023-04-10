@@ -9,30 +9,24 @@ import { UserAccountServiceClient } from './user-account-service-client.js';
 class AuthenticationService {
   #persistentSessionRepository;
   #userAccountServiceClient;
-  #tokenEncryptionConfig;
-  #passwordHashConfig;
+  #config;
 
-  constructor(persistentSessionRepository, userAccountServiceClient, tokenEncryptionConfig, passwordHashConfig) {
+  constructor(persistentSessionRepository, userAccountServiceClient, config) {
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
       throw new Error();
     }
     if (!(userAccountServiceClient instanceof UserAccountServiceClient)) {
       throw new Error();
     }
-    if (tokenEncryptionConfig == null || !validateTokenEncryptionConfig(tokenEncryptionConfig)) {
-      throw new Error();
-    }
-    if (passwordHashConfig == null || !validatePasswordHashConfig(passwordHashConfig)) {
+    if (config == null || !validateConfig(config)) {
       throw new Error();
     }
     this.#persistentSessionRepository = persistentSessionRepository;
     this.#userAccountServiceClient = userAccountServiceClient;
-    this.#tokenEncryptionConfig = {
-      algorithm: tokenEncryptionConfig.algorithm,
-      secretKey: tokenEncryptionConfig.secretKey
-    };
-    this.#passwordHashConfig = {
-      algorithm: passwordHashConfig.algorithm
+    this.#config = {
+      tokenAlgorithm: config.tokenAlgorithm,
+      tokenSecretKey: config.tokenSecretKey,
+      passwordHashAlgorithm: config.passwordHashAlgorithm
     };
   }
 
@@ -48,8 +42,8 @@ class AuthenticationService {
     }
     const tokenPayload = (() => {
       try {
-        return jwt.verify(token, this.#tokenEncryptionConfig.secretKey, {
-          algorithms: [this.#tokenEncryptionConfig.algorithm]
+        return jwt.verify(token, this.#config.tokenSecretKey, {
+          algorithms: [this.#config.tokenAlgorithm]
         });
       }
       catch (e) {
@@ -132,7 +126,7 @@ class AuthenticationService {
         throw e;
       }
     })();
-    const passwordHash = hashPassword(this.#passwordHashConfig.algorithm, credentials.password, userAccount.passwordSalt);
+    const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, credentials.password, userAccount.passwordSalt);
     if (passwordHash !== userAccount.passwordHash) {
       throw new AccessDeniedError();
     }
@@ -160,8 +154,8 @@ class AuthenticationService {
       sessionId: persistentSession.id,
       iat: persistentSession.creationTime,
       exp: persistentSession.creationTime + jwtDuration
-    }, this.#tokenEncryptionConfig.secretKey, {
-      algorithm: this.#tokenEncryptionConfig.algorithm
+    }, this.#config.tokenSecretKey, {
+      algorithm: this.#config.tokenAlgorithm
     });
     return {
       refreshToken: persistentSession.refreshToken,
@@ -195,8 +189,8 @@ class AuthenticationService {
       sessionId: persistentSession.id,
       iat: currentTime,
       exp: currentTime + jwtDuration
-    }, this.#tokenEncryptionConfig.secretKey, {
-      algorithm: this.#tokenEncryptionConfig.algorithm
+    }, this.#config.tokenSecretKey, {
+      algorithm: this.#config.tokenAlgorithm
     });
     return {
       idToken: idToken
@@ -231,33 +225,23 @@ class AuthenticationService {
   }
 }
 
-const validateTokenEncryptionConfig = (tokenEncryptionConfig) => {
-  if (tokenEncryptionConfig == null) {
+const validateConfig = (config) => {
+  if (config == null) {
     return true;
   }
-  if (typeof tokenEncryptionConfig !== 'object') {
+  if (typeof config !== 'object') {
     return false;
   }
-  if (typeof tokenEncryptionConfig.algorithm !== 'string') {
+  if (typeof config.tokenAlgorithm !== 'string') {
     return false;
   }
-  if (!(tokenEncryptionConfig.secretKey instanceof Buffer)) {
+  if (!(config.tokenSecretKey instanceof Buffer)) {
     return false;
   }
-  return true;
-};
-
-const validatePasswordHashConfig = (passwordHashConfig) => {
-  if (passwordHashConfig == null) {
-    return true;
-  }
-  if (typeof passwordHashConfig !== 'object') {
+  if (typeof config.passwordHashAlgorithm !== 'string') {
     return false;
   }
-  if (typeof passwordHashConfig.algorithm !== 'string') {
-    return false;
-  }
-  if (getHashes().indexOf(passwordHashConfig.algorithm) < 0) {
+  if (getHashes().indexOf(config.passwordHashAlgorithm) < 0) {
     return false;
   }
   return true;

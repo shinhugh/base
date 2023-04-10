@@ -4,18 +4,18 @@ import { IllegalArgumentError, ConflictError } from '../model/errors.js';
 
 class PersistentSessionRepository {
   #sequelize;
-  #databaseConfig;
+  #config;
 
-  constructor(databaseConfig) {
-    if (databaseConfig == null || !validateDatabaseConfig(databaseConfig)) {
+  constructor(config) {
+    if (config == null || !validateConfig(config)) {
       throw new Error();
     }
-    this.#databaseConfig = {
-      host: databaseConfig.host,
-      port: databaseConfig.port,
-      database: databaseConfig.database,
-      username: databaseConfig.username,
-      password: databaseConfig.password
+    this.#config = {
+      host: config.host,
+      port: config.port,
+      database: config.database,
+      username: config.username,
+      password: config.password
     };
   }
 
@@ -23,7 +23,7 @@ class PersistentSessionRepository {
     if (typeof id !== 'string' || id.length > idMaxLength) {
       throw new IllegalArgumentError();
     }
-    await this.#openSequelize(this.#databaseConfig);
+    await this.#openSequelize(this.#config);
     try {
       const matches = await this.#sequelize.models.persistentSessions.findAll({
         where: {
@@ -41,7 +41,7 @@ class PersistentSessionRepository {
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
       throw new IllegalArgumentError();
     }
-    await this.#openSequelize(this.#databaseConfig);
+    await this.#openSequelize(this.#config);
     try {
       const matches = await this.#sequelize.models.persistentSessions.findAll({
         where: {
@@ -66,7 +66,7 @@ class PersistentSessionRepository {
       creationTime: persistentSession.creationTime,
       expirationTime: persistentSession.expirationTime
     };
-    await this.#openSequelize(this.#databaseConfig);
+    await this.#openSequelize(this.#config);
     try {
       entry.id = await this.#generateId();
       try {
@@ -89,7 +89,7 @@ class PersistentSessionRepository {
     if (typeof userAccountId !== 'string' || userAccountId.length > userAccountIdMaxLength) {
       throw new IllegalArgumentError();
     }
-    await this.#openSequelize(this.#databaseConfig);
+    await this.#openSequelize(this.#config);
     try {
       return await this.#sequelize.models.persistentSessions.destroy({
         where: {
@@ -106,7 +106,7 @@ class PersistentSessionRepository {
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
       throw new IllegalArgumentError();
     }
-    await this.#openSequelize(this.#databaseConfig);
+    await this.#openSequelize(this.#config);
     try {
       return await this.#sequelize.models.persistentSessions.destroy({
         where: {
@@ -131,14 +131,14 @@ class PersistentSessionRepository {
     return id;
   }
 
-  async #openSequelize(databaseConfig) {
+  async #openSequelize(config) {
     if (this.#sequelize == null) {
       this.#sequelize = new Sequelize({
-        host: databaseConfig.host,
-        port: databaseConfig.port,
-        database: databaseConfig.database,
-        username: databaseConfig.username,
-        password: databaseConfig.password,
+        host: config.host,
+        port: config.port,
+        database: config.database,
+        username: config.username,
+        password: config.password,
         dialect: sequelizeOptions.dialect,
         logging: sequelizeOptions.logging,
         pool: sequelizeOptions.pool
@@ -156,26 +156,26 @@ class PersistentSessionRepository {
   }
 }
 
-const validateDatabaseConfig = (databaseConfig) => {
-  if (databaseConfig == null) {
+const validateConfig = (config) => {
+  if (config == null) {
     return true;
   }
-  if (typeof databaseConfig !== 'object') {
+  if (typeof config !== 'object') {
     return false;
   }
-  if (typeof databaseConfig.host !== 'string') {
+  if (typeof config.host !== 'string') {
     return false;
   }
-  if (!Number.isInteger(databaseConfig.port) || databaseConfig.port < 0 || databaseConfig.port > portMaxValue) {
+  if (!Number.isInteger(config.port) || config.port < 0 || config.port > portMaxValue) {
     return false;
   }
-  if (typeof databaseConfig.database !== 'string') {
+  if (typeof config.database !== 'string') {
     return false;
   }
-  if (typeof databaseConfig.username !== 'string') {
+  if (typeof config.username !== 'string') {
     return false;
   }
-  if (typeof databaseConfig.password !== 'string') {
+  if (typeof config.password !== 'string') {
     return false;
   }
   return true;

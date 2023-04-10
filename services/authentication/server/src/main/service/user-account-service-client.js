@@ -1,13 +1,13 @@
 class UserAccountServiceClient {
-  #endpointConfig;
+  #config;
 
-  constructor(endpointConfig) {
-    if (endpointConfig == null || !validateEndpointConfig(endpointConfig)) {
+  constructor(config) {
+    if (config == null || !validateConfig(config)) {
       throw new Error();
     }
-    this.#endpointConfig = {
-      host: endpointConfig.host,
-      port: endpointConfig.port
+    this.#config = {
+      host: config.host,
+      port: config.port
     };
   }
 
@@ -17,17 +17,17 @@ class UserAccountServiceClient {
   }
 }
 
-const validateEndpointConfig = (endpointConfig) => {
-  if (endpointConfig == null) {
+const validateConfig = (config) => {
+  if (config == null) {
     return true;
   }
-  if (typeof endpointConfig !== 'object') {
+  if (typeof config !== 'object') {
     return false;
   }
-  if (typeof endpointConfig.host !== 'string') {
+  if (typeof config.host !== 'string') {
     return false;
   }
-  if (!Number.isInteger(endpointConfig.port) || endpointConfig.port < 0 || endpointConfig.port > portMaxValue) {
+  if (!Number.isInteger(config.port) || config.port < 0 || config.port > portMaxValue) {
     return false;
   }
   return true;
