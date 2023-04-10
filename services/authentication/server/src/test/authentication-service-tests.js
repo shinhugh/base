@@ -176,8 +176,7 @@ const verifyEqualityBetweenPersistentSessions = (first, second) => {
 const config = {
   authenticationService: {
     tokenAlgorithm: 'HS256',
-    tokenSecretKey: 'Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=',
-    tokenSecretKeyEncoding: 'base64',
+    tokenSecretKey: Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64'),
     passwordHashAlgorithm: 'sha256',
     persistentSessionDuration: 1209600,
     volatileSessionDuration: 86400
@@ -203,11 +202,7 @@ const mockPassword = 'Qwer!234';
 const authority = { roles: Role.System };
 const persistentSessionRepositoryMock = new PersistentSessionRepositoryMock();
 const accountServiceClientMock = new AccountServiceClientMock();
-const authenticationService = new AuthenticationService(persistentSessionRepositoryMock, accountServiceClientMock, {
-  tokenAlgorithm: config.authenticationService.tokenAlgorithm,
-  tokenSecretKey: Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding),
-  passwordHashAlgorithm: config.authenticationService.passwordHashAlgorithm
-});
+const authenticationService = new AuthenticationService(persistentSessionRepositoryMock, accountServiceClientMock, config.authenticationService);
 
 const tests = [
   { name: 'Identify', run: testIdentify },

@@ -142,7 +142,7 @@ class AuthenticationService {
             roles: account.roles,
             refreshToken: refreshToken,
             creationTime: currentTime,
-            expirationTime: config.persistentSessionDuration > 0 ? (currentTime + config.persistentSessionDuration) : timeMaxValue
+            expirationTime: this.#config.persistentSessionDuration > 0 ? (currentTime + this.#config.persistentSessionDuration) : timeMaxValue
           });
         }
         catch (e) {
@@ -155,7 +155,7 @@ class AuthenticationService {
     const idToken = jwt.sign({
       sessionId: persistentSession.id,
       iat: persistentSession.creationTime,
-      exp: config.volatileSessionDuration > 0 ? (persistentSession.creationTime + config.volatileSessionDuration) : timeMaxValue
+      exp: this.#config.volatileSessionDuration > 0 ? (persistentSession.creationTime + this.#config.volatileSessionDuration) : timeMaxValue
     }, this.#config.tokenSecretKey, {
       algorithm: this.#config.tokenAlgorithm
     });
@@ -190,7 +190,7 @@ class AuthenticationService {
     const idToken = jwt.sign({
       sessionId: persistentSession.id,
       iat: currentTime,
-      exp: config.volatileSessionDuration > 0 ? (currentTime + config.volatileSessionDuration) : timeMaxValue
+      exp: this.#config.volatileSessionDuration > 0 ? (currentTime + this.#config.volatileSessionDuration) : timeMaxValue
     }, this.#config.tokenSecretKey, {
       algorithm: this.#config.tokenAlgorithm
     });

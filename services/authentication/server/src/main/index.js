@@ -19,8 +19,7 @@ const config = {
   },
   authenticationService: {
     tokenAlgorithm: 'HS256',
-    tokenSecretKey: 'Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=',
-    tokenSecretKeyEncoding: 'base64',
+    tokenSecretKey: Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64'),
     passwordHashAlgorithm: 'sha256',
     persistentSessionDuration: 1209600,
     volatileSessionDuration: 86400
@@ -32,11 +31,7 @@ const config = {
 
 const persistentSessionRepository = new PersistentSessionRepository(config.persistentSessionRepository);
 const accountServiceClient = new AccountServiceClient(config.accountServiceClient);
-const authenticationService = new AuthenticationService(persistentSessionRepository, accountServiceClient, {
-  tokenAlgorithm: config.authenticationService.tokenAlgorithm,
-  tokenSecretKey: Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding),
-  passwordHashAlgorithm: config.authenticationService.passwordHashAlgorithm
-});
+const authenticationService = new AuthenticationService(persistentSessionRepository, accountServiceClient, config.authenticationService);
 const authenticationController = new AuthenticationController(authenticationService);
 const server = new Server({
   '/identify': {
