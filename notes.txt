@@ -1,10 +1,19 @@
 TODO:
 
-- implement full executable for UserAccount service
+- UserAccount service
+  - implement AuthenticationServiceBridge
+  - only accept requests from localhost
 
-- implement UserAccountServiceClient
+- authentication service
+  - implement UserAccountServiceClient
+  - only accept requests from localhost
 
-- implement AuthenticationServiceBridge
+- gateway
+  - listen on port 80
+  - invoke /identify on authentication service endpoint
+  - populate authority-* headers in original request using /identify payload
+  - forward modified request to mapped service endpoint
+  - track all ongoing requests to enable response forwarding
 
 
 
