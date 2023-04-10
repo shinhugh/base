@@ -23,24 +23,26 @@ public class UserAccountManager implements UserAccountService {
     private static final String PASSWORD_SALT_ALLOWED_CHARS = PASSWORD_ALLOWED_CHARS;
     private static final int PASSWORD_SALT_LENGTH = 32;
     private static final byte[] HEX_CHARS = "0123456789abcdef".getBytes(StandardCharsets.US_ASCII);
+    private final long sessionAgeForModificationMaxValue;
     private final UserAccountRepository userAccountRepository;
     private final AuthenticationServiceClient authenticationServiceClient;
     private final MessageDigest digest;
 
-    public UserAccountManager(UserAccountRepository userAccountRepository, AuthenticationServiceClient authenticationServiceClient, Map<String, String> passwordHashConfig) {
+    public UserAccountManager(UserAccountRepository userAccountRepository, AuthenticationServiceClient authenticationServiceClient, Map<String, String> config) {
         if (userAccountRepository == null) {
             throw new RuntimeException();
         }
         if (authenticationServiceClient == null) {
             throw new RuntimeException();
         }
-        if (passwordHashConfig == null || !validatePasswordHashConfig(passwordHashConfig)) {
+        if (config == null || !validateConfig(config)) {
             throw new RuntimeException();
         }
         this.userAccountRepository = userAccountRepository;
         this.authenticationServiceClient = authenticationServiceClient;
+        sessionAgeForModificationMaxValue = Long.parseLong(config.get("sessionAgeForModificationMaxValue"));
         try {
-            digest = MessageDigest.getInstance(passwordHashConfig.get("algorithm"));
+            digest = MessageDigest.getInstance(config.get("passwordHashAlgorithm"));
         } catch (NoSuchAlgorithmException ex) {
             throw new RuntimeException();
         }
@@ -116,6 +118,9 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM) && authority.getAuthTime() + sessionAgeForModificationMaxValue < (System.currentTimeMillis() / 1000)) {
+            throw new AccessDeniedException();
+        }
         if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
@@ -163,6 +168,9 @@ public class UserAccountManager implements UserAccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM) && authority.getAuthTime() + sessionAgeForModificationMaxValue < (System.currentTimeMillis() / 1000)) {
+            throw new AccessDeniedException();
+        }
         if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
@@ -187,17 +195,36 @@ public class UserAccountManager implements UserAccountService {
         authenticationServiceClient.logout(authority, match.getId());
     }
 
-    private boolean validatePasswordHashConfig(Map<String, String> passwordHashConfig) {
-        if (passwordHashConfig == null) {
-            return true;
-        }
-        if (!passwordHashConfig.containsKey("algorithm")) {
-            return false;
-        }
-        return Security.getAlgorithms("MessageDigest").contains(passwordHashConfig.get("algorithm"));
+    private String hashPassword(String password, String salt) {
+        digest.reset();
+        byte[] bytes = digest.digest((password + salt).getBytes(StandardCharsets.UTF_8));
+        return hexString(bytes);
     }
 
-    private boolean validateUuid(String id) {
+    private static boolean validateConfig(Map<String, String> config) {
+        if (config == null) {
+            return true;
+        }
+        if (!config.containsKey("sessionAgeForModificationMaxValue")) {
+            return false;
+        }
+        long sessionAgeForModificationMaxValue;
+        try {
+            sessionAgeForModificationMaxValue = Long.parseLong(config.get("sessionAgeForModificationMaxValue"));
+        }
+        catch (NumberFormatException ex) {
+            return false;
+        }
+        if (sessionAgeForModificationMaxValue < 0) {
+            return false;
+        }
+        if (!config.containsKey("passwordHashAlgorithm")) {
+            return false;
+        }
+        return Security.getAlgorithms("MessageDigest").contains(config.get("passwordHashAlgorithm"));
+    }
+
+    private static boolean validateUuid(String id) {
         if (id == null) {
             return true;
         }
@@ -210,7 +237,7 @@ public class UserAccountManager implements UserAccountService {
         return true;
     }
 
-    private boolean validateAuthority(Authority authority) {
+    private static boolean validateAuthority(Authority authority) {
         if (authority == null) {
             return true;
         }
@@ -223,7 +250,7 @@ public class UserAccountManager implements UserAccountService {
         return authority.getAuthTime() >= 0 && authority.getAuthTime() <= TIME_MAX_VALUE;
     }
 
-    private boolean validateUserAccount(UserAccount userAccount) {
+    private static boolean validateUserAccount(UserAccount userAccount) {
         if (userAccount == null) {
             return true;
         }
@@ -236,7 +263,7 @@ public class UserAccountManager implements UserAccountService {
         return userAccount.getRoles() >= 0 && userAccount.getRoles() <= ROLES_MAX_VALUE;
     }
 
-    private boolean validateName(String name) {
+    private static boolean validateName(String name) {
         if (name == null) {
             return true;
         }
@@ -251,7 +278,7 @@ public class UserAccountManager implements UserAccountService {
         return true;
     }
 
-    private boolean validatePassword(String password) {
+    private static boolean validatePassword(String password) {
         if (password == null) {
             return true;
         }
@@ -266,7 +293,7 @@ public class UserAccountManager implements UserAccountService {
         return true;
     }
 
-    private boolean verifyAuthorityContainsAtLeastOneRole(Authority authority, short roles) {
+    private static boolean verifyAuthorityContainsAtLeastOneRole(Authority authority, short roles) {
         if (!validateAuthority(authority) || roles < 0 || roles > ROLES_MAX_VALUE) {
             throw new RuntimeException();
         }
@@ -277,12 +304,6 @@ public class UserAccountManager implements UserAccountService {
             return false;
         }
         return (authority.getRoles() & roles) != 0;
-    }
-
-    private String hashPassword(String password, String salt) {
-        digest.reset();
-        byte[] bytes = digest.digest((password + salt).getBytes(StandardCharsets.UTF_8));
-        return hexString(bytes);
     }
 
     private static String generateRandomString(String pool, int length) {

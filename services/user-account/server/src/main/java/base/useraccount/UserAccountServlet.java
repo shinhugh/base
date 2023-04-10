@@ -22,12 +22,12 @@ public class UserAccountServlet extends HttpServlet {
     private static final String DB_USERNAME = "root";
     private static final String DB_PASSWORD = "";
     private static final String CONNECTION_URL_FORMAT = "jdbc:mysql://%s:%s/%s";
-    private static final Map<String, String> DATABASE_CONFIG = Map.of("hibernate.connection.url", String.format(CONNECTION_URL_FORMAT, DB_HOST, DB_PORT, DB_DATABASE), "hibernate.connection.username", DB_USERNAME, "hibernate.connection.password", DB_PASSWORD);
-    private static final Map<String, String> AUTHENTICATION_SERVICE_ENDPOINT_CONFIG = Map.of("host", "", "port", "");
-    private static final Map<String, String> PASSWORD_HASH_CONFIG = Map.of("algorithm", "SHA-256");
-    private final UserAccountRepository userAccountRepository = new UserAccountJpaRepository(DATABASE_CONFIG);
-    private final AuthenticationServiceClient authenticationServiceClient = new AuthenticationServiceBridge(AUTHENTICATION_SERVICE_ENDPOINT_CONFIG);
-    private final UserAccountService userAccountService = new UserAccountManager(userAccountRepository, authenticationServiceClient, PASSWORD_HASH_CONFIG);
+    private static final Map<String, String> USER_ACCOUNT_JPA_REPOSITORY_CONFIG = Map.of("hibernate.connection.url", String.format(CONNECTION_URL_FORMAT, DB_HOST, DB_PORT, DB_DATABASE), "hibernate.connection.username", DB_USERNAME, "hibernate.connection.password", DB_PASSWORD);
+    private static final Map<String, String> AUTHENTICATION_SERVICE_BRIDGE_CONFIG = Map.of("host", "", "port", ""); // TODO: Add endpoint configuration
+    private static final Map<String, String> USER_ACCOUNT_MANAGER_CONFIG = Map.of("sessionAgeForModificationMaxValue", "900", "passwordHashAlgorithm", "SHA-256");
+    private final UserAccountRepository userAccountRepository = new UserAccountJpaRepository(USER_ACCOUNT_JPA_REPOSITORY_CONFIG);
+    private final AuthenticationServiceClient authenticationServiceClient = new AuthenticationServiceBridge(AUTHENTICATION_SERVICE_BRIDGE_CONFIG);
+    private final UserAccountService userAccountService = new UserAccountManager(userAccountRepository, authenticationServiceClient, USER_ACCOUNT_MANAGER_CONFIG);
     private final UserAccountController userAccountController = new UserAccountController(userAccountService);
 
     @Override

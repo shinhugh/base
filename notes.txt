@@ -1,12 +1,12 @@
 TODO:
 
 - UserAccount service
-  - implement session age verification for update() and delete()
   - implement servlet
   - implement AuthenticationServiceBridge
 
 - authentication service
   - implement UserAccountServiceClient
+  - merge config objects
 
 - rename UserAccount to Account
 

@@ -14,14 +14,14 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 public class UserAccountManagerTests {
-    private static final Map<String, String> PASSWORD_HASH_CONFIG = Map.of("algorithm", "SHA-256");
+    private static final Map<String, String> USER_ACCOUNT_MANAGER_CONFIG = Map.of("sessionAgeForModificationMaxValue", "900", "passwordHashAlgorithm", "SHA-256");
     private static final byte[] HEX_CHARS = "0123456789abcdef".getBytes(StandardCharsets.US_ASCII);
     private static final UserAccount MOCK_USERACCOUNT = new UserAccount("00000000-0000-0000-0000-000000000000", "qwer", null, "bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3", "00000000000000000000000000000000", (short) 6);
-    private static final String USERACCOUNT_PASSWORD = "Qwer!234";
+    private static final String USER_ACCOUNT_PASSWORD = "Qwer!234";
     private static final Authority AUTHORITY = new Authority(null, Role.SYSTEM, 0);
     private static final UserAccountRepositorySpy userAccountRepositorySpy = new UserAccountRepositorySpy();
     private static final AuthenticationServiceClientSpy authenticationServiceClientSpy = new AuthenticationServiceClientSpy();
-    private static final UserAccountService userAccountManager = new UserAccountManager(userAccountRepositorySpy, authenticationServiceClientSpy, PASSWORD_HASH_CONFIG);
+    private static final UserAccountService userAccountManager = new UserAccountManager(userAccountRepositorySpy, authenticationServiceClientSpy, USER_ACCOUNT_MANAGER_CONFIG);
 
     public static final Test[] tests = new Test[] {
             new Test("Read", new ReadTest()),
@@ -56,13 +56,13 @@ public class UserAccountManagerTests {
         public void run() {
             userAccountRepositorySpy.resetSpy();
             userAccountRepositorySpy.setCreateReturnValue(MOCK_USERACCOUNT);
-            UserAccount inputUserAccount = new UserAccount(null, MOCK_USERACCOUNT.getName(), USERACCOUNT_PASSWORD, null, null, MOCK_USERACCOUNT.getRoles());
+            UserAccount inputUserAccount = new UserAccount(null, MOCK_USERACCOUNT.getName(), USER_ACCOUNT_PASSWORD, null, null, MOCK_USERACCOUNT.getRoles());
             UserAccount output = userAccountManager.create(AUTHORITY, inputUserAccount);
             if (userAccountRepositorySpy.getCreateInvokeCount() != 1) {
                 throw new RuntimeException("Actual value does not match expected value: UserAccountRepository.create(): Invocation count");
             }
             String generatedPasswordSalt = userAccountRepositorySpy.getCreateUserAccountArgument().getPasswordSalt();
-            String expectedPasswordHash = hashPassword(PASSWORD_HASH_CONFIG.get("algorithm"), USERACCOUNT_PASSWORD, generatedPasswordSalt);
+            String expectedPasswordHash = hashPassword(USER_ACCOUNT_MANAGER_CONFIG.get("passwordHashAlgorithm"), USER_ACCOUNT_PASSWORD, generatedPasswordSalt);
             UserAccount expectedUserAccountRepositoryCreateUserAccountArgument = new UserAccount(null, MOCK_USERACCOUNT.getName(), null, expectedPasswordHash, generatedPasswordSalt, MOCK_USERACCOUNT.getRoles());
             if (!verifyEqualityBetweenUserAccounts(userAccountRepositorySpy.getCreateUserAccountArgument(), expectedUserAccountRepositoryCreateUserAccountArgument)) {
                 throw new RuntimeException("Actual value does not match expected value: UserAccountRepository.create(): userAccount argument");
@@ -81,7 +81,7 @@ public class UserAccountManagerTests {
             userAccountRepositorySpy.setReadByIdAndNameReturnValue(new UserAccount[] { MOCK_USERACCOUNT });
             userAccountRepositorySpy.setUpdateByIdAndNameReturnValue(MOCK_USERACCOUNT);
             String userAccountName = "changed";
-            UserAccount inputUserAccount = new UserAccount(null, userAccountName, USERACCOUNT_PASSWORD, null, null, MOCK_USERACCOUNT.getRoles());
+            UserAccount inputUserAccount = new UserAccount(null, userAccountName, USER_ACCOUNT_PASSWORD, null, null, MOCK_USERACCOUNT.getRoles());
             UserAccount output = userAccountManager.update(AUTHORITY, MOCK_USERACCOUNT.getId(), MOCK_USERACCOUNT.getName(), inputUserAccount);
             if (userAccountRepositorySpy.getUpdateByIdAndNameInvokeCount() != 1) {
                 throw new RuntimeException("Actual value does not match expected value: UserAccountRepository.updateByIdAndName(): Invocation count");
@@ -93,7 +93,7 @@ public class UserAccountManagerTests {
                 throw new RuntimeException("Actual value does not match expected value: UserAccountRepository.updateByIdAndName(): name argument");
             }
             String generatedPasswordSalt = userAccountRepositorySpy.getUpdateByIdAndNameUserAccountArgument().getPasswordSalt();
-            String expectedPasswordHash = hashPassword(PASSWORD_HASH_CONFIG.get("algorithm"), USERACCOUNT_PASSWORD, generatedPasswordSalt);
+            String expectedPasswordHash = hashPassword(USER_ACCOUNT_MANAGER_CONFIG.get("passwordHashAlgorithm"), USER_ACCOUNT_PASSWORD, generatedPasswordSalt);
             UserAccount expectedUserAccountRepositoryUpdateByIdAndNameUserAccountArgument = new UserAccount(null, userAccountName, null, expectedPasswordHash, generatedPasswordSalt, MOCK_USERACCOUNT.getRoles());
             if (!verifyEqualityBetweenUserAccounts(userAccountRepositorySpy.getUpdateByIdAndNameUserAccountArgument(), expectedUserAccountRepositoryUpdateByIdAndNameUserAccountArgument)) {
                 throw new RuntimeException("Actual value does not match expected value: UserAccountRepository.updateByIdAndName(): userAccount argument");
