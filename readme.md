@@ -47,16 +47,18 @@ by the service to determine whether the request should be accepted or denied. It
 is comprised of the following information:
 
 - **The identity of the caller**: This is the ID (UUID) of the user account that
-the authentication service has correlated with the client. This would be used
-by the service to allow reading of private data that is restricted to the owner
-user only.
+the authentication service has correlated with the client. This would, for
+example, be used by the service to allow reading of private data that is
+restricted to the owner user only.
 - **The roles of the caller**: This is a bit-flag represented in plain decimal
 form. Each bit represents a different role; a 1 signifies that the caller
 possesses the role. Starting from the least significant bit (right to left), the
 current roles are as following: system (1 / `001`), user (2 / `010`), and admin
 (4 / `100`). Thus, a client that is both a user and an administrator would have
 6 (`110`) as their role, whereas the system itself would operate with a 1
-(`001`).
+(`001`). More roles can be added as the application grows; the existing roles
+take up the least significant bits, so the addition of new roles does not affect
+the existing entries.
 - **The time that the authentication was confirmed**: This is the point in time
 that the user provided their credentials to verify their identity and generate
 the ID token that is currently being used. This is used by certain services to
@@ -93,6 +95,7 @@ within the same private network, not accessible from outside the network. The
 gateway would be the entry point that all clients interface with. For this
 setup, the private network must be secured such that the services are not
 directly reachable.
+![Private network configuration](docs/private-network-configuration.png)
 
 - For scenarios that expect lighter traffic and workloads, all services can run
 on a single machine (as separate processes using different ports). This allows
@@ -102,6 +105,7 @@ the need for a dedicated private network; the system can define its trust
 boundaries within the single machine. For this setup, the machine's firewall
 must be configured to deny all requests headed for the services' ports while
 allowing requests for the gateway's port.
+![Single machine configuration](docs/single-machine-configuration.png)
 
 Simply put, each service is ultimately a single process (or possibly a group of
 processes, depending on how the service is built). Where these processes are
@@ -140,6 +144,7 @@ content-length: 198
 The authentication service responds in the following format:
 
 ```
+200
 content-type: application/json
 content-length: 77
 
@@ -150,6 +155,7 @@ In the case that the client has provided an invalid ID token, the authentication
 service responds with the following:
 
 ```
+200
 content-type: application/json
 content-length: 2
 

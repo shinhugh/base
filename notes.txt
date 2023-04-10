@@ -1,12 +1,12 @@
 TODO:
 
 - UserAccount service
+  - implement session age verification for update() and delete()
+  - implement servlet
   - implement AuthenticationServiceBridge
-  - only accept requests from localhost
 
 - authentication service
   - implement UserAccountServiceClient
-  - only accept requests from localhost
 
 - rename UserAccount to Account
 
@@ -18,11 +18,6 @@ TODO:
   - track all ongoing requests to enable response forwarding
 
 - readme
-  - architecture diagram
-    - add system boundaries
-    - label services and gateway
-  - create diagrams for 2 configurations
-  - write "internal communication" section
   - write "internal design of authentication service" section
   - write "internal design of user account service" section
 
