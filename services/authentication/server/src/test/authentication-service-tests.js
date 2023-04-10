@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { Role } from '../main/model/role.js';
 import { PersistentSessionRepositoryMock } from './mock/persistent-session-repository-mock.js';
-import { UserAccountServiceClientMock } from './mock/user-account-service-client-mock.js';
+import { AccountServiceClientMock } from './mock/account-service-client-mock.js';
 import { AuthenticationService } from '../main/service/authentication-service.js';
 
 const testIdentify = async () => {
@@ -21,7 +21,7 @@ const testIdentify = async () => {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readById(): id argument');
   }
   if (!verifyEqualityBetweenAuthorities(output, {
-    id: mockPersistentSession.userAccountId,
+    id: mockPersistentSession.accountId,
     roles: mockPersistentSession.roles,
     authTime: mockPersistentSession.creationTime
   })) {
@@ -31,25 +31,25 @@ const testIdentify = async () => {
 
 const testLogin = async () => {
   persistentSessionRepositoryMock.resetSpy();
-  userAccountServiceClientMock.resetSpy();
+  accountServiceClientMock.resetSpy();
   persistentSessionRepositoryMock.createReturnValue = mockPersistentSession;
-  userAccountServiceClientMock.readReturnValue = mockUserAccount;
+  accountServiceClientMock.readReturnValue = mockAccount;
   let output = await authenticationService.login(authority, {
     credentials: {
-      name: mockUserAccount.name,
+      name: mockAccount.name,
       password: mockPassword
     }
   });
-  if (userAccountServiceClientMock.readInvokeCount != 1) {
-    throw new Error('Actual value does not match expected value: UserAccountServiceClient.read(): Invocation count');
+  if (accountServiceClientMock.readInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: AccountServiceClient.read(): Invocation count');
   }
-  if (!verifyEqualityBetweenAuthorities(userAccountServiceClientMock.readAuthorityArgument, {
+  if (!verifyEqualityBetweenAuthorities(accountServiceClientMock.readAuthorityArgument, {
     roles: 1
   })) {
-    throw new Error('Actual value does not match expected value: UserAccountServiceClient.read(): authority argument');
+    throw new Error('Actual value does not match expected value: AccountServiceClient.read(): authority argument');
   }
-  if (userAccountServiceClientMock.readNameArgument !== mockUserAccount.name) {
-    throw new Error('Actual value does not match expected value: UserAccountServiceClient.read(): name argument');
+  if (accountServiceClientMock.readNameArgument !== mockAccount.name) {
+    throw new Error('Actual value does not match expected value: AccountServiceClient.read(): name argument');
   }
   if (persistentSessionRepositoryMock.createInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.create(): Invocation count');
@@ -58,8 +58,8 @@ const testLogin = async () => {
   const generatedCreationTime = persistentSessionRepositoryMock.createPersistentSessionArgument.creationTime;
   const generatedExpirationTime = persistentSessionRepositoryMock.createPersistentSessionArgument.expirationTime;
   if (!verifyEqualityBetweenPersistentSessions(persistentSessionRepositoryMock.createPersistentSessionArgument, {
-    userAccountId: mockUserAccount.id,
-    roles: mockUserAccount.roles,
+    accountId: mockAccount.id,
+    roles: mockAccount.roles,
     refreshToken: generatedRefreshToken,
     creationTime: generatedCreationTime,
     expirationTime: generatedExpirationTime
@@ -103,15 +103,15 @@ const testLogin = async () => {
 
 const testLogout = async () => {
   persistentSessionRepositoryMock.resetSpy();
-  persistentSessionRepositoryMock.deleteByUserAccountIdReturnValue = 2;
+  persistentSessionRepositoryMock.deleteByAccountIdReturnValue = 2;
   await authenticationService.logout(authority, {
-    userAccountId: mockPersistentSession.userAccountId
+    accountId: mockPersistentSession.accountId
   });
-  if (persistentSessionRepositoryMock.deleteByUserAccountIdInvokeCount != 1) {
-    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByUserAccountId(): Invocation count');
+  if (persistentSessionRepositoryMock.deleteByAccountIdInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): Invocation count');
   }
-  if (persistentSessionRepositoryMock.deleteByUserAccountIdUserAccountIdArgument !== mockPersistentSession.userAccountId) {
-    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByUserAccountId(): userAccountId argument');
+  if (persistentSessionRepositoryMock.deleteByAccountIdAccountIdArgument !== mockPersistentSession.accountId) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): accountId argument');
   }
   persistentSessionRepositoryMock.resetSpy();
   persistentSessionRepositoryMock.deleteByRefreshTokenReturnValue = 1;
@@ -155,7 +155,7 @@ const verifyEqualityBetweenPersistentSessions = (first, second) => {
   if (first.id !== second.id) {
     return false;
   }
-  if (first.userAccountId !== second.userAccountId) {
+  if (first.accountId !== second.accountId) {
     return false;
   }
   if (first.roles != second.roles) {
@@ -183,13 +183,13 @@ const config = {
 };
 const mockPersistentSession = {
   id: '00000000-0000-0000-0000-000000000000',
-  userAccountId: '00000000-0000-0000-0000-000000000000',
+  accountId: '00000000-0000-0000-0000-000000000000',
   roles: 6,
   refreshToken: '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
   creationTime: Math.floor(Date.now() / 1000),
   expirationTime: 4294967295
 };
-const mockUserAccount = {
+const mockAccount = {
   id: '00000000-0000-0000-0000-000000000000',
   name: 'qwer',
   passwordHash: 'bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3',
@@ -200,8 +200,8 @@ const mockPassword = 'Qwer!234';
 
 const authority = { roles: Role.System };
 const persistentSessionRepositoryMock = new PersistentSessionRepositoryMock();
-const userAccountServiceClientMock = new UserAccountServiceClientMock();
-const authenticationService = new AuthenticationService(persistentSessionRepositoryMock, userAccountServiceClientMock, {
+const accountServiceClientMock = new AccountServiceClientMock();
+const authenticationService = new AuthenticationService(persistentSessionRepositoryMock, accountServiceClientMock, {
   tokenAlgorithm: config.authenticationService.tokenAlgorithm,
   tokenSecretKey: Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding),
   passwordHashAlgorithm: config.authenticationService.passwordHashAlgorithm

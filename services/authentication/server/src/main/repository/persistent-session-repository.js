@@ -60,7 +60,7 @@ class PersistentSessionRepository {
       throw new IllegalArgumentError();
     }
     const entry = {
-      userAccountId: persistentSession.userAccountId,
+      accountId: persistentSession.accountId,
       roles: persistentSession.roles,
       refreshToken: persistentSession.refreshToken,
       creationTime: persistentSession.creationTime,
@@ -85,15 +85,15 @@ class PersistentSessionRepository {
     }
   }
 
-  async deleteByUserAccountId(userAccountId) {
-    if (typeof userAccountId !== 'string' || userAccountId.length > userAccountIdMaxLength) {
+  async deleteByAccountId(accountId) {
+    if (typeof accountId !== 'string' || accountId.length > accountIdMaxLength) {
       throw new IllegalArgumentError();
     }
     await this.#openSequelize(this.#config);
     try {
       return await this.#sequelize.models.persistentSessions.destroy({
         where: {
-          userAccountId: userAccountId
+          accountId: accountId
         }
       });
     }
@@ -188,7 +188,7 @@ const validatePersistentSession = (persistentSession) => {
   if (typeof persistentSession !== 'object') {
     return false;
   }
-  if (typeof persistentSession.userAccountId !== 'string' || persistentSession.userAccountId.length > userAccountIdMaxLength) {
+  if (typeof persistentSession.accountId !== 'string' || persistentSession.accountId.length > accountIdMaxLength) {
     return false;
   }
   if (!Number.isInteger(persistentSession.roles) || persistentSession.roles < 0 || persistentSession.roles > rolesMaxValue) {
@@ -208,7 +208,7 @@ const validatePersistentSession = (persistentSession) => {
 
 const portMaxValue = 65535;
 const idMaxLength = 36;
-const userAccountIdMaxLength = 36;
+const accountIdMaxLength = 36;
 const rolesMaxValue = 255;
 const refreshTokenMaxLength = 128;
 const creationTimeMaxValue = 4294967295;
@@ -231,10 +231,10 @@ const sequelizePersistentSessionAttributes = {
     primaryKey: true,
     field: 'Id'
   },
-  userAccountId: {
+  accountId: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: 'UserAccountId'
+    field: 'AccountId'
   },
   roles: {
     type: DataTypes.TINYINT.UNSIGNED,

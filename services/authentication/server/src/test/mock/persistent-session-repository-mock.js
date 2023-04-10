@@ -10,9 +10,9 @@ class PersistentSessionRepositoryMock extends PersistentSessionRepository {
   #createReturnValue;
   #createInvokeCount;
   #createPersistentSessionArgument;
-  #deleteByUserAccountIdReturnValue;
-  #deleteByUserAccountIdInvokeCount;
-  #deleteByUserAccountIdUserAccountIdArgument;
+  #deleteByAccountIdReturnValue;
+  #deleteByAccountIdInvokeCount;
+  #deleteByAccountIdAccountIdArgument;
   #deleteByRefreshTokenReturnValue;
   #deleteByRefreshTokenInvokeCount;
   #deleteByRefreshTokenRefreshTokenArgument;
@@ -45,10 +45,10 @@ class PersistentSessionRepositoryMock extends PersistentSessionRepository {
     return this.#createReturnValue;
   }
 
-  async deleteByUserAccountId(userAccountId) {
-    this.#deleteByUserAccountIdInvokeCount++;
-    this.#deleteByUserAccountIdUserAccountIdArgument = userAccountId;
-    return this.#deleteByUserAccountIdReturnValue;
+  async deleteByAccountId(accountId) {
+    this.#deleteByAccountIdInvokeCount++;
+    this.#deleteByAccountIdAccountIdArgument = accountId;
+    return this.#deleteByAccountIdReturnValue;
   }
 
   async deleteByRefreshToken(refreshToken) {
@@ -64,8 +64,8 @@ class PersistentSessionRepositoryMock extends PersistentSessionRepository {
     this.#readByRefreshTokenRefreshTokenArgument = undefined;
     this.#createInvokeCount = 0;
     this.#createPersistentSessionArgument = undefined;
-    this.#deleteByUserAccountIdInvokeCount = 0;
-    this.#deleteByUserAccountIdUserAccountIdArgument = undefined;
+    this.#deleteByAccountIdInvokeCount = 0;
+    this.#deleteByAccountIdAccountIdArgument = undefined;
     this.#deleteByRefreshTokenInvokeCount = 0;
     this.#deleteByRefreshTokenRefreshTokenArgument = undefined;
   }
@@ -106,16 +106,16 @@ class PersistentSessionRepositoryMock extends PersistentSessionRepository {
     return this.#createPersistentSessionArgument;
   }
 
-  set deleteByUserAccountIdReturnValue(deleteByUserAccountIdReturnValue) {
-    this.#deleteByUserAccountIdReturnValue = deleteByUserAccountIdReturnValue;
+  set deleteByAccountIdReturnValue(deleteByAccountIdReturnValue) {
+    this.#deleteByAccountIdReturnValue = deleteByAccountIdReturnValue;
   }
 
-  get deleteByUserAccountIdInvokeCount() {
-    return this.#deleteByUserAccountIdInvokeCount;
+  get deleteByAccountIdInvokeCount() {
+    return this.#deleteByAccountIdInvokeCount;
   }
 
-  get deleteByUserAccountIdUserAccountIdArgument() {
-    return this.#deleteByUserAccountIdUserAccountIdArgument;
+  get deleteByAccountIdAccountIdArgument() {
+    return this.#deleteByAccountIdAccountIdArgument;
   }
 
   set deleteByRefreshTokenReturnValue(deleteByRefreshTokenReturnValue) {

@@ -2,7 +2,7 @@ PersistentSessions:
 
 CREATE TABLE PersistentSessions (
   Id VARCHAR(36) NOT NULL PRIMARY KEY,
-  UserAccountId VARCHAR(36) NOT NULL,
+  AccountId VARCHAR(36) NOT NULL,
   Roles TINYINT UNSIGNED NOT NULL,
   RefreshToken VARCHAR(128) NOT NULL UNIQUE,
   CreationTime INT UNSIGNED NOT NULL,
@@ -11,9 +11,9 @@ CREATE TABLE PersistentSessions (
 
 ------------------------------------------------------------
 
-UserAccounts:
+Accounts:
 
-CREATE TABLE UserAccounts (
+CREATE TABLE Accounts (
   Id VARCHAR(36) NOT NULL PRIMARY KEY,
   Name VARCHAR(32) NOT NULL UNIQUE,
   PasswordHash VARCHAR(64) NOT NULL,

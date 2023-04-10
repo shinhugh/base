@@ -1,13 +1,13 @@
 TODO:
 
-- UserAccount service
+- Account service
   - implement servlet
   - implement AuthenticationServiceBridge
 
 - authentication service
-  - implement UserAccountServiceClient
+  - implement AccountServiceClient
 
-- rename UserAccount to Account
+- rename UserAccount to Account in readme and diagrams
 
 - gateway
   - listen on port 80
@@ -18,7 +18,7 @@ TODO:
 
 - readme
   - write "internal design of authentication service" section
-  - write "internal design of user account service" section
+  - write "internal design of account service" section
 
 
 
@@ -33,9 +33,9 @@ insert into PersistentSessions values (
   4294967295
 );
 
-Test entry for UserAccount table:
+Test entry for Accounts table:
 
-insert into UserAccounts values (
+insert into Accounts values (
   '00000000-0000-0000-0000-000000000000',
   'qwer',
   'bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3',

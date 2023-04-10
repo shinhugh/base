@@ -4,25 +4,25 @@ import jwt from 'jsonwebtoken';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
 import { Role } from '../model/role.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
-import { UserAccountServiceClient } from './user-account-service-client.js';
+import { AccountServiceClient } from './account-service-client.js';
 
 class AuthenticationService {
   #persistentSessionRepository;
-  #userAccountServiceClient;
+  #accountServiceClient;
   #config;
 
-  constructor(persistentSessionRepository, userAccountServiceClient, config) {
+  constructor(persistentSessionRepository, accountServiceClient, config) {
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
       throw new Error();
     }
-    if (!(userAccountServiceClient instanceof UserAccountServiceClient)) {
+    if (!(accountServiceClient instanceof AccountServiceClient)) {
       throw new Error();
     }
     if (config == null || !validateConfig(config)) {
       throw new Error();
     }
     this.#persistentSessionRepository = persistentSessionRepository;
-    this.#userAccountServiceClient = userAccountServiceClient;
+    this.#accountServiceClient = accountServiceClient;
     this.#config = {
       tokenAlgorithm: config.tokenAlgorithm,
       tokenSecretKey: config.tokenSecretKey,
@@ -71,7 +71,7 @@ class AuthenticationService {
       return { };
     }
     return {
-      id: persistentSession.userAccountId,
+      id: persistentSession.accountId,
       roles: persistentSession.roles,
       authTime: persistentSession.creationTime
     };
@@ -100,8 +100,8 @@ class AuthenticationService {
     if (logoutInfo == null || typeof logoutInfo !== 'object') {
       throw new IllegalArgumentError();
     }
-    if (logoutInfo.userAccountId != null) {
-      await this.#logoutViaUserAccountId(authority, logoutInfo.userAccountId);
+    if (logoutInfo.accountId != null) {
+      await this.#logoutViaAccountId(authority, logoutInfo.accountId);
       return;
     }
     if (logoutInfo.refreshToken != null) {
@@ -115,9 +115,9 @@ class AuthenticationService {
     if (!validateCredentials(credentials)) {
       throw new IllegalArgumentError();
     }
-    const userAccount = await (async () => {
+    const account = await (async () => {
       try {
-        return await this.#userAccountServiceClient.read(systemAuthority, credentials.name);
+        return await this.#accountServiceClient.read(systemAuthority, credentials.name);
       }
       catch (e) {
         if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
@@ -126,8 +126,8 @@ class AuthenticationService {
         throw e;
       }
     })();
-    const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, credentials.password, userAccount.passwordSalt);
-    if (passwordHash !== userAccount.passwordHash) {
+    const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, credentials.password, account.passwordSalt);
+    if (passwordHash !== account.passwordHash) {
       throw new AccessDeniedError();
     }
     const persistentSession = await (async () => {
@@ -136,8 +136,8 @@ class AuthenticationService {
         const currentTime = Math.floor(Date.now() / 1000);
         try {
           return await this.#persistentSessionRepository.create({
-            userAccountId: userAccount.id,
-            roles: userAccount.roles,
+            accountId: account.id,
+            roles: account.roles,
             refreshToken: refreshToken,
             creationTime: currentTime,
             expirationTime: currentTime + sessionDuration
@@ -197,19 +197,19 @@ class AuthenticationService {
     };
   }
 
-  async #logoutViaUserAccountId(authority, userAccountId) {
+  async #logoutViaAccountId(authority, accountId) {
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
       throw new AccessDeniedError();
     }
-    if (typeof userAccountId !== 'string' || !validateUuid(userAccountId)) {
+    if (typeof accountId !== 'string' || !validateUuid(accountId)) {
       throw new IllegalArgumentError();
     }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin)) {
-      if (authority.id !== userAccountId) {
+      if (authority.id !== accountId) {
         throw new AccessDeniedError();
       }
     }
-    await this.#persistentSessionRepository.deleteByUserAccountId(userAccountId);
+    await this.#persistentSessionRepository.deleteByAccountId(accountId);
   }
 
   async #logoutViaRefreshToken(authority, refreshToken) {
@@ -312,8 +312,8 @@ const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
 const refreshTokenAllowedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const refreshTokenLength = 128;
-const sessionDuration = 1209600;
-const jwtDuration = 86400;
+const sessionDuration = 1209600; // TODO: Allow configuration
+const jwtDuration = 86400; // TODO: Allow configuration
 
 export {
   AuthenticationService

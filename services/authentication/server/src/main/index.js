@@ -1,5 +1,5 @@
 import { PersistentSessionRepository } from './repository/persistent-session-repository.js';
-import { UserAccountServiceClient } from './service/user-account-service-client.js';
+import { AccountServiceClient } from './service/account-service-client.js';
 import { AuthenticationService } from './service/authentication-service.js';
 import { AuthenticationController } from './controller/authentication-controller.js';
 import { Server } from './server.js';
@@ -13,7 +13,7 @@ const config = {
     username: 'root',
     password: ''
   },
-  userAccountServiceClient: {
+  accountServiceClient: {
     host: 'localhost',
     port: 8001
   },
@@ -29,8 +29,8 @@ const config = {
 };
 
 const persistentSessionRepository = new PersistentSessionRepository(config.persistentSessionRepository);
-const userAccountServiceClient = new UserAccountServiceClient(config.userAccountServiceClient);
-const authenticationService = new AuthenticationService(persistentSessionRepository, userAccountServiceClient, {
+const accountServiceClient = new AccountServiceClient(config.accountServiceClient);
+const authenticationService = new AuthenticationService(persistentSessionRepository, accountServiceClient, {
   tokenAlgorithm: config.authenticationService.tokenAlgorithm,
   tokenSecretKey: Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding),
   passwordHashAlgorithm: config.authenticationService.passwordHashAlgorithm
