@@ -7,8 +7,6 @@ TODO:
 - authentication service
   - implement AccountServiceClient
 
-- rename UserAccount to Account in readme and diagrams
-
 - gateway
   - listen on port 80
   - invoke /identify on authentication service endpoint

@@ -4,15 +4,15 @@ This project serves as a foundation to build on top of when developing a
 microservice-oriented HTTP API. Two services are provided:
 
 - Authentication service
-- User account service
+- Account service
 
 These two services provide the following functionalities:
 
-- User account creation
+- Account creation
 - Login
 - ID token refresh
 - Logout with proper token revocation
-- User account read, update, and delete (with access control)
+- Account read, update, and delete (with access control)
 - Granular access control over resources and other APIs
 
 As application-specific services are introduced into this ecosystem, these nodes
@@ -46,10 +46,10 @@ information that gets sent alongside every request to every service. It is used
 by the service to determine whether the request should be accepted or denied. It
 is comprised of the following information:
 
-- **The identity of the caller**: This is the ID (UUID) of the user account that
-the authentication service has correlated with the client. This would, for
-example, be used by the service to allow reading of private data that is
-restricted to the owner user only.
+- **The identity of the caller**: This is the ID (UUID) of the account that the
+authentication service has correlated with the client. This would, for example,
+be used by the service to allow reading of private data that is restricted to
+the owner user only.
 - **The roles of the caller**: This is a bit-flag represented in plain decimal
 form. Each bit represents a different role; a 1 signifies that the caller
 possesses the role. Starting from the least significant bit (right to left), the
@@ -62,10 +62,10 @@ the existing entries.
 - **The time that the authentication was confirmed**: This is the point in time
 that the user provided their credentials to verify their identity and generate
 the ID token that is currently being used. This is used by certain services to
-allow access to more privileged actions. For example, the user account service
+allow access to more privileged actions. For example, the account service
 restricts account modification and termination to sessions that are no older
 than 15 minutes; if it has been over 15 minutes since the login event, the
-session may still be valid, but the user account service will deny requests for
+session may still be valid, but the account service will deny requests for
 account modification and termination. This protects the user from scenarios
 where a third party gains physical access to the user's device and tries to
 modify the user's password.
@@ -219,10 +219,10 @@ behalf of the client.
 
 One such case would be the login flow, where the client makes an unauthenticated
 request. The authentication service needs to fetch the (hashed) credential
-information from the user account service, an action that the user account
-service would normally deny due to the lack of authority information. Thus, the
-authentication service proceeds with a system override and sets the
-`authority-roles` header to `1` in its request to the user account service.
+information from the account service, an action that the account service would
+normally deny due to the lack of authority information. Thus, the authentication
+service proceeds with a system override and sets the `authority-roles` header to
+`1` in its request to the account service.
 
 It's very important that any confidential data that is fetched in this manner
 do not get propagated back to the client. In the example with the login flow,
@@ -442,6 +442,6 @@ whether a request should be processed.
 
 *This section is under construction.*
 
-## Internal design of user account service
+## Internal design of account service
 
 *This section is under construction.*
