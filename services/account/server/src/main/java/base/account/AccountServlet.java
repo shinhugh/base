@@ -25,7 +25,7 @@ public class AccountServlet extends HttpServlet {
     private static final String DB_PASSWORD = "";
     private static final String CONNECTION_URL_FORMAT = "jdbc:mysql://%s:%s/%s";
     private static final Map<String, String> ACCOUNT_JPA_REPOSITORY_CONFIG = Map.of("hibernate.connection.url", String.format(CONNECTION_URL_FORMAT, DB_HOST, DB_PORT, DB_DATABASE), "hibernate.connection.username", DB_USERNAME, "hibernate.connection.password", DB_PASSWORD);
-    private static final Map<String, String> AUTHENTICATION_SERVICE_BRIDGE_CONFIG = Map.of("host", "", "port", ""); // TODO: Add endpoint configuration
+    private static final Map<String, String> AUTHENTICATION_SERVICE_BRIDGE_CONFIG = Map.of("host", "localhost", "port", "8000");
     private static final Map<String, String> ACCOUNT_MANAGER_CONFIG = Map.of("sessionAgeForModificationMaxValue", "900", "passwordHashAlgorithm", "SHA-256");
     private final AccountRepository accountRepository = new AccountJpaRepository(ACCOUNT_JPA_REPOSITORY_CONFIG);
     private final AuthenticationServiceClient authenticationServiceClient = new AuthenticationServiceBridge(AUTHENTICATION_SERVICE_BRIDGE_CONFIG);

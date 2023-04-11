@@ -7,7 +7,7 @@ class AccountServiceClient {
 
   constructor(config) {
     if (config == null || !validateConfig(config)) {
-      throw new Error();
+      throw new Error('AccountServiceClient constructor failed');
     }
     this.#config = {
       host: config.host,
@@ -17,7 +17,7 @@ class AccountServiceClient {
 
   async read(authority, name) {
     if (!validateAuthority(authority)) {
-      throw new Error();
+      throw new Error('Invalid authority provided to AccountServiceClient.read()');
     }
     if (name != null && typeof name !== 'string') {
       throw new IllegalArgumentError();
@@ -71,7 +71,12 @@ class AccountServiceClient {
     });
     switch (response.status) {
       case 200: {
-        return JSON.parse(response.body.toString());
+        try {
+          return JSON.parse(response.body.toString());
+        }
+        catch {
+          throw new Error('Unexpected response body format received from Account service');
+        }
       }
       case 401: {
         throw new AccessDeniedError();
@@ -83,7 +88,7 @@ class AccountServiceClient {
         throw new NotFoundError();
       }
       default: {
-        throw new Error();
+        throw new Error('Unexpected status code received from Account service');
       }
     }
   }

@@ -8,7 +8,7 @@ class PersistentSessionRepository {
 
   constructor(config) {
     if (config == null || !validateConfig(config)) {
-      throw new Error();
+      throw new Error('PersistentSessionRepository constructor failed');
     }
     this.#config = {
       host: config.host,
@@ -143,7 +143,12 @@ class PersistentSessionRepository {
         logging: sequelizeOptions.logging,
         pool: sequelizeOptions.pool
       });
-      await this.#sequelize.authenticate();
+      try {
+        await this.#sequelize.authenticate();
+      }
+      catch {
+        throw new Error('Database connection failed');
+      }
       this.#sequelize.define('persistentSessions', sequelizePersistentSessionAttributes, sequelizePersistentSessionOptions);
     }
   }

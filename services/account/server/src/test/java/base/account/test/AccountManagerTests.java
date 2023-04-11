@@ -199,7 +199,7 @@ public class AccountManagerTests {
             digest = MessageDigest.getInstance(algorithm);
         }
         catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException();
+            throw new RuntimeException("Invalid algorithm provided for password hashing");
         }
         byte[] bytes = digest.digest((password + salt).getBytes(StandardCharsets.UTF_8));
         byte[] builder = new byte[bytes.length * 2];

@@ -20,7 +20,7 @@ public class AccountController {
 
     public AccountController(AccountService accountService) {
         if (accountService == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("AccountController constructor failed");
         }
         this.accountService = accountService;
         gson = new GsonBuilder().create();
@@ -55,6 +55,7 @@ public class AccountController {
             return new Response((short) 200, responseHeaders, new ByteArrayInputStream(gson.toJson(output).getBytes(StandardCharsets.UTF_8)));
         }
         catch (Exception ex) {
+            System.out.println("Unexpected error: " + ex.getMessage());
             return new Response((short) 500, null, null);
         }
     }
@@ -90,6 +91,7 @@ public class AccountController {
             return new Response((short) 200, responseHeaders, new ByteArrayInputStream(gson.toJson(output).getBytes(StandardCharsets.UTF_8)));
         }
         catch (Exception ex) {
+            System.out.println("Unexpected error: " + ex.getMessage());
             return new Response((short) 500, null, null);
         }
     }
@@ -137,6 +139,7 @@ public class AccountController {
             return new Response((short) 200, responseHeaders, new ByteArrayInputStream(gson.toJson(output).getBytes(StandardCharsets.UTF_8)));
         }
         catch (Exception ex) {
+            System.out.println("Unexpected error: " + ex.getMessage());
             return new Response((short) 500, null, null);
         }
     }
@@ -168,6 +171,7 @@ public class AccountController {
             return new Response((short) 200, null, null);
         }
         catch (Exception ex) {
+            System.out.println("Unexpected error: " + ex.getMessage());
             return new Response((short) 500, null, null);
         }
     }

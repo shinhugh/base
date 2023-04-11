@@ -7,10 +7,10 @@ class Server {
 
   constructor(endpoints, port) {
     if (endpoints == null || !validateEndpoints(endpoints)) {
-      throw new Error();
+      throw new Error('Server constructor failed');
     }
     if (!Number.isInteger(port) || port < 0 || port > portMaxValue) {
-      throw new Error();
+      throw new Error('Server constructor failed');
     }
     this.#app = express();
     this.#app.use(express.raw({
@@ -66,33 +66,25 @@ const handleRequest = async (req, res, endpoints) => {
     request.body = req.body;
   }
   const response = await (async () => {
-    try {
-      if (endpoints[request.path] == null) {
-        return {
-          status: 404
-        };
-      }
-      const endpoint = (() => {
-        for (const method in endpoints[request.path]) {
-          if (method.toLowerCase() === request.method.toLowerCase()) {
-            return endpoints[request.path][method];
-          }
-        }
-        return undefined;
-      })();
-      if (endpoint == null) {
-        return {
-          status: 405
-        };
-      }
-      return await endpoint(request);
-    }
-    catch (e) {
-      console.log('Unexpected error: ' + e.message);
+    if (endpoints[request.path] == null) {
       return {
-        status: 500
+        status: 404
       };
     }
+    const endpoint = (() => {
+      for (const method in endpoints[request.path]) {
+        if (method.toLowerCase() === request.method.toLowerCase()) {
+          return endpoints[request.path][method];
+        }
+      }
+      return undefined;
+    })();
+    if (endpoint == null) {
+      return {
+        status: 405
+      };
+    }
+    return await endpoint(request);
   })();
   res.status(response.status);
   for (const headerName in response.headers) {

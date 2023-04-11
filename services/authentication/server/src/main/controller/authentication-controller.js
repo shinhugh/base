@@ -7,108 +7,132 @@ class AuthenticationController {
 
   constructor(authenticationService) {
     if (!(authenticationService instanceof AuthenticationService)) {
-      throw new Error();
+      throw new Error('AuthenticationController constructor failed');
     }
     this.#authenticationService = authenticationService;
   }
 
   async identify(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error();
+      throw new Error('Invalid request provided to AuthenticationController.identify()');
     }
-    // TODO: Order of errors is wrong
-    if (request.headers?.['content-type'] !== 'application/json') {
-      return {
-        status: 400
-      }
-    }
-    let token;
     try {
-      token = JSON.parse(request.body.toString());
-    }
-    catch (e) {
-      if (e instanceof SyntaxError) {
+      // TODO: Order of errors is wrong
+      if (request.headers?.['content-type'] !== 'application/json') {
         return {
           status: 400
-        };
+        }
       }
-      throw e;
+      let token;
+      try {
+        token = JSON.parse(request.body.toString());
+      }
+      catch (e) {
+        if (e instanceof SyntaxError) {
+          return {
+            status: 400
+          };
+        }
+        throw e;
+      }
+      const authority = parseAuthority(request);
+      return await invokeAndInterceptDomainError(async () => {
+        return {
+          status: 200,
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: Buffer.from(JSON.stringify(await this.#authenticationService.identify(authority, token)))
+        };
+      });
     }
-    const authority = parseAuthority(request);
-    return await invokeAndInterceptDomainError(async () => {
+    catch (e) {
+      console.error('Unexpected error: ' + e.message);
       return {
-        status: 200,
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: Buffer.from(JSON.stringify(await this.#authenticationService.identify(authority, token)))
+        status: 500
       };
-    });
+    }
   }
 
   async login(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error();
+      throw new Error('Invalid request provided to AuthenticationController.login()');
     }
-    // TODO: Order of errors is wrong
-    if (request.headers?.['content-type'] !== 'application/json') {
-      return {
-        status: 400
-      }
-    }
-    let loginInfo;
     try {
-      loginInfo = JSON.parse(request.body.toString());
-    }
-    catch (e) {
-      if (e instanceof SyntaxError) {
+      // TODO: Order of errors is wrong
+      if (request.headers?.['content-type'] !== 'application/json') {
         return {
           status: 400
-        };
+        }
       }
-      throw e;
+      let loginInfo;
+      try {
+        loginInfo = JSON.parse(request.body.toString());
+      }
+      catch (e) {
+        if (e instanceof SyntaxError) {
+          return {
+            status: 400
+          };
+        }
+        throw e;
+      }
+      const authority = parseAuthority(request);
+      return await invokeAndInterceptDomainError(async () => {
+        return {
+          status: 200,
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: Buffer.from(JSON.stringify(await this.#authenticationService.login(authority, loginInfo)))
+        }
+      });
     }
-    const authority = parseAuthority(request);
-    return await invokeAndInterceptDomainError(async () => {
+    catch (e) {
+      console.error('Unexpected error: ' + e.message);
       return {
-        status: 200,
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: Buffer.from(JSON.stringify(await this.#authenticationService.login(authority, loginInfo)))
-      }
-    });
+        status: 500
+      };
+    }
   }
 
   async logout(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error();
+      throw new Error('Invalid request provided to AuthenticationController.logout()');
     }
-    // TODO: Order of errors is wrong
-    if (request.headers?.['content-type'] !== 'application/json') {
-      return {
-        status: 400
-      }
-    }
-    let logoutInfo;
     try {
-      logoutInfo = JSON.parse(request.body.toString());
-    }
-    catch (e) {
-      if (e instanceof SyntaxError) {
+      // TODO: Order of errors is wrong
+      if (request.headers?.['content-type'] !== 'application/json') {
         return {
           status: 400
-        };
+        }
       }
-      throw e;
+      let logoutInfo;
+      try {
+        logoutInfo = JSON.parse(request.body.toString());
+      }
+      catch (e) {
+        if (e instanceof SyntaxError) {
+          return {
+            status: 400
+          };
+        }
+        throw e;
+      }
+      const authority = parseAuthority(request);
+      return await invokeAndInterceptDomainError(async () => {
+        await this.#authenticationService.logout(authority, logoutInfo);
+        return {
+          status: 200
+        }
+      });
     }
-    const authority = parseAuthority(request);
-    return await invokeAndInterceptDomainError(async () => {
-      await this.#authenticationService.logout(authority, logoutInfo);
+    catch (e) {
+      console.error('Unexpected error: ' + e.message);
       return {
-        status: 200
-      }
-    });
+        status: 500
+      };
+    }
   }
 }
 

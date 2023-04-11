@@ -30,13 +30,13 @@ public class AccountManager implements AccountService {
 
     public AccountManager(AccountRepository accountRepository, AuthenticationServiceClient authenticationServiceClient, Map<String, String> config) {
         if (accountRepository == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("AccountManager constructor failed");
         }
         if (authenticationServiceClient == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("AccountManager constructor failed");
         }
         if (config == null || !validateConfig(config)) {
-            throw new RuntimeException();
+            throw new RuntimeException("AccountManager constructor failed");
         }
         this.accountRepository = accountRepository;
         this.authenticationServiceClient = authenticationServiceClient;
@@ -44,7 +44,7 @@ public class AccountManager implements AccountService {
         try {
             digest = MessageDigest.getInstance(config.get("passwordHashAlgorithm"));
         } catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException();
+            throw new RuntimeException("AccountManager constructor failed");
         }
     }
 

@@ -13,13 +13,13 @@ class AuthenticationService {
 
   constructor(persistentSessionRepository, accountServiceClient, config) {
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
-      throw new Error();
+      throw new Error('AuthenticationService constructor failed');
     }
     if (!(accountServiceClient instanceof AccountServiceClient)) {
-      throw new Error();
+      throw new Error('AuthenticationService constructor failed');
     }
     if (config == null || !validateConfig(config)) {
-      throw new Error();
+      throw new Error('AuthenticationService constructor failed');
     }
     this.#persistentSessionRepository = persistentSessionRepository;
     this.#accountServiceClient = accountServiceClient;
@@ -34,7 +34,7 @@ class AuthenticationService {
 
   async identify(authority, token) {
     if (!validateAuthority(authority)) {
-      throw new Error();
+      throw new Error('Invalid authority provided to AuthenticationService.identify()');
     }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
       throw new AccessDeniedError();
@@ -81,7 +81,7 @@ class AuthenticationService {
 
   async login(authority, loginInfo) {
     if (!validateAuthority(authority)) {
-      throw new Error();
+      throw new Error('Invalid authority provided to AuthenticationService.login()');
     }
     if (loginInfo == null || typeof loginInfo !== 'object') {
       throw new IllegalArgumentError();
@@ -97,7 +97,7 @@ class AuthenticationService {
 
   async logout(authority, logoutInfo) {
     if (!validateAuthority(authority)) {
-      throw new Error();
+      throw new Error('Invalid authority provided to AuthenticationService.logout()');
     }
     if (logoutInfo == null || typeof logoutInfo !== 'object') {
       throw new IllegalArgumentError();
@@ -291,9 +291,6 @@ const validateCredentials = (credentials) => {
 };
 
 const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
-  if (!validateAuthority(authority) || (roles != null && (!Number.isInteger(roles) || roles < 0 || roles > rolesMaxValue))) {
-    throw new Error();
-  }
   if (roles == null || roles == 0) {
     return true;
   }
