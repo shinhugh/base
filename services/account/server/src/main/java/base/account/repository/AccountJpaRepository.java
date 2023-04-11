@@ -20,7 +20,7 @@ public class AccountJpaRepository implements AccountRepository {
 
     public AccountJpaRepository(Map<String, String> config) {
         if (config == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("AccountJpaRepository constructor failed");
         }
         entityManagerFactory = Persistence.createEntityManagerFactory("base", config);
     }

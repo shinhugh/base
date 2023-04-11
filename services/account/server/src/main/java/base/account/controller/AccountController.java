@@ -28,7 +28,7 @@ public class AccountController {
 
     public Response read(Request request) {
         if (request == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("Invalid request provided to AccountController.read()");
         }
         try {
             Authority authority = parseAuthority(request);
@@ -62,7 +62,7 @@ public class AccountController {
 
     public Response create(Request request) {
         if (request == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("Invalid request provided to AccountController.create()");
         }
         try {
             // TODO: Order of exceptions is wrong
@@ -98,7 +98,7 @@ public class AccountController {
 
     public Response update(Request request) {
         if (request == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("Invalid request provided to AccountController.update()");
         }
         try {
             // TODO: Order of exceptions is wrong
@@ -146,7 +146,7 @@ public class AccountController {
 
     public Response delete(Request request) {
         if (request == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("Invalid request provided to AccountController.delete()");
         }
         try {
             Authority authority = parseAuthority(request);

@@ -51,7 +51,7 @@ public class AccountManager implements AccountService {
     @Override
     public Account read(Authority authority, String id, String name) {
         if (!validateAuthority(authority)) {
-            throw new RuntimeException();
+            throw new RuntimeException("Invalid authority provided to AccountManager.read()");
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
@@ -90,7 +90,7 @@ public class AccountManager implements AccountService {
     @Override
     public Account create(Authority authority, Account account) {
         if (!validateAuthority(authority)) {
-            throw new RuntimeException();
+            throw new RuntimeException("Invalid authority provided to AccountManager.create()");
         }
         if (account == null || !validateAccount(account)) {
             throw new IllegalArgumentException();
@@ -109,7 +109,7 @@ public class AccountManager implements AccountService {
     @Override
     public Account update(Authority authority, String id, String name, Account account) {
         if (!validateAuthority(authority)) {
-            throw new RuntimeException();
+            throw new RuntimeException("Invalid authority provided to AccountManager.update()");
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
@@ -159,7 +159,7 @@ public class AccountManager implements AccountService {
     @Override
     public void delete(Authority authority, String id, String name) {
         if (!validateAuthority(authority)) {
-            throw new RuntimeException();
+            throw new RuntimeException("Invalid authority provided to AccountManager.delete()");
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
@@ -294,9 +294,6 @@ public class AccountManager implements AccountService {
     }
 
     private static boolean verifyAuthorityContainsAtLeastOneRole(Authority authority, short roles) {
-        if (!validateAuthority(authority) || roles < 0 || roles > ROLES_MAX_VALUE) {
-            throw new RuntimeException();
-        }
         if (roles == 0) {
             return true;
         }
