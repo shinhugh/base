@@ -15,7 +15,7 @@ const config = {
   },
   accountServiceClient: {
     host: 'localhost',
-    port: 8001
+    port: 8080
   },
   authenticationService: {
     tokenAlgorithm: 'HS256',

@@ -1,11 +1,7 @@
 TODO:
 
 - Account service
-  - implement servlet
   - implement AuthenticationServiceBridge
-
-- authentication service
-  - implement AccountServiceClient
 
 - gateway
   - listen on port 80

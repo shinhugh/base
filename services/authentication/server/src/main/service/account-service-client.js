@@ -1,3 +1,7 @@
+import { get } from 'http';
+import { validate as validateUuid } from 'uuid';
+import { AccessDeniedError, IllegalArgumentError, NotFoundError } from '../model/errors.js';
+
 class AccountServiceClient {
   #config;
 
@@ -12,8 +16,76 @@ class AccountServiceClient {
   }
 
   async read(authority, name) {
-    return generateMockAccount(); // TODO: Remove
-    // TODO: Implement
+    if (!validateAuthority(authority)) {
+      throw new Error();
+    }
+    if (name != null && typeof name !== 'string') {
+      throw new IllegalArgumentError();
+    }
+    const requestHeaders = (() => {
+      if (authority == null || (authority.id == null && authority.roles == null && authority.authTime == null)) {
+        return undefined;
+      }
+      const output = { };
+      if (authority.id != null) {
+        output['authority-id'] = authority.id;
+      }
+      if (authority.roles != null) {
+        output['authority-roles'] = authority.roles;
+      }
+      if (authority.authTime != null) {
+        output['authority-auth-time'] = authority.authTime;
+      }
+      return output;
+    })();
+    const requestOptions = {
+      hostname: this.#config.host,
+      port: this.#config.port,
+      path: "/account?name=" + name
+    };
+    if (requestHeaders != null) {
+      requestOptions.headers = requestHeaders;
+    }
+    const response = await new Promise((resolve) => {
+      get(requestOptions, res => {
+        let body = [];
+        res.on('data', chunk => {
+          body.push(chunk);
+        });
+        res.on('end', () => {
+          if (body.length == 0) {
+            resolve({
+              status: res.statusCode,
+              headers: res.headers
+            })
+          }
+          else {
+            resolve({
+              status: res.statusCode,
+              headers: res.headers,
+              body: Buffer.concat(body)
+            });
+          }
+        });
+      });
+    });
+    switch (response.status) {
+      case 200: {
+        return JSON.parse(response.body.toString());
+      }
+      case 401: {
+        throw new AccessDeniedError();
+      }
+      case 400: {
+        throw new IllegalArgumentError();
+      }
+      case 404: {
+        throw new NotFoundError();
+      }
+      default: {
+        throw new Error();
+      }
+    }
   }
 }
 
@@ -33,17 +105,28 @@ const validateConfig = (config) => {
   return true;
 };
 
-const generateMockAccount = () => { // TODO: Remove
-  return {
-    id: '00000000-0000-0000-0000-000000000000',
-    name: 'qwer',
-    passwordHash: 'bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3',
-    passwordSalt: '00000000000000000000000000000000',
-    roles: 6
-  };
+const validateAuthority = (authority) => {
+  if (authority == null) {
+    return true;
+  }
+  if (typeof authority !== 'object') {
+    return false;
+  }
+  if (authority.id != null && (typeof authority.id !== 'string' || !validateUuid(authority.id))) {
+    return false;
+  }
+  if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
+    return false;
+  }
+  if (authority.authTime != null && (!Number.isInteger(authority.authTime) || authority.authTime < 0 || authority.authTime > timeMaxValue)) {
+    return false;
+  }
+  return true;
 };
 
 const portMaxValue = 65535;
+const rolesMaxValue = 255;
+const timeMaxValue = 4294967295;
 
 export {
   AccountServiceClient
