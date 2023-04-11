@@ -182,7 +182,7 @@ public class AccountController {
             UUID.fromString(id);
             authority.setId(id);
         }
-        catch (IllegalArgumentException ignored) { }
+        catch (IllegalArgumentException | NullPointerException ignored) { }
         try {
             authority.setRoles(Short.parseShort(request.getHeaders().get("authority-roles")));
         }
@@ -195,26 +195,14 @@ public class AccountController {
     }
 
     public static class Request {
-        private String path;
-        private String method;
         private Map<String, String> headers;
         private Map<String, String> query;
         private InputStream body;
 
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
-
-        public String getMethod() {
-            return method;
-        }
-
-        public void setMethod(String method) {
-            this.method = method;
+        public Request(Map<String, String> headers, Map<String, String> query, InputStream body) {
+            this.headers = headers;
+            this.query = query;
+            this.body = body;
         }
 
         public Map<String, String> getHeaders() {

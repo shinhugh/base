@@ -1,7 +1,7 @@
 #!/bin/bash
 
 host_root="/usr/share/tomcat10/webapps"
-context_path="/account"
+context_path="/ROOT"
 container_owner="tomcat10"
 container_group="tomcat10"
 artifact_id="account-service"
