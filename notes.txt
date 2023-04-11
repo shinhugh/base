@@ -1,4 +1,4 @@
-TODO:
+TODO ---
 
 - Account service
   - implement AuthenticationServiceBridge
@@ -14,25 +14,165 @@ TODO:
   - write "internal design of authentication service" section
   - write "internal design of account service" section
 
+--------------------------------------------------------------------------------
 
+QUESTIONS ---
 
-Test entry for PersistentSessions table:
+---
 
-insert into PersistentSessions values (
-  '00000000-0000-0000-0000-000000000000',
-  '00000000-0000-0000-0000-000000000000',
-  6,
-  '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-  0,
-  4294967295
-);
+Q:
+Between service and repository layers: Should each layer define its own models
+and errors?
 
-Test entry for Accounts table:
+A:
+Yes.
+- A repository only concerns itself with basic CRUD operations. It is
+  responsible for the storage of a single model (entity). Its errors are limited
+  to IllegalArgument, NotFound, and Conflict (and Unexpected).
+- A service may expand beyond basic CRUD operations, providing business-specific
+  actions. It uses the repository and its model but may transform it into any
+  format for the client to consume. It may use multiple repositories. Its errors
+  are entirely determined by the business domain, so it isn't tied to the same
+  ones as the repository.
+There will naturally be much overlap between the service and repository when it
+comes to the models and errors, but this is not wrong. The two layers have very
+different concerns, so their models and errors must be different as well.
+Services that only provide CRUD operations will see the biggest overlap, as they
+are essentially just validation wrappers around the repository. But technically,
+they still have different concerns; the service minds the business needs while
+the repository minds the underlying storage technology; thus, they should still
+define different sets of models and errors.
+The service should handle all possible return types and error types returned by
+the repository without letting them leak out to the above layer.
 
-insert into Accounts values (
-  '00000000-0000-0000-0000-000000000000',
-  'qwer',
-  'bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3',
-  '00000000000000000000000000000000',
-  6
-);
+---
+
+Q:
+Given that an upper layer has already done some validation coverage, is it okay
+for a lower layer to skip that portion of validation coverage?
+
+A:
+No. A component should not be aware of its caller nor make any assumptions about
+the upper layers. Each component is responsible for itself; it should gracefully
+and precisely handle all possible inputs. As the developer of the entire stack,
+it's important to "turn off" knowledge about any layers above the layer
+currently being implemented.
+This may create redundancy, but that is an inevitable cost of robustness and
+loose coupling.
+
+---
+
+Q:
+It's okay for the controller to rely directly on the service for validation
+(mapping IllegalArgument to 400).
+Then is it okay for the service to rely directly on the repository for
+validation, as long as the validation rule set delta is being checked by the
+service first?
+e.g. Account password must not be longer than 32 characters and is limited to
+some set of allowed characters. Service checks allowed characters and relegates
+max length validation to repository, since repository will check it.
+
+A:
+It's okay ("legal") but not ideal; it is better for the service to do its own
+validation entirely on its own without relying on the underlying repository.
+It's not WRONG per se because:
+- The validation coverage provided by the repository (null, types, sizes) is
+  part of the public interface exposed by the repository.
+- Callers are allowed to utilize the info provided by the public interfaces of
+  its subroutines.
+- The repository is a subroutine of the service, and thus the service is aware
+  of the validation coverage provided by the repository, and it may choose to
+  take advantage of this.
+But it's not IDEAL because:
+- It makes the service's validation coverage dependent on the repository's
+  validation coverage. This isn't wrong per se, as the repository is a
+  subroutine of the service (and by nature callers will always be dependent on
+  its subroutines), but there is room for decoupling here.
+- The repository's validation rules may change if the underlying persistence
+  technology changes. If the repository's validation rules become more lax,
+  the service may potentially start failing to fulfill the validation coverage
+  required by the business rules.
+- Considering order of error handling, IllegalArgument should be thrown first,
+  so the service should cover entire validation surface before doing anything
+  else anyways.
+
+--------------------------------------------------------------------------------
+
+NOTES ---
+
+- error handling order:
+  1. Illegal argument (400)
+  2. Access denied (401)
+  3. Not found (404)
+  4. Conflict (409)
+
+- validate() functions should return true if input is null/undefined.
+
+- it's not okay for public functions to make assumptions about input. make sure
+  to validate.
+
+- it's okay for private subroutines to make assumptions about input, as they're
+  tightly coupled anyways and all invocations are under control. don't validate,
+  just make sure that all callers are providing valid inputs.
+
+- A module should catch and handle all declared/expected/possible errors thrown
+  by its subroutines and map them to some output (return value or error) that
+  aligns with the module's domain. Errors that are specific to the subroutine's
+  domain should not propagate out from the module.
+
+- 3 layers:
+  1.  Controller
+      - No business logic - a mapping of HTTP endpoints to service calls and
+        a translation of input/output formats.
+        - Knows how to parse the authority structure.
+        - Knows which service routine to invoke.
+        - Knows, for each parameter that the service expects, the type and where
+          to get it.
+        - Knows the types the service returns (or lack thereof).
+      - HTTP endpoints and service functions should map 1-to-1. Controller does
+        not add to or reduce this in any way; simply serve as glue code for
+        this 1-to-1 mapping.
+      - Create valid authority object, regardless of whether request is
+        malformed. Valid fields get populated, invalid ones are left undefined.
+      - Translate HTTP request to type that the underlying service expects
+        (Java) or a generic object (JS). Return 400 (equivalent to throwing
+        IllegalArgument) if parsing fails. For JS, granularity stops at
+        `typeof`; object tree structure is not validated because service.
+      - Does not validate inputs value-wise.
+      - Lack of a value equates to null (undefined on JS). This is not an error
+        as far as the controller is concerned; pass as is to service layer.
+      - Possible error types that originate from this layer:
+        - IllegalArgument (400)
+  2.  Service
+      - Validates types and object tree structure. This is provided for free
+        by the language itself in Java, but not for JS.
+      - Validates allowed values (null, min/max value, min/max/required string
+        length, character pool). Throws IllegalArgument on finding non-allowed
+        value. Business rules must be a proper superset of repository rules.
+      - Values generated by the service should never be at risk of violating
+        repository rules.
+      - Values taken as input from the client may be at risk of violating
+        repository rules, but doing regular input validation using business
+        rules will completely eliminate any chance of the value going through
+        the service into the repository.
+      - Enforces access control.
+      - Handles rest of business logic.
+      - Possible error types that originate from this layer:
+        - Unexpected (500)
+        - IllegalArgument (400)
+        - AccessDenied (401)
+        - NotFound (404)
+        - Conflict (409)
+  3.  Repository
+      - No business logic - an enforcer of rules imposed only by the database
+        (types, min/max values, uniqueness, non-null). As long as provided input
+        can be stored by the database, repository says yes. Has no understanding
+        of the actual model and what the data represents.
+      - If service is doing its validation correctly, repository should never
+        have to throw IllegalArgument.
+      - No access control.
+      - Possible error types that originate from this layer:
+        - Unexpected
+        - IllegalArgument
+        - NotFound
+        - Conflict
