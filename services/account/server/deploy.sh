@@ -1,7 +1,7 @@
 #!/bin/bash
 
 host_root="/usr/share/tomcat10/webapps"
-context_path="/test"
+context_path="/account"
 container_owner="tomcat10"
 container_group="tomcat10"
 artifact_id="account-service"
@@ -11,11 +11,15 @@ mvn compiler:compile
 if [[ "$?" -ne 0 ]]; then
   exit 1
 fi
-mvn war:war
+mvn resources:resources
 if [[ "$?" -ne 0 ]]; then
   exit 1
 fi
-sudo rm -rf $host_root$context_path.war $host_root$context_path/
-sudo cp target/$artifact_id-$version.war $host_root$context_path.war
-sudo chown $container_owner:$container_group $host_root$context_path.war
+mvn war:exploded
+if [[ "$?" -ne 0 ]]; then
+  exit 1
+fi
+sudo rm -rf $host_root$context_path
+sudo cp -r target/$artifact_id-$version $host_root$context_path
+sudo chown -R $container_owner:$container_group $host_root$context_path
 mvn clean:clean

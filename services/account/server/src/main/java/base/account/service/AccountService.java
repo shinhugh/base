@@ -1,7 +1,7 @@
 package base.account.service;
 
-import base.account.model.Authority;
 import base.account.model.Account;
+import base.account.model.Authority;
 
 public interface AccountService {
     Account read(Authority authority, String id, String name);

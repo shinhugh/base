@@ -1,9 +1,9 @@
 package base.account.repository;
 
+import base.account.model.Account;
 import base.account.model.ConflictException;
 import base.account.model.IllegalArgumentException;
 import base.account.model.NotFoundException;
-import base.account.model.Account;
 import jakarta.persistence.*;
 
 import java.util.List;

@@ -3,10 +3,10 @@ package base.account;
 import base.account.controller.AccountController;
 import base.account.repository.AccountJpaRepository;
 import base.account.repository.AccountRepository;
-import base.account.service.AuthenticationServiceBridge;
-import base.account.service.AuthenticationServiceClient;
 import base.account.service.AccountManager;
 import base.account.service.AccountService;
+import base.account.service.AuthenticationServiceBridge;
+import base.account.service.AuthenticationServiceClient;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,11 +33,15 @@ public class AccountServlet extends HttpServlet {
     @Override
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         System.out.println("@@ service() invoked"); // DEBUG
-        super.service(request, response);
         // TODO: Use request path and method to determine which controller method to invoke
+        System.out.println("@@ Path info: " + request.getPathInfo()); // DEBUG
+        System.out.println("@@ Path translated: " + request.getPathTranslated()); // DEBUG
+        System.out.println("@@ Servlet path: " + request.getServletPath()); // DEBUG
+        System.out.println("@@ Context path: " + request.getContextPath()); // DEBUG
         // TODO: Return 404 or 405 if no valid mapping exists
         // TODO: Generate AccountController.Request from HttpServletRequest
         // TODO: Invoke appropriate AccountController method
         // TODO: Configure HttpServletResponse using AccountController.Response
+        super.service(request, response); // TODO: Remove
     }
 }

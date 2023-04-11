@@ -1,12 +1,12 @@
 package base.account.test;
 
+import base.account.model.Account;
 import base.account.model.Authority;
 import base.account.model.Role;
-import base.account.model.Account;
 import base.account.service.AccountManager;
 import base.account.service.AccountService;
-import base.account.test.spy.AuthenticationServiceClientSpy;
 import base.account.test.spy.AccountRepositorySpy;
+import base.account.test.spy.AuthenticationServiceClientSpy;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
