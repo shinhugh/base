@@ -32,7 +32,7 @@ class PersistentSessionRepository {
       });
     }
     catch {
-      throw new Error('Unexpected error when querying database');
+      throw new Error('Unexpected error: Failed to execute database transaction');
     }
     finally {
       await this.#closeSequelize();
@@ -52,7 +52,7 @@ class PersistentSessionRepository {
       });
     }
     catch {
-      throw new Error('Unexpected error when querying database');
+      throw new Error('Unexpected error: Failed to execute database transaction');
     }
     finally {
       await this.#closeSequelize();
@@ -80,7 +80,7 @@ class PersistentSessionRepository {
         if (e instanceof Sequelize.ValidationError) {
           throw new RepositoryConflictError();
         }
-        throw new Error('Unexpected error when querying database');
+        throw new Error('Unexpected error: Failed to execute database transaction');
       }
       return entry;
     }
@@ -102,7 +102,7 @@ class PersistentSessionRepository {
       });
     }
     catch {
-      throw new Error('Unexpected error when querying database');
+      throw new Error('Unexpected error: Failed to execute database transaction');
     }
     finally {
       await this.#closeSequelize();
@@ -122,7 +122,7 @@ class PersistentSessionRepository {
       });
     }
     catch {
-      throw new Error('Unexpected error when querying database');
+      throw new Error('Unexpected error: Failed to execute database transaction');
     }
     finally {
       await this.#closeSequelize();
@@ -141,7 +141,7 @@ class PersistentSessionRepository {
           });
         }
         catch {
-          throw new Error('Unexpected error when querying database');
+          throw new Error('Unexpected error: Failed to execute database transaction');
         }
       })();
       if (match == null) {
@@ -168,7 +168,7 @@ class PersistentSessionRepository {
         await this.#sequelize.authenticate();
       }
       catch {
-        throw new Error('Connection to database failed');
+        throw new Error('Unexpected error: Failed to connect to database');
       }
       this.#sequelize.define('persistentSessions', sequelizePersistentSessionAttributes, sequelizePersistentSessionOptions);
     }

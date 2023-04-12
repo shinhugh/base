@@ -7,10 +7,10 @@ class Server {
 
   constructor(endpoints, port) {
     if (endpoints == null || !validateEndpoints(endpoints)) {
-      throw new Error('Server constructor failed');
+      throw new Error('Invalid endpoints provided to Server constructor');
     }
     if (!Number.isInteger(port) || port < 0 || port > portMaxValue) {
-      throw new Error('Server constructor failed');
+      throw new Error('Invalid port provided to Server constructor');
     }
     this.#app = express();
     this.#app.use(express.raw({

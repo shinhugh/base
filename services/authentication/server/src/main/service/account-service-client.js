@@ -72,7 +72,7 @@ class AccountServiceClient {
         });
       }
       catch {
-        throw new Error('Connection to Account service failed');
+        throw new Error('Unexpected error: Failed to connect to account service endpoint');
       }
     })();
     switch (response.status) {
@@ -81,7 +81,7 @@ class AccountServiceClient {
           return JSON.parse(response.body.toString());
         }
         catch {
-          throw new Error('Unexpected response body format received from Account service');
+          throw new Error('Unexpected error: Malformed response received from account service');
         }
       }
       case 400: {
@@ -94,7 +94,7 @@ class AccountServiceClient {
         throw new NotFoundError();
       }
       default: {
-        throw new Error('Unexpected status code received from Account service');
+        throw new Error('Unexpected error: Unrecognized status code received from account service');
       }
     }
   }

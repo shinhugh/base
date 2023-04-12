@@ -2,85 +2,13 @@ TODO ---
 
 authentication service
 
-  - all constructors should detect invalid config values immediately. any values
-    that configure network connections (e.g. database, remote service) don't
-    need to be tested here.
-    [DONE]
-
-  - more detail in errors thrown by constructors
-    [DONE]
-
-  - handle all errors from calls that make network connections (and can
-    potentially fail).
-    [DONE]
-
-  - make sure that only domain-defined errors can possibly be thrown
-    [DONE]
-
   - capture specific internal error information somehow before translating to
     domain error
 
-  - change unexpected error message to hide implementation information
-
-  - change error handling order in service (IllegalArgument before AccessDenied)
-    [DONE]
-
-  - invalid authority should return IllegalArgument in service
-    [DONE]
-
-  - make sure that each layer handles its own validation in its entirety
-    [DONE]
-
-  - make sure that all public functions are doing validation for all parameters
-    [DONE]
-
-  - make sure that no private function is doing validation for any parameter
-    [DONE]
-
-  - define separate models and errors between service and repository
-    [DONE]
-
 Account service
-
-  - implement AuthenticationServiceBridge
-
-  - all constructors should detect invalid config values immediately. any values
-    that configure network connections (e.g. database, remote service) don't
-    need to be tested here.
-    [DONE]
-
-  - more detail in errors thrown by constructors
-    [DONE]
-
-  - handle all errors from calls that make network connections (and can
-    potentially fail).
-    [DONE]
-
-  - make sure that only domain-defined errors can possibly be thrown
-    [DONE]
 
   - capture specific internal exception information somehow before translating
     to domain exception
-
-  - change unexpected exception message to hide implementation information
-
-  - change error handling order in service (IllegalArgument before AccessDenied)
-    [DONE]
-
-  - invalid authority should return IllegalArgument in service
-    [DONE]
-
-  - make sure that each layer handles its own validation in its entirety
-    [DONE]
-
-  - make sure that all public methods are doing validation for all parameters
-    [DONE]
-
-  - make sure that no private function is doing validation for any parameter
-    [DONE]
-
-  - define separate models and errors between service and repository
-    [DONE]
 
 gateway
 
@@ -93,12 +21,6 @@ gateway
   - forward modified request to mapped service endpoint
 
   - track all ongoing requests to enable response forwarding
-
-readme
-
-  - write "internal design of authentication service" section
-
-  - write "internal design of account service" section
 
 --------------------------------------------------------------------------------
 

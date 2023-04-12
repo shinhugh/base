@@ -44,7 +44,7 @@ public class AccountManager implements AccountService {
             digest = MessageDigest.getInstance(config.get("passwordHashAlgorithm"));
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception when calling MessageDigest.getInstance()");
+            throw new RuntimeException("Unexpected exception: Failed to attain password hash function");
         }
     }
 
@@ -74,7 +74,7 @@ public class AccountManager implements AccountService {
             matches = accountRepository.readByIdAndName(id, name);
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception when calling AccountRepository.readByIdAndName()");
+            throw new RuntimeException("Unexpected exception: Failed to read from account store");
         }
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
@@ -112,7 +112,7 @@ public class AccountManager implements AccountService {
             throw new ConflictException();
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception when calling AccountRepository.create()");
+            throw new RuntimeException("Unexpected exception: Failed to write to account store");
         }
         Account output = createServiceAccountFromRepositoryAccount(entry);
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
@@ -154,7 +154,7 @@ public class AccountManager implements AccountService {
             matches = accountRepository.readByIdAndName(id, name);
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception when calling AccountRepository.readByIdAndName()");
+            throw new RuntimeException("Unexpected exception: Failed to read from account store");
         }
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
@@ -176,9 +176,15 @@ public class AccountManager implements AccountService {
             throw new ConflictException();
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception when calling AccountRepository.updateByIdAndName()");
+            throw new RuntimeException("Unexpected exception: Failed to write to account store");
         }
-        authenticationServiceClient.logout(authority, match.getId()); // TODO: Handle exceptions
+        try {
+            authenticationServiceClient.logout(authority, match.getId());
+        }
+        // TODO: Handle specific exceptions
+        catch (Exception e) {
+            throw new RuntimeException("Unexpected exception: Failed to invoke authentication service");
+        }
         Account output = createServiceAccountFromRepositoryAccount(entry);
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
             output.setPasswordHash(null);
@@ -216,7 +222,7 @@ public class AccountManager implements AccountService {
             matches = accountRepository.readByIdAndName(id, name);
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception when calling AccountRepository.readByIdAndName()");
+            throw new RuntimeException("Unexpected exception: Failed to read from account store");
         }
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
@@ -232,9 +238,15 @@ public class AccountManager implements AccountService {
             accountRepository.deleteByIdAndName(id, name);
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception when calling AccountRepository.deleteByIdAndName()");
+            throw new RuntimeException("Unexpected exception: Failed to write to account store");
         }
-        authenticationServiceClient.logout(authority, match.getId()); // TODO: Handle exceptions
+        try {
+            authenticationServiceClient.logout(authority, match.getId());
+        }
+        // TODO: Handle specific exceptions
+        catch (Exception e) {
+            throw new RuntimeException("Unexpected exception: Failed to invoke authentication service");
+        }
     }
 
     private String hashPassword(String password, String salt) {

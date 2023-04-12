@@ -51,7 +51,7 @@ class AuthenticationService {
       }
       catch (e) {
         if (e instanceof JsonWebTokenError && e.message === 'invalid algorithm') {
-          throw new Error('Unexpected error when calling jwt.verify()')
+          throw new Error('Unexpected error: Failed to verify JWT');
         }
         return null;
       }
@@ -67,7 +67,7 @@ class AuthenticationService {
         if (e instanceof RepositoryIllegalArgumentError) {
           return undefined;
         }
-        throw new Error('Unexpected error when calling PersistentSessionRepository.readById()');
+        throw new Error('Unexpected error: Failed to read from session store');
       }
     })();
     if (persistentSession == null || persistentSession.expirationTime <= (Date.now() / 1000)) {
@@ -88,9 +88,15 @@ class AuthenticationService {
       throw new IllegalArgumentError();
     }
     if (loginInfo.credentials != null) {
+      if (!validateCredentials(loginInfo.credentials)) {
+        throw new IllegalArgumentError();
+      }
       return await this.#loginViaCredentials(authority, loginInfo.credentials);
     }
     if (loginInfo.refreshToken != null) {
+      if (typeof loginInfo.refreshToken !== 'string') {
+        throw new IllegalArgumentError();
+      }
       return await this.#loginViaRefreshToken(authority, loginInfo.refreshToken);
     }
     throw new IllegalArgumentError();
@@ -104,10 +110,16 @@ class AuthenticationService {
       throw new IllegalArgumentError();
     }
     if (logoutInfo.accountId != null) {
+      if (typeof logoutInfo.accountId !== 'string' || !validateUuid(logoutInfo.accountId)) {
+        throw new IllegalArgumentError();
+      }
       await this.#logoutViaAccountId(authority, logoutInfo.accountId);
       return;
     }
     if (logoutInfo.refreshToken != null) {
+      if (typeof logoutInfo.refreshToken !== 'string') {
+        return;
+      }
       await this.#logoutViaRefreshToken(authority, logoutInfo.refreshToken);
       return;
     }
@@ -115,9 +127,6 @@ class AuthenticationService {
   }
 
   async #loginViaCredentials(authority, credentials) {
-    if (!validateCredentials(credentials)) {
-      throw new IllegalArgumentError();
-    }
     const account = await (async () => {
       try {
         return await this.#accountServiceClient.readByName(systemAuthority, credentials.name);
@@ -126,7 +135,7 @@ class AuthenticationService {
         if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
           throw new AccessDeniedError();
         }
-        throw new Error('Unexpected error when calling AccountServiceClient.readByName()');
+        throw new Error('Unexpected error: Failed to invoke account service');
       }
     })();
     const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, credentials.password, account.passwordSalt);
@@ -149,7 +158,7 @@ class AuthenticationService {
         }
         catch (e) {
           if (!(e instanceof RepositoryConflictError)) {
-            throw new Error('Unexpected error when calling PersistentSessionRepository.create()');
+            throw new Error('Unexpected error: Failed to write to session store');
           }
         }
       }
@@ -169,9 +178,9 @@ class AuthenticationService {
           await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
         }
         catch {
-          throw new Error('Unexpected error when calling jwt.sign(); Unexpected error when calling PersistentSessionRepository.deleteByRefreshToken()');
+          throw new Error('Unexpected error: Failed to create JWT; Unexpected error: Failed to write to session store');
         }
-        throw new Error('Unexpected error when calling jwt.sign()');
+        throw new Error('Unexpected error: Failed to create JWT');
       }
     })();
     return {
@@ -181,9 +190,6 @@ class AuthenticationService {
   }
 
   async #loginViaRefreshToken(authority, refreshToken) {
-    if (typeof refreshToken !== 'string') {
-      throw new IllegalArgumentError();
-    }
     const persistentSession = await (async () => {
       try {
         return (await this.#persistentSessionRepository.readByRefreshToken(refreshToken))[0];
@@ -192,7 +198,7 @@ class AuthenticationService {
         if (e instanceof RepositoryIllegalArgumentError) {
           return undefined;
         }
-        throw new Error('Unexpected error when calling PersistentSessionRepository.readByRefreshToken()');
+        throw new Error('Unexpected error: Failed to read from session store');
       }
     })();
     if (persistentSession == null) {
@@ -213,7 +219,7 @@ class AuthenticationService {
         });
       }
       catch {
-        throw new Error('Unexpected error when calling jwt.sign()');
+        throw new Error('Unexpected error: Failed to create JWT');
       }
     })();
     return {
@@ -222,9 +228,6 @@ class AuthenticationService {
   }
 
   async #logoutViaAccountId(authority, accountId) {
-    if (typeof accountId !== 'string' || !validateUuid(accountId)) {
-      throw new IllegalArgumentError();
-    }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
       throw new AccessDeniedError();
     }
@@ -237,14 +240,11 @@ class AuthenticationService {
       await this.#persistentSessionRepository.deleteByAccountId(accountId);
     }
     catch {
-      throw new Error('Unexpected error when calling PersistentSessionRepository.deleteByAccountId()');
+      throw new Error('Unexpected error: Failed to write to session store');
     }
   }
 
   async #logoutViaRefreshToken(authority, refreshToken) {
-    if (typeof refreshToken !== 'string') {
-      return;
-    }
     try {
       await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
     }
@@ -252,7 +252,7 @@ class AuthenticationService {
       if (e instanceof RepositoryIllegalArgumentError) {
         return;
       }
-      throw new Error('Unexpected error when calling PersistentSessionRepository.deleteByRefreshToken()');
+      throw new Error('Unexpected error: Failed to write to session store');
     }
   }
 }
