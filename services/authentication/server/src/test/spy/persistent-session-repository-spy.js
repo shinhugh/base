@@ -1,6 +1,6 @@
 import { PersistentSessionRepository } from '../../main/repository/persistent-session-repository.js';
 
-class PersistentSessionRepositoryMock extends PersistentSessionRepository {
+class PersistentSessionRepositorySpy extends PersistentSessionRepository {
   #readByIdReturnValue;
   #readByIdInvokeCount;
   #readByIdIdArgument;
@@ -132,5 +132,5 @@ class PersistentSessionRepositoryMock extends PersistentSessionRepository {
 }
 
 export {
-  PersistentSessionRepositoryMock
+  PersistentSessionRepositorySpy
 };

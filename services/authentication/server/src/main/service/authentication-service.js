@@ -120,7 +120,7 @@ class AuthenticationService {
     }
     const account = await (async () => {
       try {
-        return await this.#accountServiceClient.read(systemAuthority, credentials.name);
+        return await this.#accountServiceClient.readByName(systemAuthority, credentials.name);
       }
       catch (e) {
         if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {

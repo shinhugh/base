@@ -1,5 +1,4 @@
 import { get } from 'http';
-import { validate as validateUuid } from 'uuid';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError } from './model/errors.js';
 
 class AccountServiceClient {
@@ -15,28 +14,25 @@ class AccountServiceClient {
     };
   }
 
-  async read(authority, name) {
-    if (!validateAuthority(authority)) {
-      throw new Error('Invalid authority provided to AccountServiceClient.read()');
-    }
+  async readByName(authority, name) {
     if (name != null && typeof name !== 'string') {
       throw new IllegalArgumentError();
     }
     const requestHeaders = (() => {
-      if (authority == null || (authority.id == null && authority.roles == null && authority.authTime == null)) {
+      if (authority == null || typeof authority !== 'object') {
         return undefined;
       }
       const output = { };
-      if (authority.id != null) {
+      if (typeof authority.id == 'string') {
         output['authority-id'] = authority.id;
       }
-      if (authority.roles != null) {
+      if (typeof authority.roles == 'string') {
         output['authority-roles'] = authority.roles;
       }
-      if (authority.authTime != null) {
+      if (typeof authority.authTime == 'string') {
         output['authority-auth-time'] = authority.authTime;
       }
-      return output;
+      return Object.keys(authority).length == 0 ? undefined : output;
     })();
     const requestOptions = {
       hostname: this.#config.host,
@@ -120,28 +116,7 @@ const validateConfig = (config) => {
   return true;
 };
 
-const validateAuthority = (authority) => {
-  if (authority == null) {
-    return true;
-  }
-  if (typeof authority !== 'object') {
-    return false;
-  }
-  if (authority.id != null && (typeof authority.id !== 'string' || !validateUuid(authority.id))) {
-    return false;
-  }
-  if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
-    return false;
-  }
-  if (authority.authTime != null && (!Number.isInteger(authority.authTime) || authority.authTime < 0 || authority.authTime > timeMaxValue)) {
-    return false;
-  }
-  return true;
-};
-
 const portMaxValue = 65535;
-const rolesMaxValue = 255;
-const timeMaxValue = 4294967295;
 
 export {
   AccountServiceClient

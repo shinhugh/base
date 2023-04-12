@@ -1,12 +1,12 @@
 import jwt from 'jsonwebtoken';
 import { Role } from '../main/service/model/role.js';
-import { PersistentSessionRepositoryMock } from './mock/persistent-session-repository-mock.js';
-import { AccountServiceClientMock } from './mock/account-service-client-mock.js';
+import { PersistentSessionRepositorySpy } from './spy/persistent-session-repository-spy.js';
+import { AccountServiceClientSpy } from './spy/account-service-client-spy.js';
 import { AuthenticationService } from '../main/service/authentication-service.js';
 
 const testIdentify = async () => {
-  persistentSessionRepositoryMock.resetSpy();
-  persistentSessionRepositoryMock.readByIdReturnValue = [ mockPersistentSession ];
+  persistentSessionRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.readByIdReturnValue = [ mockPersistentSession ];
   const token = jwt.sign({
     sessionId: mockPersistentSession.id,
     exp: Math.floor(Date.now() / 1000) + 60
@@ -14,10 +14,10 @@ const testIdentify = async () => {
     algorithm: config.authenticationService.tokenAlgorithm
   });
   const output = await authenticationService.identify(authority, token);
-  if (persistentSessionRepositoryMock.readByIdInvokeCount != 1) {
+  if (persistentSessionRepositorySpy.readByIdInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readById(): Invocation count');
   }
-  if (persistentSessionRepositoryMock.readByIdIdArgument !== mockPersistentSession.id) {
+  if (persistentSessionRepositorySpy.readByIdIdArgument !== mockPersistentSession.id) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readById(): id argument');
   }
   if (!verifyEqualityBetweenAuthorities(output, {
@@ -30,34 +30,34 @@ const testIdentify = async () => {
 };
 
 const testLogin = async () => {
-  persistentSessionRepositoryMock.resetSpy();
-  accountServiceClientMock.resetSpy();
-  persistentSessionRepositoryMock.createReturnValue = mockPersistentSession;
-  accountServiceClientMock.readReturnValue = mockAccount;
+  persistentSessionRepositorySpy.resetSpy();
+  accountServiceClientSpy.resetSpy();
+  persistentSessionRepositorySpy.createReturnValue = mockPersistentSession;
+  accountServiceClientSpy.readByNameReturnValue = mockAccount;
   let output = await authenticationService.login(authority, {
     credentials: {
       name: mockAccount.name,
       password: mockPassword
     }
   });
-  if (accountServiceClientMock.readInvokeCount != 1) {
+  if (accountServiceClientSpy.readByNameInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: AccountServiceClient.read(): Invocation count');
   }
-  if (!verifyEqualityBetweenAuthorities(accountServiceClientMock.readAuthorityArgument, {
+  if (!verifyEqualityBetweenAuthorities(accountServiceClientSpy.readByNameAuthorityArgument, {
     roles: 1
   })) {
     throw new Error('Actual value does not match expected value: AccountServiceClient.read(): authority argument');
   }
-  if (accountServiceClientMock.readNameArgument !== mockAccount.name) {
+  if (accountServiceClientSpy.readByNameNameArgument !== mockAccount.name) {
     throw new Error('Actual value does not match expected value: AccountServiceClient.read(): name argument');
   }
-  if (persistentSessionRepositoryMock.createInvokeCount != 1) {
+  if (persistentSessionRepositorySpy.createInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.create(): Invocation count');
   }
-  const generatedRefreshToken = persistentSessionRepositoryMock.createPersistentSessionArgument.refreshToken;
-  const generatedCreationTime = persistentSessionRepositoryMock.createPersistentSessionArgument.creationTime;
-  const generatedExpirationTime = persistentSessionRepositoryMock.createPersistentSessionArgument.expirationTime;
-  if (!verifyEqualityBetweenPersistentSessions(persistentSessionRepositoryMock.createPersistentSessionArgument, {
+  const generatedRefreshToken = persistentSessionRepositorySpy.createPersistentSessionArgument.refreshToken;
+  const generatedCreationTime = persistentSessionRepositorySpy.createPersistentSessionArgument.creationTime;
+  const generatedExpirationTime = persistentSessionRepositorySpy.createPersistentSessionArgument.expirationTime;
+  if (!verifyEqualityBetweenPersistentSessions(persistentSessionRepositorySpy.createPersistentSessionArgument, {
     accountId: mockAccount.id,
     roles: mockAccount.roles,
     refreshToken: generatedRefreshToken,
@@ -74,15 +74,15 @@ const testLogin = async () => {
   catch {
     throw new Error('Actual value does not match expected value: AuthenticationService.login(): Return value');
   }
-  persistentSessionRepositoryMock.resetSpy();
-  persistentSessionRepositoryMock.readByRefreshTokenReturnValue = [ mockPersistentSession ];
+  persistentSessionRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.readByRefreshTokenReturnValue = [ mockPersistentSession ];
   output = await authenticationService.login(authority, {
     refreshToken: mockPersistentSession.refreshToken
   });
-  if (persistentSessionRepositoryMock.readByRefreshTokenInvokeCount != 1) {
+  if (persistentSessionRepositorySpy.readByRefreshTokenInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readByRefreshToken(): Invocation count');
   }
-  if (persistentSessionRepositoryMock.readByRefreshTokenRefreshTokenArgument !== mockPersistentSession.refreshToken) {
+  if (persistentSessionRepositorySpy.readByRefreshTokenRefreshTokenArgument !== mockPersistentSession.refreshToken) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readByRefreshToken(): refreshToken argument');
   }
   try {
@@ -96,26 +96,26 @@ const testLogin = async () => {
 };
 
 const testLogout = async () => {
-  persistentSessionRepositoryMock.resetSpy();
-  persistentSessionRepositoryMock.deleteByAccountIdReturnValue = 2;
+  persistentSessionRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.deleteByAccountIdReturnValue = 2;
   await authenticationService.logout(authority, {
     accountId: mockPersistentSession.accountId
   });
-  if (persistentSessionRepositoryMock.deleteByAccountIdInvokeCount != 1) {
+  if (persistentSessionRepositorySpy.deleteByAccountIdInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): Invocation count');
   }
-  if (persistentSessionRepositoryMock.deleteByAccountIdAccountIdArgument !== mockPersistentSession.accountId) {
+  if (persistentSessionRepositorySpy.deleteByAccountIdAccountIdArgument !== mockPersistentSession.accountId) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): accountId argument');
   }
-  persistentSessionRepositoryMock.resetSpy();
-  persistentSessionRepositoryMock.deleteByRefreshTokenReturnValue = 1;
+  persistentSessionRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.deleteByRefreshTokenReturnValue = 1;
   await authenticationService.logout(authority, {
     refreshToken: mockPersistentSession.refreshToken
   });
-  if (persistentSessionRepositoryMock.deleteByRefreshTokenInvokeCount != 1) {
+  if (persistentSessionRepositorySpy.deleteByRefreshTokenInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByRefreshToken(): Invocation count');
   }
-  if (persistentSessionRepositoryMock.deleteByRefreshTokenRefreshTokenArgument !== mockPersistentSession.refreshToken) {
+  if (persistentSessionRepositorySpy.deleteByRefreshTokenRefreshTokenArgument !== mockPersistentSession.refreshToken) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByRefreshToken(): refreshToken argument');
   }
 };
@@ -194,9 +194,9 @@ const mockAccount = {
 const mockPassword = 'Qwer!234';
 
 const authority = { roles: Role.System };
-const persistentSessionRepositoryMock = new PersistentSessionRepositoryMock();
-const accountServiceClientMock = new AccountServiceClientMock();
-const authenticationService = new AuthenticationService(persistentSessionRepositoryMock, accountServiceClientMock, config.authenticationService);
+const persistentSessionRepositorySpy = new PersistentSessionRepositorySpy();
+const accountServiceClientSpy = new AccountServiceClientSpy();
+const authenticationService = new AuthenticationService(persistentSessionRepositorySpy, accountServiceClientSpy, config.authenticationService);
 
 const tests = [
   { name: 'Identify', run: testIdentify },
