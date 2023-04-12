@@ -513,4 +513,38 @@ the repository doing its validation despite redundancy.
 **Q: When a subroutine throws an error/exception, should the calling component
 re-map it into a type defined within the domain?**
 
-*This section is under construction.*
+Yes. Errors (or exceptions in Java), by name, seem like dreadful entities that
+only occur when a problem exists with the code. However, this isn't the case; an
+error is simply a form of output from a unit of code. In the traditional sense,
+the return value is a function's way of sending information back to its caller.
+Similarly, an error conveys some piece of information about the result of the
+operation. It is essentially just another channel through which information is
+sent from the subroutine to the caller.
+
+![Information channels from the subroutine to the caller](docs/subroutine-outputs.png)
+
+This implies that, just as the return value is a part of the public interface of
+a function, the error is also defined within the public interface. This way, the
+calling code knows the total number of possible outcomes and can handle all
+subroutine behaviors appropriately. Thus, the error should always be of a type
+from the domain managed by the subroutine. Any other error that the subroutine
+encounters should be translated into an instance of a domain error before being
+thrown back to the caller.
+
+![Error translation](docs/error-translation.png)
+
+This behavior brings the following benefits:
+
+- The caller has no need to handle miscellaneous error types. If a subroutine
+fails to declare the complete set of errors that it can possibly throw, the
+developer is often required to figure it out via manual testing, which is a
+painful and time-consuming process. When a function maps all of its internal
+errors into domain errors and declares them in its public interface, this
+problem goes away.
+- The function does not leak any information about its internal implementation.
+This is beneficial both as a security measure and a development principle. An
+interface should never be tied to a specific implementation, enabling any
+consumer of the interface to switch out the underlying implementation without
+making code changes. Without the error translation, a caller may have had to
+resort to handling implementation-specific errors, which will likely lead to
+broken code if this implementation gets switched out.
