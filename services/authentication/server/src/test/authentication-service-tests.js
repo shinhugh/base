@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { Role } from '../main/model/role.js';
+import { Role } from '../main/service/model/role.js';
 import { PersistentSessionRepositoryMock } from './mock/persistent-session-repository-mock.js';
 import { AccountServiceClientMock } from './mock/account-service-client-mock.js';
 import { AuthenticationService } from '../main/service/authentication-service.js';

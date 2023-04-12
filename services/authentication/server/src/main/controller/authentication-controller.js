@@ -1,4 +1,4 @@
-import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
+import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../service/model/errors.js';
 import { AuthenticationService } from '../service/authentication-service.js';
 
 class AuthenticationController {

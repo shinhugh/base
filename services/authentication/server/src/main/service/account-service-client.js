@@ -1,6 +1,6 @@
 import { get } from 'http';
 import { validate as validateUuid } from 'uuid';
-import { AccessDeniedError, IllegalArgumentError, NotFoundError } from '../model/errors.js';
+import { AccessDeniedError, IllegalArgumentError, NotFoundError } from './model/errors.js';
 
 class AccountServiceClient {
   #config;

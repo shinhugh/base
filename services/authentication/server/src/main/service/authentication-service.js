@@ -1,9 +1,10 @@
 import { createHash, getHashes } from 'crypto';
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
-import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
-import { Role } from '../model/role.js';
+import { RepositoryIllegalArgumentError, RepositoryConflictError } from '../repository/model/errors.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
+import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from './model/errors.js';
+import { Role } from './model/role.js';
 import { AccountServiceClient } from './account-service-client.js';
 
 class AuthenticationService {
@@ -63,7 +64,7 @@ class AuthenticationService {
         return (await this.#persistentSessionRepository.readById(tokenPayload.sessionId))[0];
       }
       catch (e) {
-        if (e instanceof IllegalArgumentError) {
+        if (e instanceof RepositoryIllegalArgumentError) {
           return undefined;
         }
         throw e;
@@ -146,7 +147,7 @@ class AuthenticationService {
           });
         }
         catch (e) {
-          if (!(e instanceof ConflictError)) {
+          if (!(e instanceof RepositoryConflictError)) {
             throw e;
           }
         }
@@ -182,7 +183,7 @@ class AuthenticationService {
         return (await this.#persistentSessionRepository.readByRefreshToken(refreshToken))[0];
       }
       catch (e) {
-        if (e instanceof IllegalArgumentError) {
+        if (e instanceof RepositoryIllegalArgumentError) {
           return undefined;
         }
         throw e;
@@ -237,7 +238,7 @@ class AuthenticationService {
       await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
     }
     catch (e) {
-      if (e instanceof IllegalArgumentError) {
+      if (e instanceof RepositoryIllegalArgumentError) {
         return;
       }
       throw e;
