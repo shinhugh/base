@@ -15,6 +15,12 @@ authentication service
     [DONE]
 
   - make sure that only domain-defined errors can possibly be thrown
+    [DONE]
+
+  - capture specific internal error information somehow before translating to
+    domain error
+
+  - change unexpected error message to hide implementation information
 
   - change error handling order in service (IllegalArgument before AccessDenied)
     [DONE]
@@ -51,6 +57,12 @@ Account service
     [DONE]
 
   - make sure that only domain-defined errors can possibly be thrown
+    [DONE]
+
+  - capture specific internal exception information somehow before translating
+    to domain exception
+
+  - change unexpected exception message to hide implementation information
 
   - change error handling order in service (IllegalArgument before AccessDenied)
     [DONE]
