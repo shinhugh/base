@@ -67,7 +67,7 @@ public class AccountJpaRepository implements AccountRepository {
             entityManager.getTransaction().rollback();
             return matches.toArray(new Account[0]);
         }
-        catch (Exception e) {
+        catch (Exception e) { // TODO: More granular exception handling
             throw new RuntimeException("Unexpected exception when querying database");
         }
         finally {
@@ -89,7 +89,7 @@ public class AccountJpaRepository implements AccountRepository {
             try {
                 conflict = query.setParameter("name", account.getName()).getSingleResult();
             }
-            catch (NoResultException ignored) { }
+            catch (Exception ignored) { }
             if (conflict != null) {
                 entityManager.getTransaction().rollback();
                 throw new ConflictException();
@@ -102,7 +102,7 @@ public class AccountJpaRepository implements AccountRepository {
         catch (ConflictException e) {
             throw e;
         }
-        catch (Exception e) {
+        catch (Exception e) { // TODO: More granular exception handling
             throw new RuntimeException("Unexpected exception when querying database");
         }
         finally {
@@ -150,7 +150,7 @@ public class AccountJpaRepository implements AccountRepository {
             try {
                 match = query.getSingleResult();
             }
-            catch (NoResultException ignored) { }
+            catch (Exception ignored) { }
             if (match == null) {
                 entityManager.getTransaction().rollback();
                 throw new NotFoundException();
@@ -160,7 +160,7 @@ public class AccountJpaRepository implements AccountRepository {
             try {
                 conflict = query.setParameter("name", account.getName()).getSingleResult();
             }
-            catch (NoResultException ignored) { }
+            catch (Exception ignored) { }
             if (conflict != null) {
                 entityManager.getTransaction().rollback();
                 throw new ConflictException();
@@ -175,7 +175,7 @@ public class AccountJpaRepository implements AccountRepository {
         catch (NotFoundException | ConflictException e) {
             throw e;
         }
-        catch (Exception e) {
+        catch (Exception e) { // TODO: More granular exception handling
             throw new RuntimeException("Unexpected exception when querying database");
         }
         finally {
@@ -223,7 +223,7 @@ public class AccountJpaRepository implements AccountRepository {
             entityManager.getTransaction().commit();
             return matches.size();
         }
-        catch (Exception e) {
+        catch (Exception e) { // TODO: More granular exception handling
             throw new RuntimeException("Unexpected exception when querying database");
         }
         finally {

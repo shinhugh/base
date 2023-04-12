@@ -44,7 +44,7 @@ public class AccountManager implements AccountService {
         try {
             digest = MessageDigest.getInstance(config.get("passwordHashAlgorithm"));
         }
-        catch (NoSuchAlgorithmException e) {
+        catch (Exception e) {
             throw new RuntimeException("Unexpected exception when calling MessageDigest.getInstance()");
         }
     }
@@ -74,7 +74,7 @@ public class AccountManager implements AccountService {
         try {
             matches = accountRepository.readByIdAndName(id, name);
         }
-        catch (base.account.repository.model.IllegalArgumentException e) {
+        catch (Exception e) {
             throw new RuntimeException("Unexpected exception when calling AccountRepository.readByIdAndName()");
         }
         if (matches.length == 0) {
@@ -109,11 +109,11 @@ public class AccountManager implements AccountService {
         try {
             entry = accountRepository.create(entry);
         }
-        catch (base.account.repository.model.IllegalArgumentException e) {
-            throw new RuntimeException("Unexpected exception when calling AccountRepository.create()");
-        }
         catch (base.account.repository.model.ConflictException e) {
             throw new ConflictException();
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Unexpected exception when calling AccountRepository.create()");
         }
         Account output = createServiceAccountFromRepositoryAccount(entry);
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
@@ -154,7 +154,7 @@ public class AccountManager implements AccountService {
         try {
             matches = accountRepository.readByIdAndName(id, name);
         }
-        catch (base.account.repository.model.IllegalArgumentException e) {
+        catch (Exception e) {
             throw new RuntimeException("Unexpected exception when calling AccountRepository.readByIdAndName()");
         }
         if (matches.length == 0) {
@@ -173,13 +173,13 @@ public class AccountManager implements AccountService {
         try {
             entry = accountRepository.updateByIdAndName(id, name, entry);
         }
-        catch (base.account.repository.model.IllegalArgumentException | base.account.repository.model.NotFoundException e) {
-            throw new RuntimeException("Unexpected exception when calling AccountRepository.updateByIdAndName()");
-        }
         catch (base.account.repository.model.ConflictException e) {
             throw new ConflictException();
         }
-        authenticationServiceClient.logout(authority, match.getId());
+        catch (Exception e) {
+            throw new RuntimeException("Unexpected exception when calling AccountRepository.updateByIdAndName()");
+        }
+        authenticationServiceClient.logout(authority, match.getId()); // TODO: Handle exceptions
         Account output = createServiceAccountFromRepositoryAccount(entry);
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
             output.setPasswordHash(null);
@@ -216,7 +216,7 @@ public class AccountManager implements AccountService {
         try {
             matches = accountRepository.readByIdAndName(id, name);
         }
-        catch (base.account.repository.model.IllegalArgumentException e) {
+        catch (Exception e) {
             throw new RuntimeException("Unexpected exception when calling AccountRepository.readByIdAndName()");
         }
         if (matches.length == 0) {
@@ -232,10 +232,10 @@ public class AccountManager implements AccountService {
         try {
             accountRepository.deleteByIdAndName(id, name);
         }
-        catch (base.account.repository.model.IllegalArgumentException e) {
+        catch (Exception e) {
             throw new RuntimeException("Unexpected exception when calling AccountRepository.deleteByIdAndName()");
         }
-        authenticationServiceClient.logout(authority, match.getId());
+        authenticationServiceClient.logout(authority, match.getId()); // TODO: Handle exceptions
     }
 
     private String hashPassword(String password, String salt) {
@@ -252,7 +252,7 @@ public class AccountManager implements AccountService {
         try {
             modificationEnabledSessionAgeMaxValue = Long.parseLong(config.get("modificationEnabledSessionAgeMaxValue"));
         }
-        catch (NumberFormatException e) {
+        catch (Exception e) {
             return false;
         }
         if (modificationEnabledSessionAgeMaxValue < 0 || modificationEnabledSessionAgeMaxValue > TIME_MAX_VALUE) {
@@ -271,7 +271,7 @@ public class AccountManager implements AccountService {
         try {
             UUID.fromString(id);
         }
-        catch (java.lang.IllegalArgumentException e) {
+        catch (Exception e) {
             return false;
         }
         return true;

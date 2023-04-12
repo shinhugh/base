@@ -64,7 +64,7 @@ public class AccountManagerTests {
             try {
                 digest = MessageDigest.getInstance(ACCOUNT_MANAGER_CONFIG.get("passwordHashAlgorithm"));
             }
-            catch (NoSuchAlgorithmException e) {
+            catch (Exception e) {
                 throw new RuntimeException("Invalid algorithm provided for password hashing");
             }
             accountRepositorySpy.resetSpy();
@@ -99,7 +99,7 @@ public class AccountManagerTests {
             try {
                 digest = MessageDigest.getInstance(ACCOUNT_MANAGER_CONFIG.get("passwordHashAlgorithm"));
             }
-            catch (NoSuchAlgorithmException e) {
+            catch (Exception e) {
                 throw new RuntimeException("Invalid algorithm provided for password hashing");
             }
             accountRepositorySpy.resetSpy();

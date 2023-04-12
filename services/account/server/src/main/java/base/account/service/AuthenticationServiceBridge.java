@@ -37,7 +37,7 @@ public class AuthenticationServiceBridge implements AuthenticationServiceClient 
         try {
             port = Integer.parseInt(config.get("port"));
         }
-        catch (NumberFormatException e) {
+        catch (Exception e) {
             return false;
         }
         return port >= 0 && port <= PORT_MAX_VALUE;

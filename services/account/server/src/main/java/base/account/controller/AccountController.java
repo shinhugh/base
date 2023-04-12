@@ -84,7 +84,7 @@ public class AccountController {
             try {
                 account = gson.fromJson(new InputStreamReader(request.getBody(), StandardCharsets.UTF_8), Account.class);
             }
-            catch (JsonSyntaxException e) {
+            catch (Exception e) {
                 return new Response((short) 400, null, null);
             }
             Account output;
@@ -125,7 +125,7 @@ public class AccountController {
             try {
                 account = gson.fromJson(new InputStreamReader(request.getBody(), StandardCharsets.UTF_8), Account.class);
             }
-            catch (JsonSyntaxException e) {
+            catch (Exception e) {
                 return new Response((short) 400, null, null);
             }
             String id = null;
@@ -210,7 +210,7 @@ public class AccountController {
             try {
                 authority.setRoles(Short.parseShort(request.getHeaders().get("authority-roles")));
             }
-            catch (NumberFormatException e) {
+            catch (Exception e) {
                 throw new Exception();
             }
         }
@@ -218,7 +218,7 @@ public class AccountController {
             try {
                 authority.setAuthTime(Long.parseLong(request.getHeaders().get("authority-auth-time")));
             }
-            catch (NumberFormatException e) {
+            catch (Exception e) {
                 throw new Exception();
             }
         }
