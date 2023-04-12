@@ -43,7 +43,8 @@ public class AccountManager implements AccountService {
         modificationEnabledSessionAgeMaxValue = Long.parseLong(config.get("modificationEnabledSessionAgeMaxValue"));
         try {
             digest = MessageDigest.getInstance(config.get("passwordHashAlgorithm"));
-        } catch (NoSuchAlgorithmException e) {
+        }
+        catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Unexpected exception when calling MessageDigest.getInstance()");
         }
     }
