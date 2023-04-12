@@ -8,7 +8,7 @@ class PersistentSessionRepository {
 
   constructor(config) {
     if (config == null || !validateConfig(config)) {
-      throw new Error('PersistentSessionRepository constructor failed');
+      throw new Error('Invalid config provided to PersistentSessionRepository constructor');
     }
     this.#config = {
       host: config.host,
@@ -32,6 +32,9 @@ class PersistentSessionRepository {
       });
       return matches;
     }
+    catch {
+      throw new Error('Unexpected error when querying database');
+    }
     finally {
       await this.#closeSequelize();
     }
@@ -49,6 +52,9 @@ class PersistentSessionRepository {
         }
       });
       return matches;
+    }
+    catch {
+      throw new Error('Unexpected error when querying database');
     }
     finally {
       await this.#closeSequelize();
@@ -80,6 +86,9 @@ class PersistentSessionRepository {
       }
       return entry;
     }
+    catch {
+      throw new Error('Unexpected error when querying database');
+    }
     finally {
       await this.#closeSequelize();
     }
@@ -97,6 +106,9 @@ class PersistentSessionRepository {
         }
       });
     }
+    catch {
+      throw new Error('Unexpected error when querying database');
+    }
     finally {
       await this.#closeSequelize();
     }
@@ -113,6 +125,9 @@ class PersistentSessionRepository {
           refreshToken: refreshToken
         }
       });
+    }
+    catch {
+      throw new Error('Unexpected error when querying database');
     }
     finally {
       await this.#closeSequelize();
@@ -147,7 +162,7 @@ class PersistentSessionRepository {
         await this.#sequelize.authenticate();
       }
       catch {
-        throw new Error('Database connection failed');
+        throw new Error('Connection to database failed');
       }
       this.#sequelize.define('persistentSessions', sequelizePersistentSessionAttributes, sequelizePersistentSessionOptions);
     }

@@ -5,6 +5,7 @@ import base.account.service.model.Authority;
 import java.util.Map;
 
 public class AuthenticationServiceBridge implements AuthenticationServiceClient {
+    private static final int PORT_MAX_VALUE = 65535;
     private final String host;
     private final int port;
 
@@ -39,6 +40,6 @@ public class AuthenticationServiceBridge implements AuthenticationServiceClient 
         catch (NumberFormatException e) {
             return false;
         }
-        return port >= 0;
+        return port >= 0 && port <= PORT_MAX_VALUE;
     }
 }

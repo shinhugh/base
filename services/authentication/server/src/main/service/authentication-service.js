@@ -13,13 +13,13 @@ class AuthenticationService {
 
   constructor(persistentSessionRepository, accountServiceClient, config) {
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
-      throw new Error('AuthenticationService constructor failed');
+      throw new Error('Invalid persistentSessionRepository provided to AuthenticationService constructor');
     }
     if (!(accountServiceClient instanceof AccountServiceClient)) {
-      throw new Error('AuthenticationService constructor failed');
+      throw new Error('Invalid accountServiceClient provided to AuthenticationService constructor');
     }
     if (config == null || !validateConfig(config)) {
-      throw new Error('AuthenticationService constructor failed');
+      throw new Error('Invalid config provided to AuthenticationService constructor');
     }
     this.#persistentSessionRepository = persistentSessionRepository;
     this.#accountServiceClient = accountServiceClient;
@@ -34,13 +34,13 @@ class AuthenticationService {
 
   async identify(authority, token) {
     if (!validateAuthority(authority)) {
-      throw new Error('Invalid authority provided to AuthenticationService.identify()');
-    }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
-      throw new AccessDeniedError();
+      throw new IllegalArgumentError();
     }
     if (typeof token !== 'string') {
       throw new IllegalArgumentError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
+      throw new AccessDeniedError();
     }
     const tokenPayload = (() => {
       try {
@@ -52,7 +52,7 @@ class AuthenticationService {
         if (e instanceof jwt.TokenExpiredError || e instanceof jwt.JsonWebTokenError || e instanceof jwt.NotBeforeError) {
           return null;
         }
-        throw e;
+        throw new Error('Unexpected error when calling jwt.verify()');
       }
     })();
     if (tokenPayload == null) {
@@ -81,7 +81,7 @@ class AuthenticationService {
 
   async login(authority, loginInfo) {
     if (!validateAuthority(authority)) {
-      throw new Error('Invalid authority provided to AuthenticationService.login()');
+      throw new IllegalArgumentError();
     }
     if (loginInfo == null || typeof loginInfo !== 'object') {
       throw new IllegalArgumentError();
@@ -97,7 +97,7 @@ class AuthenticationService {
 
   async logout(authority, logoutInfo) {
     if (!validateAuthority(authority)) {
-      throw new Error('Invalid authority provided to AuthenticationService.logout()');
+      throw new IllegalArgumentError();
     }
     if (logoutInfo == null || typeof logoutInfo !== 'object') {
       throw new IllegalArgumentError();
@@ -152,13 +152,21 @@ class AuthenticationService {
         }
       }
     })();
-    const idToken = jwt.sign({
-      sessionId: persistentSession.id,
-      iat: persistentSession.creationTime,
-      exp: this.#config.volatileSessionDuration > 0 ? (persistentSession.creationTime + this.#config.volatileSessionDuration) : timeMaxValue
-    }, this.#config.tokenSecretKey, {
-      algorithm: this.#config.tokenAlgorithm
-    });
+    const idToken = (() => {
+      try {
+        return jwt.sign({
+          sessionId: persistentSession.id,
+          iat: persistentSession.creationTime,
+          exp: this.#config.volatileSessionDuration > 0 ? (persistentSession.creationTime + this.#config.volatileSessionDuration) : timeMaxValue
+        }, this.#config.tokenSecretKey, {
+          algorithm: this.#config.tokenAlgorithm
+        });
+      }
+      catch {
+        // TODO: Delete PersistentSession that was just created
+        throw new Error('Unexpected error when calling jwt.sign()');
+      }
+    })();
     return {
       refreshToken: persistentSession.refreshToken,
       idToken: idToken
@@ -187,24 +195,31 @@ class AuthenticationService {
     if (persistentSession.expirationTime <= currentTime) {
       throw new AccessDeniedError();
     }
-    const idToken = jwt.sign({
-      sessionId: persistentSession.id,
-      iat: currentTime,
-      exp: this.#config.volatileSessionDuration > 0 ? (currentTime + this.#config.volatileSessionDuration) : timeMaxValue
-    }, this.#config.tokenSecretKey, {
-      algorithm: this.#config.tokenAlgorithm
-    });
+    const idToken = (() => {
+      try {
+        return jwt.sign({
+          sessionId: persistentSession.id,
+          iat: currentTime,
+          exp: this.#config.volatileSessionDuration > 0 ? (currentTime + this.#config.volatileSessionDuration) : timeMaxValue
+        }, this.#config.tokenSecretKey, {
+          algorithm: this.#config.tokenAlgorithm
+        });
+      }
+      catch {
+        throw new Error('Unexpected error when calling jwt.sign()');
+      }
+    })();
     return {
       idToken: idToken
     };
   }
 
   async #logoutViaAccountId(authority, accountId) {
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
-      throw new AccessDeniedError();
-    }
     if (typeof accountId !== 'string' || !validateUuid(accountId)) {
       throw new IllegalArgumentError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
+      throw new AccessDeniedError();
     }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin)) {
       if (authority.id !== accountId) {

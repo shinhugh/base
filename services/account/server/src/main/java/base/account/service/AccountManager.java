@@ -254,7 +254,7 @@ public class AccountManager implements AccountService {
         catch (NumberFormatException e) {
             return false;
         }
-        if (modificationEnabledSessionAgeMaxValue < 0) {
+        if (modificationEnabledSessionAgeMaxValue < 0 || modificationEnabledSessionAgeMaxValue > TIME_MAX_VALUE) {
             return false;
         }
         if (!config.containsKey("passwordHashAlgorithm")) {

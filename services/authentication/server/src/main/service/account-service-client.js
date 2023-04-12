@@ -7,7 +7,7 @@ class AccountServiceClient {
 
   constructor(config) {
     if (config == null || !validateConfig(config)) {
-      throw new Error('AccountServiceClient constructor failed');
+      throw new Error('Invalid config provided to AccountServiceClient constructor');
     }
     this.#config = {
       host: config.host,
@@ -46,29 +46,39 @@ class AccountServiceClient {
     if (requestHeaders != null) {
       requestOptions.headers = requestHeaders;
     }
-    const response = await new Promise((resolve) => {
-      get(requestOptions, res => {
-        let body = [];
-        res.on('data', chunk => {
-          body.push(chunk);
-        });
-        res.on('end', () => {
-          if (body.length == 0) {
-            resolve({
-              status: res.statusCode,
-              headers: res.headers
-            })
-          }
-          else {
-            resolve({
-              status: res.statusCode,
-              headers: res.headers,
-              body: Buffer.concat(body)
+    const response = await (async () => {
+      try {
+        return await new Promise((resolve, reject) => {
+          get(requestOptions, res => {
+            let body = [];
+            res.on('data', chunk => {
+              body.push(chunk);
             });
-          }
+            res.on('end', () => {
+              if (body.length == 0) {
+                resolve({
+                  status: res.statusCode,
+                  headers: res.headers
+                })
+              }
+              else {
+                resolve({
+                  status: res.statusCode,
+                  headers: res.headers,
+                  body: Buffer.concat(body)
+                });
+              }
+            });
+          })
+          .on('error', () => {
+            reject();
+          });
         });
-      });
-    });
+      }
+      catch {
+        throw new Error('Connection to Account service failed');
+      }
+    })();
     switch (response.status) {
       case 200: {
         try {
@@ -78,11 +88,11 @@ class AccountServiceClient {
           throw new Error('Unexpected response body format received from Account service');
         }
       }
-      case 401: {
-        throw new AccessDeniedError();
-      }
       case 400: {
         throw new IllegalArgumentError();
+      }
+      case 401: {
+        throw new AccessDeniedError();
       }
       case 404: {
         throw new NotFoundError();

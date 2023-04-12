@@ -5,23 +5,33 @@ authentication service
   - all constructors should detect invalid config values immediately. any values
     that configure network connections (e.g. database, remote service) don't
     need to be tested here.
+    [DONE]
+
+  - more detail in errors thrown by constructors
+    [DONE]
 
   - handle all errors from calls that make network connections (and can
     potentially fail).
+    [DONE]
 
-  - more detail in errors thrown by constructors
+  - make sure that only domain-defined errors can possibly be thrown
 
   - change error handling order in service (IllegalArgument before AccessDenied)
+    [DONE]
 
   - invalid authority should return IllegalArgument in service
-
-  - define separate models and errors between service and repository
+    [DONE]
 
   - make sure that each layer handles its own validation in its entirety
+    [DONE]
 
   - make sure that all public functions are doing validation for all parameters
+    [DONE]
 
   - make sure that no private function is doing validation for any parameter
+    [DONE]
+
+  - define separate models and errors between service and repository
 
 Account service
 
@@ -32,20 +42,19 @@ Account service
     need to be tested here.
     [DONE]
 
+  - more detail in errors thrown by constructors
+    [DONE]
+
   - handle all errors from calls that make network connections (and can
     potentially fail).
     [DONE]
 
-  - more detail in errors thrown by constructors
-    [DONE]
+  - make sure that only domain-defined errors can possibly be thrown
 
   - change error handling order in service (IllegalArgument before AccessDenied)
     [DONE]
 
   - invalid authority should return IllegalArgument in service
-    [DONE]
-
-  - define separate models and errors between service and repository
     [DONE]
 
   - make sure that each layer handles its own validation in its entirety
@@ -55,6 +64,9 @@ Account service
     [DONE]
 
   - make sure that no private function is doing validation for any parameter
+    [DONE]
+
+  - define separate models and errors between service and repository
     [DONE]
 
 gateway

@@ -1,4 +1,3 @@
-import { validate as validateUuid } from 'uuid';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../model/errors.js';
 import { AuthenticationService } from '../service/authentication-service.js';
 
@@ -7,7 +6,7 @@ class AuthenticationController {
 
   constructor(authenticationService) {
     if (!(authenticationService instanceof AuthenticationService)) {
-      throw new Error('AuthenticationController constructor failed');
+      throw new Error('Invalid authenticationService provided to AuthenticationController constructor');
     }
     this.#authenticationService = authenticationService;
   }
@@ -17,7 +16,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.identify()');
     }
     try {
-      // TODO: Order of errors is wrong
+      const authority = parseAuthority(request);
       if (request.headers?.['content-type'] !== 'application/json') {
         return {
           status: 400
@@ -35,7 +34,6 @@ class AuthenticationController {
         }
         throw e;
       }
-      const authority = parseAuthority(request);
       return await invokeAndInterceptDomainError(async () => {
         return {
           status: 200,
@@ -59,7 +57,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.login()');
     }
     try {
-      // TODO: Order of errors is wrong
+      const authority = parseAuthority(request);
       if (request.headers?.['content-type'] !== 'application/json') {
         return {
           status: 400
@@ -77,7 +75,6 @@ class AuthenticationController {
         }
         throw e;
       }
-      const authority = parseAuthority(request);
       return await invokeAndInterceptDomainError(async () => {
         return {
           status: 200,
@@ -101,7 +98,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.logout()');
     }
     try {
-      // TODO: Order of errors is wrong
+      const authority = parseAuthority(request);
       if (request.headers?.['content-type'] !== 'application/json') {
         return {
           status: 400
@@ -119,7 +116,6 @@ class AuthenticationController {
         }
         throw e;
       }
-      const authority = parseAuthority(request);
       return await invokeAndInterceptDomainError(async () => {
         await this.#authenticationService.logout(authority, logoutInfo);
         return {
@@ -223,9 +219,6 @@ const invokeAndInterceptDomainError = async (routine) => {
     throw e;
   }
 };
-
-const rolesMaxValue = 255;
-const timeMaxValue = 4294967295;
 
 export {
   AuthenticationController
