@@ -4,7 +4,10 @@ import base.account.repository.model.Account;
 import base.account.repository.model.ConflictException;
 import base.account.repository.model.IllegalArgumentException;
 import base.account.repository.model.NotFoundException;
-import jakarta.persistence.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
+import jakarta.persistence.TypedQuery;
 
 import java.util.List;
 import java.util.Map;

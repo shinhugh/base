@@ -179,7 +179,13 @@ component's model, should it be translated into an error that is a part of the
 model?
 
 A:
-?
+Yes. A well-designed component has full control over all input-output mappings
+(with state taken into account). Throwing an error that isn't a part of the
+component's domain shows:
+- Implementation details (internal dependencies)
+- The failure to handle a use case
+The component's caller should not have to deal with a type that's outside of the
+domain provided by the component.
 
 --------------------------------------------------------------------------------
 
