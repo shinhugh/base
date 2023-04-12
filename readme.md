@@ -438,10 +438,79 @@ whether a request should be processed.
 
 ![Flow diagram](docs/account-delete-flow.png)
 
-## Internal design of authentication service
+## Internal concerns within a service
 
-*This section is under construction.*
+*Note*: As everything in this section is within the scope of a single
+microservice, the term "service" in this section refers to the layer in the
+software stack, not a node in the microservice architecture. "Service" here is
+referring to the component that encapsulates the business logic.
 
-## Internal design of account service
+### Validation
+
+**Q: Which component or layer in the system is responsible for making sure that
+the only inputs that make it through are the ones that make sense in the context
+of the domain?**
+
+Validation is a responsibility shared amongst the different layers of the
+software stack. There are small differences between different languages in how
+this responsibility gets divided, but the core idea remains constant. The two
+diagrams below provide a visual overview on the setup.
+
+![Validation by tier](docs/validation-by-tier.png)
+
+![Validation by area](docs/validation-by-area.png)
+
+The three layers are as follows:
+
+- **Controller**<br>This layer does not explicitly try to do any validation but
+does so implicitly by dropping requests (i.e. responding with status code 400)
+that are malformed on the HTTP/JSON (or any other data representation method)
+level.<br>The controller maps the HTTP data into whatever format the underlying
+service can accept, and it does no more than that. It does not do any further
+validation; it does the bare minimum to enable the service to operate with the
+request.<br>With a strongly-typed language like Java, the controller naturally
+filters out inputs that don't align with the expected structure (class). This is
+imposed/provided by the language itself, as parsing would be done into a
+pre-defined type.<br>With a weakly typed language like Javascript, the
+controller can get away with covering less ground. It would only deny requests
+that aren't possible to parse into any value regardless of type. This is because
+the service cannot specify types for its function parameters, so it would
+validate its inputs against its schemas anyways (in order to be well-defined and
+robust). Thus, there is no need for the controller to do any validation beyond
+the parsing it already does; that will inevitably be covered by the service.
+
+- **Service**<br>The service is the main validator. It validates the input by
+applying the domain's rules. These rules are the strictest and compose a proper
+superset of all the rules imposed by the other layers. In other words, any input
+that passes the service layer's validation will pass that of any other
+layer.<br>As described in the controller section, a service in a weakly typed
+language will carry more responsibility than one in a strongly typed language,
+as the former has no guarantee about its inputs' types and should manually
+validate them.
+
+- **Repository**<br>Although the repository does its own validation, it is only
+for the sake of being well-defined and robust as a standalone component. It does
+not add any surface area to the validation done for the system as a whole. This
+is because there should be no scenario where the domain rules deem an input as
+legal but the system cannot store it due to the repository rejecting it. Such an
+incident would imply a major flaw in either the configuration or choice of the
+storage tool.<br>This implies that any validation done by the repository will be
+entirely redundant. This initially seems like something to be avoided, but it
+makes sense from the perspective of the repository itself. Each software
+component is responsible for itself, and making assumptions about the caller is
+in general a bad practice.<br>If avoiding redundancy is a priority, one may
+choose to modify the service instead, where it can rely on the validation that
+it knows the repository will do. Whereas "knowledge" about the service from the
+repository's perspective is based on assumptions, the service does indeed know
+the behavior of the repository and its validation. Validation coverage is a part
+of each component's public interface, and the service is an invoker of the
+repository. However, there are other complications to doing this, such as error
+handling order; these will not be discussed here. In summary, there is merit to
+the repository doing its validation despite redundancy.
+
+### Error handling
+
+**Q: When a subroutine throws an error/exception, should the calling component
+re-map it into a type defined within the domain?**
 
 *This section is under construction.*
