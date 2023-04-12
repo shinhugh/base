@@ -526,12 +526,14 @@ sent from the subroutine to the caller.
 ![Information channels from the subroutine to the caller](docs/subroutine-outputs.png)
 
 This implies that, just as the return value is a part of the public interface of
-a function, the error is also defined within the public interface. This way, the
-calling code knows the total number of possible outcomes and can handle all
-subroutine behaviors appropriately. Thus, the error should always be of a type
-from the domain managed by the subroutine. Any other error that the subroutine
-encounters should be translated into an instance of a domain error before being
-thrown back to the caller.
+a function, the error should also be defined within the public interface. This
+way, the calling code is aware of all possible outcomes and can react
+accordingly.
+
+Being a part of the public interface, an error should always be of a type from
+the domain managed by the subroutine. Any other internal error that the
+subroutine encounters should be translated into an instance of a domain error
+before being propagated back to the caller.
 
 ![Error translation](docs/error-translation.png)
 
@@ -540,13 +542,29 @@ This behavior brings the following benefits:
 - The caller has no need to handle miscellaneous error types. If a subroutine
 fails to declare the complete set of errors that it can possibly throw, the
 developer is often required to figure it out via manual testing, which is a
-painful and time-consuming process. When a function maps all of its internal
-errors into domain errors and declares them in its public interface, this
-problem goes away.
+painful and time-consuming process. When a function restricts its error outputs
+to a well-defined set of types that it controls, this problem goes away.
 - The function does not leak any information about its internal implementation.
 This is beneficial both as a security measure and a development principle. An
-interface should never be tied to a specific implementation, enabling any
-consumer of the interface to switch out the underlying implementation without
-making code changes. Without the error translation, a caller may have had to
-resort to handling implementation-specific errors, which will likely lead to
-broken code if this implementation gets switched out.
+interface should never be tied to a specific implementation. Doing so prohibits
+the consumer of the interface from freely switching out the underlying
+implementation without making code changes. Without the error translation, a
+caller may have had to resort to handling implementation-specific errors, which
+will likely lead to broken code if this implementation gets switched out.
+
+If done incorrectly, error translation can result in a loss of information. An
+error contains valuable information about what exactly happened internally that
+prevented a value from being returned. There are multiple approaches to capture
+this information:
+
+- Nest the original error within an existing domain error type.
+- Define a new error type within the domain that exactly expresses the same
+meaning as the original error.
+- Log the original error and throw a more general domain error.
+
+The approach taken depends on the needs of the calling code. If it's expected
+that the caller would immediately require more granular information on what
+caused a value from being returned, either wrapping the original error or
+defining a specific error type is probably the wiser choice. Otherwise, if there
+is no anticipated need for the caller to understand what caused the error (i.e.
+the reaction is the same regardless of the cause), logging is likely sufficient.
