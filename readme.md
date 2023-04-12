@@ -438,12 +438,14 @@ whether a request should be processed.
 
 ![Flow diagram](docs/account-delete-flow.png)
 
-## Internal concerns within a service
+## Internal concerns within a microservice
 
-*Note*: As everything in this section is within the scope of a single
-microservice, the term "service" in this section refers to the layer in the
-software stack, not a node in the microservice architecture. "Service" here is
-referring to the component that encapsulates the business logic.
+*Note*: There is a shift in scope for this section. As this section discusses
+matters that are internal to a single microservice, the term "service" in this
+section refers to the layer in the software stack of one microservice, not a
+node in the greater microservice network. A microservice can typically be broken
+down into the controller, service, and repository. "Service" here is referring
+to the stack layer that encapsulates the business logic.
 
 ### Validation
 
