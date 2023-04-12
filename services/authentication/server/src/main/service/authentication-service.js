@@ -50,10 +50,10 @@ class AuthenticationService {
         });
       }
       catch (e) {
-        if (e instanceof jwt.TokenExpiredError || e instanceof jwt.JsonWebTokenError || e instanceof jwt.NotBeforeError) {
-          return null;
+        if (e instanceof JsonWebTokenError && e.message === 'invalid algorithm') {
+          throw new Error('Unexpected error when calling jwt.verify()')
         }
-        throw new Error('Unexpected error when calling jwt.verify()');
+        return null;
       }
     })();
     if (tokenPayload == null) {
@@ -133,9 +133,10 @@ class AuthenticationService {
     if (passwordHash !== account.passwordHash) {
       throw new AccessDeniedError();
     }
+    let refreshToken;
     const persistentSession = await (async () => {
       while (true) {
-        const refreshToken = generateRandomString(refreshTokenAllowedChars, refreshTokenLength);
+        refreshToken = generateRandomString(refreshTokenAllowedChars, refreshTokenLength);
         const currentTime = Math.floor(Date.now() / 1000);
         try {
           return await this.#persistentSessionRepository.create({
@@ -153,7 +154,7 @@ class AuthenticationService {
         }
       }
     })();
-    const idToken = (() => {
+    const idToken = await (async () => {
       try {
         return jwt.sign({
           sessionId: persistentSession.id,
@@ -164,7 +165,12 @@ class AuthenticationService {
         });
       }
       catch {
-        // TODO: Delete PersistentSession that was just created
+        try {
+          await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
+        }
+        catch {
+          throw new Error('Unexpected error when calling jwt.sign(); failed to revert PersistentSession creation');
+        }
         throw new Error('Unexpected error when calling jwt.sign()');
       }
     })();

@@ -26,13 +26,10 @@ class AuthenticationController {
       try {
         token = JSON.parse(request.body.toString());
       }
-      catch (e) {
-        if (e instanceof SyntaxError) {
-          return {
-            status: 400
-          };
-        }
-        throw e;
+      catch {
+        return {
+          status: 400
+        };
       }
       return await invokeAndInterceptDomainError(async () => {
         return {
@@ -67,13 +64,10 @@ class AuthenticationController {
       try {
         loginInfo = JSON.parse(request.body.toString());
       }
-      catch (e) {
-        if (e instanceof SyntaxError) {
-          return {
-            status: 400
-          };
-        }
-        throw e;
+      catch {
+        return {
+          status: 400
+        };
       }
       return await invokeAndInterceptDomainError(async () => {
         return {
@@ -108,13 +102,10 @@ class AuthenticationController {
       try {
         logoutInfo = JSON.parse(request.body.toString());
       }
-      catch (e) {
-        if (e instanceof SyntaxError) {
-          return {
-            status: 400
-          };
-        }
-        throw e;
+      catch {
+        return {
+          status: 400
+        };
       }
       return await invokeAndInterceptDomainError(async () => {
         await this.#authenticationService.logout(authority, logoutInfo);

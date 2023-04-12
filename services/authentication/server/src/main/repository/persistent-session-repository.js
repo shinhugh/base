@@ -25,12 +25,11 @@ class PersistentSessionRepository {
     }
     await this.#openSequelize(this.#config);
     try {
-      const matches = await this.#sequelize.models.persistentSessions.findAll({
+      return await this.#sequelize.models.persistentSessions.findAll({
         where: {
           id: id
         }
       });
-      return matches;
     }
     catch {
       throw new Error('Unexpected error when querying database');
@@ -46,12 +45,11 @@ class PersistentSessionRepository {
     }
     await this.#openSequelize(this.#config);
     try {
-      const matches = await this.#sequelize.models.persistentSessions.findAll({
+      return await this.#sequelize.models.persistentSessions.findAll({
         where: {
           refreshToken: refreshToken
         }
       });
-      return matches;
     }
     catch {
       throw new Error('Unexpected error when querying database');
@@ -82,12 +80,9 @@ class PersistentSessionRepository {
         if (e instanceof Sequelize.ValidationError) {
           throw new RepositoryConflictError();
         }
-        throw e;
+        throw new Error('Unexpected error when querying database');
       }
       return entry;
-    }
-    catch {
-      throw new Error('Unexpected error when querying database');
     }
     finally {
       await this.#closeSequelize();
@@ -136,11 +131,22 @@ class PersistentSessionRepository {
 
   async #generateId() {
     let id = generateUuid();
-    while (await this.#sequelize.models.persistentSessions.findOne({
-      where: {
-        id: id
+    while (true) {
+      const match = await (async () => {
+        try {
+          return await this.#sequelize.models.persistentSessions.findOne({
+            where: {
+              id: id
+            }
+          });
+        }
+        catch {
+          throw new Error('Unexpected error when querying database');
+        }
+      })();
+      if (match == null) {
+        break;
       }
-    }) != null) {
       id = generateUuid();
     }
     return id;

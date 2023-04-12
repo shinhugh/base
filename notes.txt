@@ -32,6 +32,7 @@ authentication service
     [DONE]
 
   - define separate models and errors between service and repository
+    [DONE]
 
 Account service
 
@@ -168,6 +169,17 @@ But it's not IDEAL because:
 - Considering order of error handling, IllegalArgument should be thrown first,
   so the service should cover entire validation surface before doing anything
   else anyways.
+
+---
+
+Q:
+Should a component have full control over the possible errors that can be thrown
+from itself? If a subroutine throws an error that isn't a part of the
+component's model, should it be translated into an error that is a part of the
+model?
+
+A:
+?
 
 --------------------------------------------------------------------------------
 
