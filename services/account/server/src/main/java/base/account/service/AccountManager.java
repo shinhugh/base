@@ -1,8 +1,8 @@
 package base.account.service;
 
-import base.account.model.IllegalArgumentException;
-import base.account.model.*;
 import base.account.repository.AccountRepository;
+import base.account.service.model.IllegalArgumentException;
+import base.account.service.model.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -23,42 +23,35 @@ public class AccountManager implements AccountService {
     private static final String PASSWORD_SALT_ALLOWED_CHARS = PASSWORD_ALLOWED_CHARS;
     private static final int PASSWORD_SALT_LENGTH = 32;
     private static final byte[] HEX_CHARS = "0123456789abcdef".getBytes(StandardCharsets.US_ASCII);
-    private final long sessionAgeForModificationMaxValue;
+    private final long modificationEnabledSessionAgeMaxValue;
     private final AccountRepository accountRepository;
     private final AuthenticationServiceClient authenticationServiceClient;
     private final MessageDigest digest;
 
     public AccountManager(AccountRepository accountRepository, AuthenticationServiceClient authenticationServiceClient, Map<String, String> config) {
         if (accountRepository == null) {
-            throw new RuntimeException("AccountManager constructor failed");
+            throw new RuntimeException("Invalid accountRepository provided to AccountManager constructor");
         }
         if (authenticationServiceClient == null) {
-            throw new RuntimeException("AccountManager constructor failed");
+            throw new RuntimeException("Invalid authenticationServiceClient provided to AccountManager constructor");
         }
         if (config == null || !validateConfig(config)) {
-            throw new RuntimeException("AccountManager constructor failed");
+            throw new RuntimeException("Invalid config provided to AccountManager constructor");
         }
         this.accountRepository = accountRepository;
         this.authenticationServiceClient = authenticationServiceClient;
-        sessionAgeForModificationMaxValue = Long.parseLong(config.get("sessionAgeForModificationMaxValue"));
+        modificationEnabledSessionAgeMaxValue = Long.parseLong(config.get("modificationEnabledSessionAgeMaxValue"));
         try {
             digest = MessageDigest.getInstance(config.get("passwordHashAlgorithm"));
-        } catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException("AccountManager constructor failed");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Unexpected exception when calling MessageDigest.getInstance()");
         }
     }
 
     @Override
-    public Account read(Authority authority, String id, String name) {
+    public Account read(Authority authority, String id, String name) throws IllegalArgumentException, AccessDeniedException, NotFoundException {
         if (!validateAuthority(authority)) {
-            throw new RuntimeException("Invalid authority provided to AccountManager.read()");
-        }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
-            throw new AccessDeniedException();
-        }
-        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
-        if (onlyAuthorizedAsUser && authority.getId() == null) {
-            throw new AccessDeniedException();
+            throw new IllegalArgumentException();
         }
         if (id == null && name == null) {
             throw new IllegalArgumentException();
@@ -69,48 +62,6 @@ public class AccountManager implements AccountService {
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        Account[] matches = accountRepository.readByIdAndName(id, name);
-        if (matches.length == 0) {
-            if (onlyAuthorizedAsUser) {
-                throw new AccessDeniedException();
-            }
-            throw new NotFoundException();
-        }
-        Account match = matches[0];
-        if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
-            throw new AccessDeniedException();
-        }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
-            match.setPasswordHash(null);
-            match.setPasswordSalt(null);
-        }
-        return match;
-    }
-
-    @Override
-    public Account create(Authority authority, Account account) {
-        if (!validateAuthority(authority)) {
-            throw new RuntimeException("Invalid authority provided to AccountManager.create()");
-        }
-        if (account == null || !validateAccount(account)) {
-            throw new IllegalArgumentException();
-        }
-        String passwordSalt = generateRandomString(PASSWORD_SALT_ALLOWED_CHARS, PASSWORD_SALT_LENGTH);
-        String passwordHash = hashPassword(account.getPassword(), passwordSalt);
-        Account entry = new Account(null, account.getName(), null, passwordHash, passwordSalt, account.getRoles());
-        entry = accountRepository.create(entry);
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
-            entry.setPasswordHash(null);
-            entry.setPasswordSalt(null);
-        }
-        return entry;
-    }
-
-    @Override
-    public Account update(Authority authority, String id, String name, Account account) {
-        if (!validateAuthority(authority)) {
-            throw new RuntimeException("Invalid authority provided to AccountManager.update()");
-        }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
         }
@@ -118,8 +69,63 @@ public class AccountManager implements AccountService {
         if (onlyAuthorizedAsUser && authority.getId() == null) {
             throw new AccessDeniedException();
         }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM) && authority.getAuthTime() + sessionAgeForModificationMaxValue < (System.currentTimeMillis() / 1000)) {
+        base.account.repository.model.Account[] matches;
+        try {
+            matches = accountRepository.readByIdAndName(id, name);
+        }
+        catch (base.account.repository.model.IllegalArgumentException e) {
+            throw new RuntimeException("Unexpected exception when calling AccountRepository.readByIdAndName()");
+        }
+        if (matches.length == 0) {
+            if (onlyAuthorizedAsUser) {
+                throw new AccessDeniedException();
+            }
+            throw new NotFoundException();
+        }
+        base.account.repository.model.Account match = matches[0];
+        if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
+        }
+        Account output = createServiceAccountFromRepositoryAccount(match);
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
+            output.setPasswordHash(null);
+            output.setPasswordSalt(null);
+        }
+        return output;
+    }
+
+    @Override
+    public Account create(Authority authority, Account account) throws IllegalArgumentException, ConflictException {
+        if (!validateAuthority(authority)) {
+            throw new IllegalArgumentException();
+        }
+        if (account == null || !validateAccount(account)) {
+            throw new IllegalArgumentException();
+        }
+        String passwordSalt = generateRandomString(PASSWORD_SALT_ALLOWED_CHARS, PASSWORD_SALT_LENGTH);
+        String passwordHash = hashPassword(account.getPassword(), passwordSalt);
+        base.account.repository.model.Account entry = new base.account.repository.model.Account(null, account.getName(), passwordHash, passwordSalt, account.getRoles());
+        try {
+            entry = accountRepository.create(entry);
+        }
+        catch (base.account.repository.model.IllegalArgumentException e) {
+            throw new RuntimeException("Unexpected exception when calling AccountRepository.create()");
+        }
+        catch (base.account.repository.model.ConflictException e) {
+            throw new ConflictException();
+        }
+        Account output = createServiceAccountFromRepositoryAccount(entry);
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
+            output.setPasswordHash(null);
+            output.setPasswordSalt(null);
+        }
+        return output;
+    }
+
+    @Override
+    public Account update(Authority authority, String id, String name, Account account) throws IllegalArgumentException, AccessDeniedException, NotFoundException, ConflictException {
+        if (!validateAuthority(authority)) {
+            throw new IllegalArgumentException();
         }
         if (id == null && name == null) {
             throw new IllegalArgumentException();
@@ -130,46 +136,61 @@ public class AccountManager implements AccountService {
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        Account[] matches = accountRepository.readByIdAndName(id, name);
+        if (account == null || !validateAccount(account)) {
+            throw new IllegalArgumentException();
+        }
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
+            throw new AccessDeniedException();
+        }
+        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
+        if (onlyAuthorizedAsUser && authority.getId() == null) {
+            throw new AccessDeniedException();
+        }
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM) && modificationEnabledSessionAgeMaxValue > 0 && authority.getAuthTime() + modificationEnabledSessionAgeMaxValue < (System.currentTimeMillis() / 1000)) {
+            throw new AccessDeniedException();
+        }
+        base.account.repository.model.Account[] matches;
+        try {
+            matches = accountRepository.readByIdAndName(id, name);
+        }
+        catch (base.account.repository.model.IllegalArgumentException e) {
+            throw new RuntimeException("Unexpected exception when calling AccountRepository.readByIdAndName()");
+        }
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
                 throw new AccessDeniedException();
             }
             throw new NotFoundException();
         }
-        Account match = matches[0];
+        base.account.repository.model.Account match = matches[0];
         if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
-        if (account == null || !validateAccount(account)) {
-            throw new IllegalArgumentException();
-        }
         String passwordSalt = generateRandomString(PASSWORD_SALT_ALLOWED_CHARS, PASSWORD_SALT_LENGTH);
         String passwordHash = hashPassword(account.getPassword(), passwordSalt);
-        Account entry = new Account(null, account.getName(), null, passwordHash, passwordSalt, account.getRoles());
-        entry = accountRepository.updateByIdAndName(id, name, entry);
+        base.account.repository.model.Account entry = new base.account.repository.model.Account(null, account.getName(), passwordHash, passwordSalt, account.getRoles());
+        try {
+            entry = accountRepository.updateByIdAndName(id, name, entry);
+        }
+        catch (base.account.repository.model.IllegalArgumentException | base.account.repository.model.NotFoundException e) {
+            throw new RuntimeException("Unexpected exception when calling AccountRepository.updateByIdAndName()");
+        }
+        catch (base.account.repository.model.ConflictException e) {
+            throw new ConflictException();
+        }
         authenticationServiceClient.logout(authority, match.getId());
+        Account output = createServiceAccountFromRepositoryAccount(entry);
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
-            entry.setPasswordHash(null);
-            entry.setPasswordSalt(null);
+            output.setPasswordHash(null);
+            output.setPasswordSalt(null);
         }
-        return entry;
+        return output;
     }
 
     @Override
-    public void delete(Authority authority, String id, String name) {
+    public void delete(Authority authority, String id, String name) throws IllegalArgumentException, AccessDeniedException, NotFoundException {
         if (!validateAuthority(authority)) {
-            throw new RuntimeException("Invalid authority provided to AccountManager.delete()");
-        }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
-            throw new AccessDeniedException();
-        }
-        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
-        if (onlyAuthorizedAsUser && authority.getId() == null) {
-            throw new AccessDeniedException();
-        }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM) && authority.getAuthTime() + sessionAgeForModificationMaxValue < (System.currentTimeMillis() / 1000)) {
-            throw new AccessDeniedException();
+            throw new IllegalArgumentException();
         }
         if (id == null && name == null) {
             throw new IllegalArgumentException();
@@ -180,18 +201,39 @@ public class AccountManager implements AccountService {
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        Account[] matches = accountRepository.readByIdAndName(id, name);
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
+            throw new AccessDeniedException();
+        }
+        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
+        if (onlyAuthorizedAsUser && authority.getId() == null) {
+            throw new AccessDeniedException();
+        }
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM) && modificationEnabledSessionAgeMaxValue > 0 && authority.getAuthTime() + modificationEnabledSessionAgeMaxValue < (System.currentTimeMillis() / 1000)) {
+            throw new AccessDeniedException();
+        }
+        base.account.repository.model.Account[] matches;
+        try {
+            matches = accountRepository.readByIdAndName(id, name);
+        }
+        catch (base.account.repository.model.IllegalArgumentException e) {
+            throw new RuntimeException("Unexpected exception when calling AccountRepository.readByIdAndName()");
+        }
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
                 throw new AccessDeniedException();
             }
             throw new NotFoundException();
         }
-        Account match = matches[0];
+        base.account.repository.model.Account match = matches[0];
         if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
-        accountRepository.deleteByIdAndName(id, name);
+        try {
+            accountRepository.deleteByIdAndName(id, name);
+        }
+        catch (base.account.repository.model.IllegalArgumentException e) {
+            throw new RuntimeException("Unexpected exception when calling AccountRepository.deleteByIdAndName()");
+        }
         authenticationServiceClient.logout(authority, match.getId());
     }
 
@@ -205,17 +247,14 @@ public class AccountManager implements AccountService {
         if (config == null) {
             return true;
         }
-        if (!config.containsKey("sessionAgeForModificationMaxValue")) {
-            return false;
-        }
-        long sessionAgeForModificationMaxValue;
+        long modificationEnabledSessionAgeMaxValue;
         try {
-            sessionAgeForModificationMaxValue = Long.parseLong(config.get("sessionAgeForModificationMaxValue"));
+            modificationEnabledSessionAgeMaxValue = Long.parseLong(config.get("modificationEnabledSessionAgeMaxValue"));
         }
-        catch (NumberFormatException ex) {
+        catch (NumberFormatException e) {
             return false;
         }
-        if (sessionAgeForModificationMaxValue < 0) {
+        if (modificationEnabledSessionAgeMaxValue < 0) {
             return false;
         }
         if (!config.containsKey("passwordHashAlgorithm")) {
@@ -231,7 +270,7 @@ public class AccountManager implements AccountService {
         try {
             UUID.fromString(id);
         }
-        catch (java.lang.IllegalArgumentException ex) {
+        catch (java.lang.IllegalArgumentException e) {
             return false;
         }
         return true;
@@ -301,6 +340,10 @@ public class AccountManager implements AccountService {
             return false;
         }
         return (authority.getRoles() & roles) != 0;
+    }
+
+    private static Account createServiceAccountFromRepositoryAccount(base.account.repository.model.Account account) {
+        return new Account(account.getId(), account.getName(), null, account.getPasswordHash(), account.getPasswordSalt(), account.getRoles());
     }
 
     private static String generateRandomString(String pool, int length) {

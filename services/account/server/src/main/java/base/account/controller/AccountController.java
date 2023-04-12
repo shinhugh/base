@@ -1,8 +1,8 @@
 package base.account.controller;
 
-import base.account.model.IllegalArgumentException;
-import base.account.model.*;
 import base.account.service.AccountService;
+import base.account.service.model.IllegalArgumentException;
+import base.account.service.model.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.UUID;
 
 public class AccountController {
     private final AccountService accountService;
@@ -20,7 +19,7 @@ public class AccountController {
 
     public AccountController(AccountService accountService) {
         if (accountService == null) {
-            throw new RuntimeException("AccountController constructor failed");
+            throw new RuntimeException("Invalid accountService provided to AccountController constructor");
         }
         this.accountService = accountService;
         gson = new GsonBuilder().create();
@@ -31,7 +30,13 @@ public class AccountController {
             throw new RuntimeException("Invalid request provided to AccountController.read()");
         }
         try {
-            Authority authority = parseAuthority(request);
+            Authority authority;
+            try {
+                authority = parseAuthority(request);
+            }
+            catch (Exception e) {
+                return new Response((short) 400, null, null);
+            }
             String id = null;
             String name = null;
             if (request.query != null) {
@@ -42,20 +47,20 @@ public class AccountController {
             try {
                 output = accountService.read(authority, id, name);
             }
-            catch (AccessDeniedException ex) {
-                return new Response((short) 401, null, null);
-            }
-            catch (IllegalArgumentException ex) {
+            catch (IllegalArgumentException e) {
                 return new Response((short) 400, null, null);
             }
-            catch (NotFoundException ex) {
+            catch (AccessDeniedException e) {
+                return new Response((short) 401, null, null);
+            }
+            catch (NotFoundException e) {
                 return new Response((short) 404, null, null);
             }
             Map<String, String> responseHeaders = Map.of("content-type", "application/json");
             return new Response((short) 200, responseHeaders, new ByteArrayInputStream(gson.toJson(output).getBytes(StandardCharsets.UTF_8)));
         }
-        catch (Exception ex) {
-            System.out.println("Unexpected error: " + ex.getMessage());
+        catch (Exception e) {
+            System.out.println("Unexpected exception: " + e.getMessage());
             return new Response((short) 500, null, null);
         }
     }
@@ -65,7 +70,13 @@ public class AccountController {
             throw new RuntimeException("Invalid request provided to AccountController.create()");
         }
         try {
-            // TODO: Order of exceptions is wrong
+            Authority authority;
+            try {
+                authority = parseAuthority(request);
+            }
+            catch (Exception e) {
+                return new Response((short) 400, null, null);
+            }
             if (request.getHeaders() == null || !"application/json".equals(request.getHeaders().get("content-type"))) {
                 return new Response((short) 400, null, null);
             }
@@ -73,25 +84,24 @@ public class AccountController {
             try {
                 account = gson.fromJson(new InputStreamReader(request.getBody(), StandardCharsets.UTF_8), Account.class);
             }
-            catch (JsonSyntaxException ex) {
+            catch (JsonSyntaxException e) {
                 return new Response((short) 400, null, null);
             }
-            Authority authority = parseAuthority(request);
             Account output;
             try {
                 output = accountService.create(authority, account);
             }
-            catch (IllegalArgumentException ex) {
+            catch (IllegalArgumentException e) {
                 return new Response((short) 400, null, null);
             }
-            catch (ConflictException ex) {
+            catch (ConflictException e) {
                 return new Response((short) 409, null, null);
             }
             Map<String, String> responseHeaders = Map.of("content-type", "application/json");
             return new Response((short) 200, responseHeaders, new ByteArrayInputStream(gson.toJson(output).getBytes(StandardCharsets.UTF_8)));
         }
-        catch (Exception ex) {
-            System.out.println("Unexpected error: " + ex.getMessage());
+        catch (Exception e) {
+            System.out.println("Unexpected exception: " + e.getMessage());
             return new Response((short) 500, null, null);
         }
     }
@@ -101,7 +111,13 @@ public class AccountController {
             throw new RuntimeException("Invalid request provided to AccountController.update()");
         }
         try {
-            // TODO: Order of exceptions is wrong
+            Authority authority;
+            try {
+                authority = parseAuthority(request);
+            }
+            catch (Exception e) {
+                return new Response((short) 400, null, null);
+            }
             if (request.getHeaders() == null || !"application/json".equals(request.getHeaders().get("content-type"))) {
                 return new Response((short) 400, null, null);
             }
@@ -109,10 +125,9 @@ public class AccountController {
             try {
                 account = gson.fromJson(new InputStreamReader(request.getBody(), StandardCharsets.UTF_8), Account.class);
             }
-            catch (JsonSyntaxException ex) {
+            catch (JsonSyntaxException e) {
                 return new Response((short) 400, null, null);
             }
-            Authority authority = parseAuthority(request);
             String id = null;
             String name = null;
             if (request.query != null) {
@@ -123,23 +138,23 @@ public class AccountController {
             try {
                 output = accountService.update(authority, id, name, account);
             }
-            catch (AccessDeniedException ex) {
-                return new Response((short) 401, null, null);
-            }
-            catch (IllegalArgumentException ex) {
+            catch (IllegalArgumentException e) {
                 return new Response((short) 400, null, null);
             }
-            catch (NotFoundException ex) {
+            catch (AccessDeniedException e) {
+                return new Response((short) 401, null, null);
+            }
+            catch (NotFoundException e) {
                 return new Response((short) 404, null, null);
             }
-            catch (ConflictException ex) {
+            catch (ConflictException e) {
                 return new Response((short) 409, null, null);
             }
             Map<String, String> responseHeaders = Map.of("content-type", "application/json");
             return new Response((short) 200, responseHeaders, new ByteArrayInputStream(gson.toJson(output).getBytes(StandardCharsets.UTF_8)));
         }
-        catch (Exception ex) {
-            System.out.println("Unexpected error: " + ex.getMessage());
+        catch (Exception e) {
+            System.out.println("Unexpected exception: " + e.getMessage());
             return new Response((short) 500, null, null);
         }
     }
@@ -149,7 +164,13 @@ public class AccountController {
             throw new RuntimeException("Invalid request provided to AccountController.delete()");
         }
         try {
-            Authority authority = parseAuthority(request);
+            Authority authority;
+            try {
+                authority = parseAuthority(request);
+            }
+            catch (Exception e) {
+                return new Response((short) 400, null, null);
+            }
             String id = null;
             String name = null;
             if (request.query != null) {
@@ -159,42 +180,48 @@ public class AccountController {
             try {
                 accountService.delete(authority, id, name);
             }
-            catch (AccessDeniedException ex) {
-                return new Response((short) 401, null, null);
-            }
-            catch (IllegalArgumentException ex) {
+            catch (IllegalArgumentException e) {
                 return new Response((short) 400, null, null);
             }
-            catch (NotFoundException ex) {
+            catch (AccessDeniedException e) {
+                return new Response((short) 401, null, null);
+            }
+            catch (NotFoundException e) {
                 return new Response((short) 404, null, null);
             }
             return new Response((short) 200, null, null);
         }
-        catch (Exception ex) {
-            System.out.println("Unexpected error: " + ex.getMessage());
+        catch (Exception e) {
+            System.out.println("Unexpected exception: " + e.getMessage());
             return new Response((short) 500, null, null);
         }
     }
 
-    private static Authority parseAuthority(Request request) {
-        Authority authority = new Authority();
+    private static Authority parseAuthority(Request request) throws Exception {
         if (request.getHeaders() == null) {
-            return authority;
+            return null;
         }
-        try {
-            String id = request.getHeaders().get("authority-id");
-            UUID.fromString(id);
-            authority.setId(id);
+        if (!request.getHeaders().containsKey("authority-id") && !request.getHeaders().containsKey("authority-roles") && !request.getHeaders().containsKey("authority-auth-time")) {
+            return null;
         }
-        catch (IllegalArgumentException | NullPointerException ignored) { }
-        try {
-            authority.setRoles(Short.parseShort(request.getHeaders().get("authority-roles")));
+        Authority authority = new Authority();
+        authority.setId(request.getHeaders().get("authority-id"));
+        if (request.getHeaders().containsKey("authority-roles")) {
+            try {
+                authority.setRoles(Short.parseShort(request.getHeaders().get("authority-roles")));
+            }
+            catch (NumberFormatException e) {
+                throw new Exception();
+            }
         }
-        catch (NumberFormatException ignored) { }
-        try {
-            authority.setAuthTime(Long.parseLong(request.getHeaders().get("authority-auth-time")));
+        if (request.getHeaders().containsKey("authority-auth-time")) {
+            try {
+                authority.setAuthTime(Long.parseLong(request.getHeaders().get("authority-auth-time")));
+            }
+            catch (NumberFormatException e) {
+                throw new Exception();
+            }
         }
-        catch (NumberFormatException ignored) { }
         return authority;
     }
 

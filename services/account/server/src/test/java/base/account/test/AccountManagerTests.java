@@ -1,10 +1,9 @@
 package base.account.test;
 
-import base.account.model.Account;
-import base.account.model.Authority;
-import base.account.model.Role;
 import base.account.service.AccountManager;
 import base.account.service.AccountService;
+import base.account.service.model.*;
+import base.account.service.model.IllegalArgumentException;
 import base.account.test.spy.AccountRepositorySpy;
 import base.account.test.spy.AuthenticationServiceClientSpy;
 
@@ -14,9 +13,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 public class AccountManagerTests {
-    private static final Map<String, String> ACCOUNT_MANAGER_CONFIG = Map.of("sessionAgeForModificationMaxValue", "900", "passwordHashAlgorithm", "SHA-256");
+    private static final Map<String, String> ACCOUNT_MANAGER_CONFIG = Map.of("modificationEnabledSessionAgeMaxValue", "900", "passwordHashAlgorithm", "SHA-256");
     private static final byte[] HEX_CHARS = "0123456789abcdef".getBytes(StandardCharsets.US_ASCII);
-    private static final Account MOCK_ACCOUNT = new Account("00000000-0000-0000-0000-000000000000", "qwer", null, "bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3", "00000000000000000000000000000000", (short) 6);
+    private static final base.account.repository.model.Account MOCK_ACCOUNT = new base.account.repository.model.Account("00000000-0000-0000-0000-000000000000", "qwer", "bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3", "00000000000000000000000000000000", (short) 6);
     private static final String ACCOUNT_PASSWORD = "Qwer!234";
     private static final Authority AUTHORITY = new Authority(null, Role.SYSTEM, 0);
     private static final AccountRepositorySpy accountRepositorySpy = new AccountRepositorySpy();
@@ -34,8 +33,14 @@ public class AccountManagerTests {
         @Override
         public void run() {
             accountRepositorySpy.resetSpy();
-            accountRepositorySpy.setReadByIdAndNameReturnValue(new Account[] {MOCK_ACCOUNT});
-            Account output = accountManager.read(AUTHORITY, MOCK_ACCOUNT.getId(), MOCK_ACCOUNT.getName());
+            accountRepositorySpy.setReadByIdAndNameReturnValue(new base.account.repository.model.Account[] { MOCK_ACCOUNT });
+            Account output = null;
+            try {
+                output = accountManager.read(AUTHORITY, MOCK_ACCOUNT.getId(), MOCK_ACCOUNT.getName());
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Unexpected exception: " + e.getMessage());
+            }
             if (accountRepositorySpy.getReadByIdAndNameInvokeCount() != 1) {
                 throw new RuntimeException("Actual value does not match expected value: AccountRepository.readByIdAndName(): Invocation count");
             }
@@ -45,7 +50,7 @@ public class AccountManagerTests {
             if (!verifyEqualityBetweenStrings(accountRepositorySpy.getReadByIdAndNameNameArgument(), MOCK_ACCOUNT.getName())) {
                 throw new RuntimeException("Actual value does not match expected value: AccountRepository.readByIdAndName(): name argument");
             }
-            if (!verifyEqualityBetweenAccounts(output, MOCK_ACCOUNT)) {
+            if (!verifyEqualityBetweenAccounts(output, createServiceAccountFromRepositoryAccount(MOCK_ACCOUNT))) {
                 throw new RuntimeException("Actual value does not match expected value: AccountManager.read(): Return value");
             }
         }
@@ -54,20 +59,33 @@ public class AccountManagerTests {
     private static class CreateTest implements Test.Runnable {
         @Override
         public void run() {
+            MessageDigest digest;
+            try {
+                digest = MessageDigest.getInstance(ACCOUNT_MANAGER_CONFIG.get("passwordHashAlgorithm"));
+            }
+            catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Invalid algorithm provided for password hashing");
+            }
             accountRepositorySpy.resetSpy();
             accountRepositorySpy.setCreateReturnValue(MOCK_ACCOUNT);
             Account inputAccount = new Account(null, MOCK_ACCOUNT.getName(), ACCOUNT_PASSWORD, null, null, MOCK_ACCOUNT.getRoles());
-            Account output = accountManager.create(AUTHORITY, inputAccount);
+            Account output;
+            try {
+                output = accountManager.create(AUTHORITY, inputAccount);
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Unexpected exception: " + e.getMessage());
+            }
             if (accountRepositorySpy.getCreateInvokeCount() != 1) {
                 throw new RuntimeException("Actual value does not match expected value: AccountRepository.create(): Invocation count");
             }
             String generatedPasswordSalt = accountRepositorySpy.getCreateAccountArgument().getPasswordSalt();
-            String expectedPasswordHash = hashPassword(ACCOUNT_MANAGER_CONFIG.get("passwordHashAlgorithm"), ACCOUNT_PASSWORD, generatedPasswordSalt);
+            String expectedPasswordHash = hashPassword(digest, ACCOUNT_PASSWORD, generatedPasswordSalt);
             Account expectedAccountRepositoryCreateAccountArgument = new Account(null, MOCK_ACCOUNT.getName(), null, expectedPasswordHash, generatedPasswordSalt, MOCK_ACCOUNT.getRoles());
-            if (!verifyEqualityBetweenAccounts(accountRepositorySpy.getCreateAccountArgument(), expectedAccountRepositoryCreateAccountArgument)) {
+            if (!verifyEqualityBetweenAccounts(createServiceAccountFromRepositoryAccount(accountRepositorySpy.getCreateAccountArgument()), expectedAccountRepositoryCreateAccountArgument)) {
                 throw new RuntimeException("Actual value does not match expected value: AccountRepository.create(): account argument");
             }
-            if (!verifyEqualityBetweenAccounts(output, MOCK_ACCOUNT)) {
+            if (!verifyEqualityBetweenAccounts(output, createServiceAccountFromRepositoryAccount(MOCK_ACCOUNT))) {
                 throw new RuntimeException("Actual value does not match expected value: AccountManager.create(): Return value");
             }
         }
@@ -76,13 +94,26 @@ public class AccountManagerTests {
     private static class UpdateTest implements Test.Runnable {
         @Override
         public void run() {
+            MessageDigest digest;
+            try {
+                digest = MessageDigest.getInstance(ACCOUNT_MANAGER_CONFIG.get("passwordHashAlgorithm"));
+            }
+            catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Invalid algorithm provided for password hashing");
+            }
             accountRepositorySpy.resetSpy();
             authenticationServiceClientSpy.resetSpy();
-            accountRepositorySpy.setReadByIdAndNameReturnValue(new Account[] {MOCK_ACCOUNT});
+            accountRepositorySpy.setReadByIdAndNameReturnValue(new base.account.repository.model.Account[] { MOCK_ACCOUNT });
             accountRepositorySpy.setUpdateByIdAndNameReturnValue(MOCK_ACCOUNT);
             String accountName = "changed";
             Account inputAccount = new Account(null, accountName, ACCOUNT_PASSWORD, null, null, MOCK_ACCOUNT.getRoles());
-            Account output = accountManager.update(AUTHORITY, MOCK_ACCOUNT.getId(), MOCK_ACCOUNT.getName(), inputAccount);
+            Account output;
+            try {
+                output = accountManager.update(AUTHORITY, MOCK_ACCOUNT.getId(), MOCK_ACCOUNT.getName(), inputAccount);
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Unexpected exception: " + e.getMessage());
+            }
             if (accountRepositorySpy.getUpdateByIdAndNameInvokeCount() != 1) {
                 throw new RuntimeException("Actual value does not match expected value: AccountRepository.updateByIdAndName(): Invocation count");
             }
@@ -93,9 +124,9 @@ public class AccountManagerTests {
                 throw new RuntimeException("Actual value does not match expected value: AccountRepository.updateByIdAndName(): name argument");
             }
             String generatedPasswordSalt = accountRepositorySpy.getUpdateByIdAndNameAccountArgument().getPasswordSalt();
-            String expectedPasswordHash = hashPassword(ACCOUNT_MANAGER_CONFIG.get("passwordHashAlgorithm"), ACCOUNT_PASSWORD, generatedPasswordSalt);
+            String expectedPasswordHash = hashPassword(digest, ACCOUNT_PASSWORD, generatedPasswordSalt);
             Account expectedAccountRepositoryUpdateByIdAndNameAccountArgument = new Account(null, accountName, null, expectedPasswordHash, generatedPasswordSalt, MOCK_ACCOUNT.getRoles());
-            if (!verifyEqualityBetweenAccounts(accountRepositorySpy.getUpdateByIdAndNameAccountArgument(), expectedAccountRepositoryUpdateByIdAndNameAccountArgument)) {
+            if (!verifyEqualityBetweenAccounts(createServiceAccountFromRepositoryAccount(accountRepositorySpy.getUpdateByIdAndNameAccountArgument()), expectedAccountRepositoryUpdateByIdAndNameAccountArgument)) {
                 throw new RuntimeException("Actual value does not match expected value: AccountRepository.updateByIdAndName(): account argument");
             }
             if (authenticationServiceClientSpy.getLogoutInvokeCount() != 1) {
@@ -107,7 +138,7 @@ public class AccountManagerTests {
             if (!verifyEqualityBetweenStrings(authenticationServiceClientSpy.getLogoutAccountIdArgument(), MOCK_ACCOUNT.getId())) {
                 throw new RuntimeException("Actual value does not match expected value: AuthenticationServiceClient.logout(): accountId argument");
             }
-            if (!verifyEqualityBetweenAccounts(output, MOCK_ACCOUNT)) {
+            if (!verifyEqualityBetweenAccounts(output, createServiceAccountFromRepositoryAccount(MOCK_ACCOUNT))) {
                 throw new RuntimeException("Actual value does not match expected value: AccountManager.update(): Return value");
             }
         }
@@ -118,9 +149,14 @@ public class AccountManagerTests {
         public void run() {
             accountRepositorySpy.resetSpy();
             authenticationServiceClientSpy.resetSpy();
-            accountRepositorySpy.setReadByIdAndNameReturnValue(new Account[] {MOCK_ACCOUNT});
+            accountRepositorySpy.setReadByIdAndNameReturnValue(new base.account.repository.model.Account[] { MOCK_ACCOUNT });
             accountRepositorySpy.setDeleteByIdAndNameReturnValue(1);
-            accountManager.delete(AUTHORITY, MOCK_ACCOUNT.getId(), MOCK_ACCOUNT.getName());
+            try {
+                accountManager.delete(AUTHORITY, MOCK_ACCOUNT.getId(), MOCK_ACCOUNT.getName());
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Unexpected exception: " + e.getMessage());
+            }
             if (accountRepositorySpy.getDeleteByIdAndNameInvokeCount() != 1) {
                 throw new RuntimeException("Actual value does not match expected value: AccountRepository.deleteByIdAndName(): Invocation count");
             }
@@ -193,14 +229,11 @@ public class AccountManagerTests {
         return first.equals(second);
     }
 
-    private static String hashPassword(String algorithm, String password, String salt) {
-        MessageDigest digest;
-        try {
-            digest = MessageDigest.getInstance(algorithm);
-        }
-        catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException("Invalid algorithm provided for password hashing");
-        }
+    private static Account createServiceAccountFromRepositoryAccount(base.account.repository.model.Account account) {
+        return new Account(account.getId(), account.getName(), null, account.getPasswordHash(), account.getPasswordSalt(), account.getRoles());
+    }
+
+    private static String hashPassword(MessageDigest digest, String password, String salt) {
         byte[] bytes = digest.digest((password + salt).getBytes(StandardCharsets.UTF_8));
         byte[] builder = new byte[bytes.length * 2];
         for (int i = 0; i < bytes.length; i++) {

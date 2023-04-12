@@ -215,6 +215,9 @@ class AuthenticationService {
   }
 
   async #logoutViaRefreshToken(authority, refreshToken) {
+    if (typeof refreshToken !== 'string') {
+      return;
+    }
     try {
       await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
     }

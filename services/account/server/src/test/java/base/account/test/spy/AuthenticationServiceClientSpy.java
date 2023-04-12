@@ -1,7 +1,7 @@
 package base.account.test.spy;
 
-import base.account.model.Authority;
 import base.account.service.AuthenticationServiceClient;
+import base.account.service.model.Authority;
 
 public class AuthenticationServiceClientSpy implements AuthenticationServiceClient {
     private int logoutInvokeCount;

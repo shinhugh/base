@@ -1,7 +1,7 @@
 package base.account.test.spy;
 
-import base.account.model.Account;
 import base.account.repository.AccountRepository;
+import base.account.repository.model.Account;
 
 public class AccountRepositorySpy implements AccountRepository {
     private Account[] readByIdAndNameReturnValue;

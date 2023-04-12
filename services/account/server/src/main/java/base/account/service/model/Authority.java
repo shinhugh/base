@@ -1,4 +1,4 @@
-package base.account.model;
+package base.account.service.model;
 
 public class Authority {
     private String id;

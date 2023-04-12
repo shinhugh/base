@@ -1,9 +1,9 @@
 package base.account.repository;
 
-import base.account.model.Account;
-import base.account.model.ConflictException;
-import base.account.model.IllegalArgumentException;
-import base.account.model.NotFoundException;
+import base.account.repository.model.Account;
+import base.account.repository.model.ConflictException;
+import base.account.repository.model.IllegalArgumentException;
+import base.account.repository.model.NotFoundException;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -20,13 +20,18 @@ public class AccountJpaRepository implements AccountRepository {
 
     public AccountJpaRepository(Map<String, String> config) {
         if (config == null) {
-            throw new RuntimeException("AccountJpaRepository constructor failed");
+            throw new RuntimeException("Invalid config provided to AccountJpaRepository constructor");
         }
-        entityManagerFactory = Persistence.createEntityManagerFactory("base", config);
+        try {
+            entityManagerFactory = Persistence.createEntityManagerFactory("base", config);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Connection to database failed");
+        }
     }
 
     @Override
-    public Account[] readByIdAndName(String id, String name) {
+    public Account[] readByIdAndName(String id, String name) throws IllegalArgumentException {
         if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
@@ -62,17 +67,20 @@ public class AccountJpaRepository implements AccountRepository {
             entityManager.getTransaction().rollback();
             return matches.toArray(new Account[0]);
         }
+        catch (Exception e) {
+            throw new RuntimeException("Unexpected exception when querying database");
+        }
         finally {
             entityManager.close();
         }
     }
 
     @Override
-    public Account create(Account account) {
+    public Account create(Account account) throws IllegalArgumentException, ConflictException {
         if (account == null || !validateAccount(account)) {
             throw new IllegalArgumentException();
         }
-        Account entry = new Account(null, account.getName(), null, account.getPasswordHash(), account.getPasswordSalt(), account.getRoles());
+        Account entry = new Account(null, account.getName(), account.getPasswordHash(), account.getPasswordSalt(), account.getRoles());
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             Account conflict = null;
@@ -91,13 +99,19 @@ public class AccountJpaRepository implements AccountRepository {
             entityManager.getTransaction().commit();
             return entry;
         }
+        catch (ConflictException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Unexpected exception when querying database");
+        }
         finally {
             entityManager.close();
         }
     }
 
     @Override
-    public Account updateByIdAndName(String id, String name, Account account) {
+    public Account updateByIdAndName(String id, String name, Account account) throws IllegalArgumentException, NotFoundException, ConflictException {
         if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
@@ -105,6 +119,9 @@ public class AccountJpaRepository implements AccountRepository {
             throw new IllegalArgumentException();
         }
         if (name != null && name.length() > NAME_MAX_LENGTH) {
+            throw new IllegalArgumentException();
+        }
+        if (account == null || !validateAccount(account)) {
             throw new IllegalArgumentException();
         }
         String queryString = "from Account as x where ";
@@ -138,10 +155,6 @@ public class AccountJpaRepository implements AccountRepository {
                 entityManager.getTransaction().rollback();
                 throw new NotFoundException();
             }
-            if (account == null || !validateAccount(account)) {
-                entityManager.getTransaction().rollback();
-                throw new IllegalArgumentException();
-            }
             Account conflict = null;
             query = entityManager.createQuery("from Account as x where x.name = :name", Account.class);
             try {
@@ -159,13 +172,19 @@ public class AccountJpaRepository implements AccountRepository {
             entityManager.getTransaction().commit();
             return match;
         }
+        catch (NotFoundException | ConflictException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Unexpected exception when querying database");
+        }
         finally {
             entityManager.close();
         }
     }
 
     @Override
-    public int deleteByIdAndName(String id, String name) {
+    public int deleteByIdAndName(String id, String name) throws IllegalArgumentException {
         if (id == null && name == null) {
             throw new IllegalArgumentException();
         }
@@ -203,6 +222,9 @@ public class AccountJpaRepository implements AccountRepository {
             }
             entityManager.getTransaction().commit();
             return matches.size();
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Unexpected exception when querying database");
         }
         finally {
             entityManager.close();

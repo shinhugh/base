@@ -15,8 +15,8 @@ public class Test {
         try {
             runnable.run();
         }
-        catch (Exception ex) {
-            System.out.println(header + ex.getMessage());
+        catch (Exception e) {
+            System.out.println(header + e.getMessage());
         }
         System.out.println(header + "Exiting test");
     }

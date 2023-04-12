@@ -176,19 +176,21 @@ const validateRequest = (request) => {
 };
 
 const parseAuthority = (request) => {
-  const authority = {
-    id: request.headers?.['authority-id'],
-    roles: Number(request.headers?.['authority-roles']),
-    authTime: Number(request.headers?.['authority-auth-time'])
-  };
-  if (authority.id == null || !validateUuid(authority.id)) {
-    delete authority.id;
+  if (request.headers == null) {
+    return null;
   }
-  if (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue) {
-    delete authority.roles;
+  if (request.headers['authority-id'] == null && request.headers['authority-roles'] == null && request.headers['authority-auth-time'] == null) {
+    return null;
   }
-  if (!Number.isInteger(authority.authTime) || authority.authTime < 0 || authority.authTime > timeMaxValue) {
-    delete authority.authTime;
+  const authority = { };
+  if (request.headers['authority-id'] != null) {
+    authority.id = request.headers['authority-id'];
+  }
+  if (request.headers['authority-roles'] != null) {
+    authority.roles = Number(request.headers['authority-roles']);
+  }
+  if (request.headers['authority-auth-time'] != null) {
+    authority.authTime = Number(request.headers['authority-auth-time']);
   }
   return authority;
 };

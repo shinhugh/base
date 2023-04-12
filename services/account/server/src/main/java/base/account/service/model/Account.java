@@ -1,22 +1,11 @@
-package base.account.model;
+package base.account.service.model;
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "Accounts")
 public class Account {
-    @Id
-    @Column(name = "Id", nullable = false)
     private String id;
-    @Column(name = "Name", nullable = false, unique = true)
     private String name;
-    @Transient
     private String password;
-    @Column(name = "PasswordHash", nullable = false)
     private String passwordHash;
-    @Column(name = "PasswordSalt", nullable = false)
     private String passwordSalt;
-    @Column(name = "Roles", nullable = false)
     private short roles;
 
     public Account() { }
