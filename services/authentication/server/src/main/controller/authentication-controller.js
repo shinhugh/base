@@ -15,111 +15,106 @@ class AuthenticationController {
     if (request == null || !validateRequest(request)) {
       throw new Error('Invalid request provided to AuthenticationController.identify()');
     }
-    try {
-      const authority = parseAuthority(request);
-      if (request.headers?.['content-type'] !== 'application/json') {
-        return {
-          status: 400
-        }
-      }
-      let token;
-      try {
-        token = JSON.parse(request.body.toString());
-      }
-      catch {
-        return {
-          status: 400
-        };
-      }
-      return await invokeAndInterceptDomainError(async () => {
-        return {
-          status: 200,
-          headers: {
-            'content-type': 'application/json'
-          },
-          body: Buffer.from(JSON.stringify(await this.#authenticationService.identify(authority, token)))
-        };
-      });
-    }
-    catch (e) {
-      console.error('Unexpected error: ' + e.message);
+    const authority = parseAuthority(request);
+    if (request.headers?.['content-type'] !== 'application/json') {
       return {
-        status: 500
+        status: 400
       };
     }
+    let token;
+    try {
+      token = JSON.parse(request.body.toString());
+    }
+    catch {
+      return {
+        status: 400
+      };
+    }
+    let output;
+    try {
+      output = await this.#authenticationService.identify(authority, token);
+    }
+    catch (e) {
+      return {
+        status: mapErrorToStatusCode(e)
+      };
+    }
+    return {
+      status: 200,
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: Buffer.from(JSON.stringify(output))
+    };
   }
 
   async login(request) {
     if (request == null || !validateRequest(request)) {
       throw new Error('Invalid request provided to AuthenticationController.login()');
     }
-    try {
-      const authority = parseAuthority(request);
-      if (request.headers?.['content-type'] !== 'application/json') {
-        return {
-          status: 400
-        }
-      }
-      let loginInfo;
-      try {
-        loginInfo = JSON.parse(request.body.toString());
-      }
-      catch {
-        return {
-          status: 400
-        };
-      }
-      return await invokeAndInterceptDomainError(async () => {
-        return {
-          status: 200,
-          headers: {
-            'content-type': 'application/json'
-          },
-          body: Buffer.from(JSON.stringify(await this.#authenticationService.login(authority, loginInfo)))
-        }
-      });
-    }
-    catch (e) {
-      console.error('Unexpected error: ' + e.message);
+    const authority = parseAuthority(request);
+    if (request.headers?.['content-type'] !== 'application/json') {
       return {
-        status: 500
+        status: 400
       };
     }
+    let loginInfo;
+    try {
+      loginInfo = JSON.parse(request.body.toString());
+    }
+    catch {
+      return {
+        status: 400
+      };
+    }
+    let output;
+    try {
+      output = await this.#authenticationService.login(authority, loginInfo);
+    }
+    catch (e) {
+      return {
+        status: mapErrorToStatusCode(e)
+      };
+    }
+    return {
+      status: 200,
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: Buffer.from(JSON.stringify(output))
+    };
   }
 
   async logout(request) {
     if (request == null || !validateRequest(request)) {
       throw new Error('Invalid request provided to AuthenticationController.logout()');
     }
-    try {
-      const authority = parseAuthority(request);
-      if (request.headers?.['content-type'] !== 'application/json') {
-        return {
-          status: 400
-        }
-      }
-      let logoutInfo;
-      try {
-        logoutInfo = JSON.parse(request.body.toString());
-      }
-      catch {
-        return {
-          status: 400
-        };
-      }
-      return await invokeAndInterceptDomainError(async () => {
-        await this.#authenticationService.logout(authority, logoutInfo);
-        return {
-          status: 200
-        }
-      });
-    }
-    catch (e) {
-      console.error('Unexpected error: ' + e.message);
+    const authority = parseAuthority(request);
+    if (request.headers?.['content-type'] !== 'application/json') {
       return {
-        status: 500
+        status: 400
       };
     }
+    let logoutInfo;
+    try {
+      logoutInfo = JSON.parse(request.body.toString());
+    }
+    catch {
+      return {
+        status: 400
+      };
+    }
+    try {
+      await this.#authenticationService.logout(authority, logoutInfo);
+    }
+    catch (e) {
+      return {
+        status: mapErrorToStatusCode(e)
+      };
+    }
+    return {
+      status: 200
+    };
   }
 }
 
@@ -182,33 +177,31 @@ const parseAuthority = (request) => {
   return authority;
 };
 
-const invokeAndInterceptDomainError = async (routine) => {
-  try {
-    return await routine();
+const mapErrorToStatusCode = (e) => {
+  if (e instanceof IllegalArgumentError) {
+    return {
+      status: 400
+    };
   }
-  catch (e) {
-    if (e instanceof IllegalArgumentError) {
-      return {
-        status: 400
-      }
-    }
-    if (e instanceof AccessDeniedError) {
-      return {
-        status: 401
-      }
-    }
-    if (e instanceof NotFoundError) {
-      return {
-        status: 404
-      }
-    }
-    if (e instanceof ConflictError) {
-      return {
-        status: 409
-      }
-    }
-    throw e;
+  if (e instanceof AccessDeniedError) {
+    return {
+      status: 401
+    };
   }
+  if (e instanceof NotFoundError) {
+    return {
+      status: 404
+    };
+  }
+  if (e instanceof ConflictError) {
+    return {
+      status: 409
+    };
+  }
+  console.error('Unexpected error: ' + e.message);
+  return {
+    status: 500
+  };
 };
 
 export {
