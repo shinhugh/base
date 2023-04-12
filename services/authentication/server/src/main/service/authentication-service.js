@@ -67,7 +67,7 @@ class AuthenticationService {
         if (e instanceof RepositoryIllegalArgumentError) {
           return undefined;
         }
-        throw e;
+        throw new Error('Unexpected error when calling PersistentSessionRepository.readById()');
       }
     })();
     if (persistentSession == null || persistentSession.expirationTime <= (Date.now() / 1000)) {
@@ -126,7 +126,7 @@ class AuthenticationService {
         if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
           throw new AccessDeniedError();
         }
-        throw e;
+        throw new Error('Unexpected error when calling AccountServiceClient.readByName()');
       }
     })();
     const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, credentials.password, account.passwordSalt);
@@ -149,7 +149,7 @@ class AuthenticationService {
         }
         catch (e) {
           if (!(e instanceof RepositoryConflictError)) {
-            throw e;
+            throw new Error('Unexpected error when calling PersistentSessionRepository.create()');
           }
         }
       }
@@ -169,7 +169,7 @@ class AuthenticationService {
           await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
         }
         catch {
-          throw new Error('Unexpected error when calling jwt.sign(); failed to revert PersistentSession creation');
+          throw new Error('Unexpected error when calling jwt.sign(); Unexpected error when calling PersistentSessionRepository.deleteByRefreshToken()');
         }
         throw new Error('Unexpected error when calling jwt.sign()');
       }
@@ -192,7 +192,7 @@ class AuthenticationService {
         if (e instanceof RepositoryIllegalArgumentError) {
           return undefined;
         }
-        throw e;
+        throw new Error('Unexpected error when calling PersistentSessionRepository.readByRefreshToken()');
       }
     })();
     if (persistentSession == null) {
@@ -233,7 +233,12 @@ class AuthenticationService {
         throw new AccessDeniedError();
       }
     }
-    await this.#persistentSessionRepository.deleteByAccountId(accountId);
+    try {
+      await this.#persistentSessionRepository.deleteByAccountId(accountId);
+    }
+    catch {
+      throw new Error('Unexpected error when calling PersistentSessionRepository.deleteByAccountId()');
+    }
   }
 
   async #logoutViaRefreshToken(authority, refreshToken) {
@@ -247,7 +252,7 @@ class AuthenticationService {
       if (e instanceof RepositoryIllegalArgumentError) {
         return;
       }
-      throw e;
+      throw new Error('Unexpected error when calling PersistentSessionRepository.deleteByRefreshToken()');
     }
   }
 }

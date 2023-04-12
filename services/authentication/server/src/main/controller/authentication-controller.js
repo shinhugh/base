@@ -179,29 +179,19 @@ const parseAuthority = (request) => {
 
 const mapErrorToStatusCode = (e) => {
   if (e instanceof IllegalArgumentError) {
-    return {
-      status: 400
-    };
+    return 400;
   }
   if (e instanceof AccessDeniedError) {
-    return {
-      status: 401
-    };
+    return 401;
   }
   if (e instanceof NotFoundError) {
-    return {
-      status: 404
-    };
+    return 404;
   }
   if (e instanceof ConflictError) {
-    return {
-      status: 409
-    };
+    return 409;
   }
   console.error('Unexpected error: ' + e.message);
-  return {
-    status: 500
-  };
+  return 500;
 };
 
 export {
