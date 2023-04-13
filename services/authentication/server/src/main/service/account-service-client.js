@@ -1,5 +1,5 @@
 import { get } from 'http';
-import { wrapAndThrowError } from '../common.js';
+import { wrapError } from '../common.js';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError } from './model/errors.js';
 
 class AccountServiceClient {
@@ -73,7 +73,7 @@ class AccountServiceClient {
         });
       }
       catch (e) {
-        wrapAndThrowError(e, 'Failed to connect to account service endpoint');
+        throw wrapError(e, 'Failed to connect to account service endpoint');
       }
     })();
     switch (response.status) {
@@ -82,7 +82,7 @@ class AccountServiceClient {
           return JSON.parse(response.body.toString());
         }
         catch (e) {
-          wrapAndThrowError(e, 'Malformed response received from account service');
+          throw wrapError(e, 'Malformed response received from account service');
         }
       }
       case 400: {

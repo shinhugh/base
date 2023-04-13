@@ -1,4 +1,4 @@
-const wrapAndThrowError = (e, message) => {
+const wrapError = (e, message) => {
   const error = new Error(message);
   if (Object.hasOwn(e, 'inner')) {
     error.inner = e.inner;
@@ -6,9 +6,9 @@ const wrapAndThrowError = (e, message) => {
   else {
     error.inner = e;
   }
-  throw error;
+  return error;
 };
 
 export {
-  wrapAndThrowError
+  wrapError
 };

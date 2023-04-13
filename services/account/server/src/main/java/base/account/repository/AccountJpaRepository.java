@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static base.account.Common.wrapException;
+
 public class AccountJpaRepository implements AccountRepository {
     private static final int ID_MAX_LENGTH = 36;
     private static final int NAME_MAX_LENGTH = 32;
@@ -29,7 +31,7 @@ public class AccountJpaRepository implements AccountRepository {
             entityManagerFactory = Persistence.createEntityManagerFactory("base", config);
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception: Failed to connect to database");
+            throw wrapException(e, "Failed to connect to database");
         }
     }
 
@@ -71,7 +73,7 @@ public class AccountJpaRepository implements AccountRepository {
             return matches.toArray(new Account[0]);
         }
         catch (Exception e) { // TODO: More granular exception handling
-            throw new RuntimeException("Unexpected exception: Failed to execute database transaction");
+            throw wrapException(e, "Failed to execute database transaction");
         }
         finally {
             entityManager.close();
@@ -106,7 +108,7 @@ public class AccountJpaRepository implements AccountRepository {
             throw e;
         }
         catch (Exception e) { // TODO: More granular exception handling
-            throw new RuntimeException("Unexpected exception: Failed to execute database transaction");
+            throw wrapException(e, "Failed to execute database transaction");
         }
         finally {
             entityManager.close();
@@ -179,7 +181,7 @@ public class AccountJpaRepository implements AccountRepository {
             throw e;
         }
         catch (Exception e) { // TODO: More granular exception handling
-            throw new RuntimeException("Unexpected exception: Failed to execute database transaction");
+            throw wrapException(e, "Failed to execute database transaction");
         }
         finally {
             entityManager.close();
@@ -227,7 +229,7 @@ public class AccountJpaRepository implements AccountRepository {
             return matches.size();
         }
         catch (Exception e) { // TODO: More granular exception handling
-            throw new RuntimeException("Unexpected exception: Failed to execute database transaction");
+            throw wrapException(e, "Failed to execute database transaction");
         }
         finally {
             entityManager.close();

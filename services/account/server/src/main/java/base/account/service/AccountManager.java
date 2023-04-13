@@ -10,6 +10,8 @@ import java.security.Security;
 import java.util.Map;
 import java.util.UUID;
 
+import static base.account.Common.wrapException;
+
 public class AccountManager implements AccountService {
     private static final short ROLES_MAX_VALUE = 255;
     private static final long TIME_MAX_VALUE = 4294967295L;
@@ -44,7 +46,7 @@ public class AccountManager implements AccountService {
             digest = MessageDigest.getInstance(config.get("passwordHashAlgorithm"));
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception: Failed to attain password hash function");
+            throw wrapException(e, "Failed to attain password hash function");
         }
     }
 
@@ -74,7 +76,7 @@ public class AccountManager implements AccountService {
             matches = accountRepository.readByIdAndName(id, name);
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception: Failed to read from account store");
+            throw wrapException(e, "Failed to read from account store");
         }
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
@@ -112,7 +114,7 @@ public class AccountManager implements AccountService {
             throw new ConflictException();
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception: Failed to write to account store");
+            throw wrapException(e, "Failed to write to account store");
         }
         Account output = createServiceAccountFromRepositoryAccount(entry);
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
@@ -154,7 +156,7 @@ public class AccountManager implements AccountService {
             matches = accountRepository.readByIdAndName(id, name);
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception: Failed to read from account store");
+            throw wrapException(e, "Failed to read from account store");
         }
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
@@ -176,14 +178,14 @@ public class AccountManager implements AccountService {
             throw new ConflictException();
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception: Failed to write to account store");
+            throw wrapException(e, "Failed to write to account store");
         }
         try {
             authenticationServiceClient.logout(authority, match.getId());
         }
         // TODO: Handle specific exceptions
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception: Failed to invoke authentication service");
+            throw wrapException(e, "Failed to invoke authentication service");
         }
         Account output = createServiceAccountFromRepositoryAccount(entry);
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
@@ -222,7 +224,7 @@ public class AccountManager implements AccountService {
             matches = accountRepository.readByIdAndName(id, name);
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception: Failed to read from account store");
+            throw wrapException(e, "Failed to read from account store");
         }
         if (matches.length == 0) {
             if (onlyAuthorizedAsUser) {
@@ -238,14 +240,14 @@ public class AccountManager implements AccountService {
             accountRepository.deleteByIdAndName(id, name);
         }
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception: Failed to write to account store");
+            throw wrapException(e, "Failed to write to account store");
         }
         try {
             authenticationServiceClient.logout(authority, match.getId());
         }
         // TODO: Handle specific exceptions
         catch (Exception e) {
-            throw new RuntimeException("Unexpected exception: Failed to invoke authentication service");
+            throw wrapException(e, "Failed to invoke authentication service");
         }
     }
 
