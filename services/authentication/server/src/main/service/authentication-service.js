@@ -1,6 +1,7 @@
 import { createHash, getHashes } from 'crypto';
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
+import { wrapAndThrowError } from '../common.js';
 import { RepositoryIllegalArgumentError, RepositoryConflictError } from '../repository/model/errors.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from './model/errors.js';
@@ -51,7 +52,7 @@ class AuthenticationService {
       }
       catch (e) {
         if (e instanceof JsonWebTokenError && e.message === 'invalid algorithm') {
-          throw new Error('Unexpected error: Failed to verify JWT');
+          wrapAndThrowError(e, 'Failed to verify JWT');
         }
         return null;
       }
@@ -67,7 +68,7 @@ class AuthenticationService {
         if (e instanceof RepositoryIllegalArgumentError) {
           return undefined;
         }
-        throw new Error('Unexpected error: Failed to read from session store');
+        wrapAndThrowError(e, 'Failed to read from session store');
       }
     })();
     if (persistentSession == null || persistentSession.expirationTime <= (Date.now() / 1000)) {
@@ -135,7 +136,7 @@ class AuthenticationService {
         if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
           throw new AccessDeniedError();
         }
-        throw new Error('Unexpected error: Failed to invoke account service');
+        wrapAndThrowError(e, 'Failed to invoke account service');
       }
     })();
     const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, credentials.password, account.passwordSalt);
@@ -158,7 +159,7 @@ class AuthenticationService {
         }
         catch (e) {
           if (!(e instanceof RepositoryConflictError)) {
-            throw new Error('Unexpected error: Failed to write to session store');
+            wrapAndThrowError(e, 'Failed to write to session store');
           }
         }
       }
@@ -173,14 +174,14 @@ class AuthenticationService {
           algorithm: this.#config.tokenAlgorithm
         });
       }
-      catch {
+      catch (e) {
         try {
           await this.#persistentSessionRepository.deleteByRefreshToken(refreshToken);
         }
         catch {
-          throw new Error('Unexpected error: Failed to create JWT; Unexpected error: Failed to write to session store');
+          wrapAndThrowError(e, 'Failed to create JWT; Failed to write to session store');
         }
-        throw new Error('Unexpected error: Failed to create JWT');
+        wrapAndThrowError(e, 'Failed to create JWT');
       }
     })();
     return {
@@ -198,7 +199,7 @@ class AuthenticationService {
         if (e instanceof RepositoryIllegalArgumentError) {
           return undefined;
         }
-        throw new Error('Unexpected error: Failed to read from session store');
+        wrapAndThrowError(e, 'Failed to read from session store');
       }
     })();
     if (persistentSession == null) {
@@ -218,8 +219,8 @@ class AuthenticationService {
           algorithm: this.#config.tokenAlgorithm
         });
       }
-      catch {
-        throw new Error('Unexpected error: Failed to create JWT');
+      catch (e) {
+        wrapAndThrowError(e, 'Failed to create JWT');
       }
     })();
     return {
@@ -239,8 +240,8 @@ class AuthenticationService {
     try {
       await this.#persistentSessionRepository.deleteByAccountId(accountId);
     }
-    catch {
-      throw new Error('Unexpected error: Failed to write to session store');
+    catch (e) {
+      wrapAndThrowError(e, 'Failed to write to session store');
     }
   }
 
@@ -252,7 +253,7 @@ class AuthenticationService {
       if (e instanceof RepositoryIllegalArgumentError) {
         return;
       }
-      throw new Error('Unexpected error: Failed to write to session store');
+      wrapAndThrowError(e, 'Failed to write to session store');
     }
   }
 }

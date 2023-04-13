@@ -1,4 +1,5 @@
 import { get } from 'http';
+import { wrapAndThrowError } from '../common.js';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError } from './model/errors.js';
 
 class AccountServiceClient {
@@ -26,13 +27,13 @@ class AccountServiceClient {
       if (typeof authority.id == 'string') {
         output['authority-id'] = authority.id;
       }
-      if (typeof authority.roles == 'string') {
-        output['authority-roles'] = authority.roles;
+      if (Number.isInteger(authority.roles)) {
+        output['authority-roles'] = authority.roles.toString();
       }
-      if (typeof authority.authTime == 'string') {
-        output['authority-auth-time'] = authority.authTime;
+      if (Number.isInteger(authority.authTime)) {
+        output['authority-auth-time'] = authority.authTime.toString();
       }
-      return Object.keys(authority).length == 0 ? undefined : output;
+      return Object.keys(output).length == 0 ? undefined : output;
     })();
     const requestOptions = {
       hostname: this.#config.host,
@@ -71,8 +72,8 @@ class AccountServiceClient {
           });
         });
       }
-      catch {
-        throw new Error('Unexpected error: Failed to connect to account service endpoint');
+      catch (e) {
+        wrapAndThrowError(e, 'Failed to connect to account service endpoint');
       }
     })();
     switch (response.status) {
@@ -80,8 +81,8 @@ class AccountServiceClient {
         try {
           return JSON.parse(response.body.toString());
         }
-        catch {
-          throw new Error('Unexpected error: Malformed response received from account service');
+        catch (e) {
+          wrapAndThrowError(e, 'Malformed response received from account service');
         }
       }
       case 400: {
@@ -94,7 +95,7 @@ class AccountServiceClient {
         throw new NotFoundError();
       }
       default: {
-        throw new Error('Unexpected error: Unrecognized status code received from account service');
+        throw new Error('Unrecognized status code received from account service');
       }
     }
   }

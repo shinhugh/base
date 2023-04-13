@@ -1,5 +1,6 @@
 import { v4 as generateUuid } from 'uuid';
 import { Sequelize, DataTypes } from 'sequelize';
+import { wrapAndThrowError } from '../common.js';
 import { RepositoryIllegalArgumentError, RepositoryConflictError } from './model/errors.js';
 
 class PersistentSessionRepository {
@@ -31,8 +32,8 @@ class PersistentSessionRepository {
         }
       });
     }
-    catch {
-      throw new Error('Unexpected error: Failed to execute database transaction');
+    catch (e) {
+      wrapAndThrowError(e, 'Failed to execute database transaction');
     }
     finally {
       await this.#closeSequelize();
@@ -51,8 +52,8 @@ class PersistentSessionRepository {
         }
       });
     }
-    catch {
-      throw new Error('Unexpected error: Failed to execute database transaction');
+    catch (e) {
+      wrapAndThrowError(e, 'Failed to execute database transaction');
     }
     finally {
       await this.#closeSequelize();
@@ -80,7 +81,7 @@ class PersistentSessionRepository {
         if (e instanceof Sequelize.ValidationError) {
           throw new RepositoryConflictError();
         }
-        throw new Error('Unexpected error: Failed to execute database transaction');
+        wrapAndThrowError(e, 'Failed to execute database transaction');
       }
       return entry;
     }
@@ -101,8 +102,8 @@ class PersistentSessionRepository {
         }
       });
     }
-    catch {
-      throw new Error('Unexpected error: Failed to execute database transaction');
+    catch (e) {
+      wrapAndThrowError(e, 'Failed to execute database transaction');
     }
     finally {
       await this.#closeSequelize();
@@ -121,8 +122,8 @@ class PersistentSessionRepository {
         }
       });
     }
-    catch {
-      throw new Error('Unexpected error: Failed to execute database transaction');
+    catch (e) {
+      wrapAndThrowError(e, 'Failed to execute database transaction');
     }
     finally {
       await this.#closeSequelize();
@@ -140,8 +141,8 @@ class PersistentSessionRepository {
             }
           });
         }
-        catch {
-          throw new Error('Unexpected error: Failed to execute database transaction');
+        catch (e) {
+          wrapAndThrowError(e, 'Failed to execute database transaction');
         }
       })();
       if (match == null) {
@@ -167,8 +168,8 @@ class PersistentSessionRepository {
       try {
         await this.#sequelize.authenticate();
       }
-      catch {
-        throw new Error('Unexpected error: Failed to connect to database');
+      catch (e) {
+        wrapAndThrowError(e, 'Failed to connect to database');
       }
       this.#sequelize.define('persistentSessions', sequelizePersistentSessionAttributes, sequelizePersistentSessionOptions);
     }

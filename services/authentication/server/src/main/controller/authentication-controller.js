@@ -190,7 +190,10 @@ const mapErrorToStatusCode = (e) => {
   if (e instanceof ConflictError) {
     return 409;
   }
-  console.error('Unexpected error: ' + e.message);
+  console.error('Unexpected error:\n' + e);
+  if (typeof e.inner === 'object') {
+    console.error('Inner error:\n' + e.inner);
+  }
   return 500;
 };
 

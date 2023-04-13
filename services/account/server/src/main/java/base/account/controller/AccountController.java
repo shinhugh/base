@@ -189,7 +189,7 @@ public class AccountController {
         if (e.getClass() == ConflictException.class) {
             return 409;
         }
-        System.out.println("Unexpected exception: " + e.getMessage());
+        System.out.println("Unexpected exception:\n" + e);
         return 500;
     }
 
