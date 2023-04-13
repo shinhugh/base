@@ -6,13 +6,18 @@ import java.util.Map;
 
 public class AuthenticationServiceBridge implements AuthenticationServiceClient {
     private static final int PORT_MAX_VALUE = 65535;
+    private final HttpClient httpClient;
     private final String host;
     private final int port;
 
-    public AuthenticationServiceBridge(Map<String, String> config) {
+    public AuthenticationServiceBridge(HttpClient httpClient, Map<String, String> config) {
+        if (httpClient == null) {
+            throw new RuntimeException("Invalid httpClient provided to AuthenticationServiceBridge constructor");
+        }
         if (config == null || !validateConfig(config)) {
             throw new RuntimeException("Invalid config provided to AuthenticationServiceBridge constructor");
         }
+        this.httpClient = httpClient;
         host = config.get("host");
         port = Integer.parseInt(config.get("port"));
     }
@@ -20,10 +25,10 @@ public class AuthenticationServiceBridge implements AuthenticationServiceClient 
     @Override
     public void logout(Authority authority, String accountId) {
         // TODO: Bridge should not know what's acceptable or not for parameters - leave that up to actual service
-        // TODO: Invoke endpoint via HTTP request
+        // TODO: Invoke endpoint via HTTP request using httpClient
         // TODO: Anticipate connection problems and invalid host/port values
-        //       Categorize these under unexpected exceptions - throw generic RuntimeException w/ message instead of
-        //       subroutine's exception types
+        //       Categorize these under unexpected exceptions - use wrapException() to wrap exception with custom
+        //       message
     }
 
     private static boolean validateConfig(Map<String, String> config) {

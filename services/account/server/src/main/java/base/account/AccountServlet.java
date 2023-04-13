@@ -2,11 +2,10 @@ package base.account;
 
 import base.account.controller.AccountController;
 import base.account.repository.AccountJpaRepository;
-import base.account.repository.AccountRepository;
 import base.account.service.AccountManager;
 import base.account.service.AccountService;
 import base.account.service.AuthenticationServiceBridge;
-import base.account.service.AuthenticationServiceClient;
+import base.account.service.HttpBridge;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,9 +26,10 @@ public class AccountServlet extends HttpServlet {
     private static final Map<String, String> ACCOUNT_JPA_REPOSITORY_CONFIG = Map.of("hibernate.connection.url", String.format(CONNECTION_URL_FORMAT, DB_HOST, DB_PORT, DB_DATABASE), "hibernate.connection.username", DB_USERNAME, "hibernate.connection.password", DB_PASSWORD);
     private static final Map<String, String> AUTHENTICATION_SERVICE_BRIDGE_CONFIG = Map.of("host", "localhost", "port", "8000");
     private static final Map<String, String> ACCOUNT_MANAGER_CONFIG = Map.of("modificationEnabledSessionAgeMaxValue", "900", "passwordHashAlgorithm", "SHA-256");
-    private final AccountRepository accountRepository = new AccountJpaRepository(ACCOUNT_JPA_REPOSITORY_CONFIG);
-    private final AuthenticationServiceClient authenticationServiceClient = new AuthenticationServiceBridge(AUTHENTICATION_SERVICE_BRIDGE_CONFIG);
-    private final AccountService accountService = new AccountManager(accountRepository, authenticationServiceClient, ACCOUNT_MANAGER_CONFIG);
+    private final AccountJpaRepository accountJpaRepository = new AccountJpaRepository(ACCOUNT_JPA_REPOSITORY_CONFIG);
+    private final HttpBridge httpBridge = new HttpBridge();
+    private final AuthenticationServiceBridge authenticationServiceBridge = new AuthenticationServiceBridge(httpBridge, AUTHENTICATION_SERVICE_BRIDGE_CONFIG);
+    private final AccountService accountService = new AccountManager(accountJpaRepository, authenticationServiceBridge, ACCOUNT_MANAGER_CONFIG);
     private final AccountController accountController = new AccountController(accountService);
 
     @Override

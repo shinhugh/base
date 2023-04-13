@@ -1,5 +1,7 @@
 package base.account.service;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -15,20 +17,51 @@ public class HttpBridge implements HttpClient {
     @Override
     public Response sendRequest(Request request) {
         StringBuilder queryString = new StringBuilder();
-        for (Map.Entry<String, List<String>> entry : request.getQuery().entrySet()) {
-            for (String value : entry.getValue()) {
-                if (queryString.length() == 0) {
-                    queryString.append('?');
+        if (request.getQuery() != null) {
+            for (Map.Entry<String, List<String>> entry : request.getQuery().entrySet()) {
+                if (entry.getKey() != null && entry.getKey().length() > 0) {
+                    if (entry.getValue() == null || entry.getValue().isEmpty()) {
+                        if (queryString.length() == 0) {
+                            queryString.append('?');
+                        }
+                        else {
+                            queryString.append('&');
+                        }
+                        queryString.append(entry.getKey());
+                    }
+                    else {
+                        for (String value : entry.getValue()) {
+                            if (queryString.length() == 0) {
+                                queryString.append('?');
+                            }
+                            else {
+                                queryString.append('&');
+                            }
+                            queryString.append(entry.getKey());
+                            if (value != null && value.length() > 0) {
+                                queryString.append('=');
+                                queryString.append(value);
+                            }
+                        }
+                    }
                 }
-                else {
-                    queryString.append('&');
-                }
-                queryString.append(entry.getKey());
-                queryString.append('=');
-                queryString.append(value);
             }
         }
-        String urlString = String.format(URL_FORMAT, request.getHost(), request.getPort(), request.getPath(), queryString);
+        String requestHost;
+        if (request.getHost() == null || request.getHost().length() == 0) {
+            requestHost = "localhost";
+        }
+        else {
+            requestHost = request.getHost();
+        }
+        String requestPath;
+        if (request.getPath() == null || request.getPath().length() == 0) {
+            requestPath = "/";
+        }
+        else {
+            requestPath = request.getPath();
+        }
+        String urlString = String.format(URL_FORMAT, requestHost, request.getPort(), requestPath, queryString);
         URL url;
         try {
             url = new URL(urlString);
@@ -52,13 +85,17 @@ public class HttpBridge implements HttpClient {
             }
             if (request.getHeaders() != null) {
                 for (Map.Entry<String, List<String>> entry : request.getHeaders().entrySet()) {
-                    if (!entry.getValue().isEmpty()) {
+                    if (entry.getKey() != null && entry.getKey().length() > 0) {
                         StringBuilder headerValues = new StringBuilder();
-                        for (String headerValue : entry.getValue()) {
-                            if (headerValues.length() != 0) {
-                                headerValues.append(',');
+                        if (entry.getValue() != null) {
+                            for (String headerValue : entry.getValue()) {
+                                if (headerValue != null && headerValue.length() > 0) {
+                                    if (headerValues.length() != 0) {
+                                        headerValues.append(',');
+                                    }
+                                    headerValues.append(headerValue);
+                                }
                             }
-                            headerValues.append(headerValue);
                         }
                         connection.setRequestProperty(entry.getKey(), headerValues.toString());
                     }
@@ -81,6 +118,7 @@ public class HttpBridge implements HttpClient {
                     throw wrapException(e, "Failed to write to request body stream");
                 }
             }
+            // TODO: Try to explicitly connect first to detect issue and throw exception with appropriate message?
             short status;
             try {
                 status = (short) connection.getResponseCode();
@@ -88,10 +126,14 @@ public class HttpBridge implements HttpClient {
             catch (Exception e) {
                 throw wrapException(e, "Failed to extract status code from response");
             }
-            InputStream responseBodyStream;
-            if (status != 400) { // TODO: For which status codes am I allowed to invoke getInputStream()?
+            Map<String, List<String>> responseHeaders = null;
+            if (connection.getHeaderFields() != null && !connection.getHeaderFields().isEmpty()) {
+                responseHeaders = connection.getHeaderFields();
+            }
+            InputStream responseBodySourceStream;
+            if (status < 400) {
                 try {
-                    responseBodyStream = connection.getInputStream();
+                    responseBodySourceStream = connection.getInputStream();
                 }
                 catch (Exception e) {
                     throw wrapException(e, "Failed to create response body stream");
@@ -99,13 +141,23 @@ public class HttpBridge implements HttpClient {
             }
             else {
                 try {
-                    responseBodyStream = connection.getErrorStream();
+                    responseBodySourceStream = connection.getErrorStream();
                 }
                 catch (Exception e) {
                     throw wrapException(e, "Failed to create response body stream");
                 }
             }
-            Map<String, List<String>> responseHeaders = Map.of(); // TODO: Use connection.getHeaderFields()
+            ByteArrayOutputStream responseBodyDestinationStream = new ByteArrayOutputStream();
+            try {
+                responseBodySourceStream.transferTo(responseBodyDestinationStream);
+            }
+            catch (Exception e) {
+                throw wrapException(e, "Failed to read from response body stream");
+            }
+            InputStream responseBodyStream = null;
+            if (responseBodyDestinationStream.size() > 0) {
+                responseBodyStream = new ByteArrayInputStream(responseBodyDestinationStream.toByteArray());
+            }
             return new Response(status, responseHeaders, responseBodyStream);
         }
         finally {
