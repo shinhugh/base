@@ -72,7 +72,7 @@ public class AccountJpaRepository implements AccountRepository {
             entityManager.getTransaction().rollback();
             return matches.toArray(new Account[0]);
         }
-        catch (Exception e) { // TODO: More granular exception handling
+        catch (Exception e) {
             throw wrapException(e, "Failed to execute database transaction");
         }
         finally {
@@ -107,7 +107,7 @@ public class AccountJpaRepository implements AccountRepository {
         catch (ConflictException e) {
             throw e;
         }
-        catch (Exception e) { // TODO: More granular exception handling
+        catch (Exception e) {
             throw wrapException(e, "Failed to execute database transaction");
         }
         finally {
@@ -180,7 +180,7 @@ public class AccountJpaRepository implements AccountRepository {
         catch (NotFoundException | ConflictException e) {
             throw e;
         }
-        catch (Exception e) { // TODO: More granular exception handling
+        catch (Exception e) {
             throw wrapException(e, "Failed to execute database transaction");
         }
         finally {
@@ -228,7 +228,7 @@ public class AccountJpaRepository implements AccountRepository {
             entityManager.getTransaction().commit();
             return matches.size();
         }
-        catch (Exception e) { // TODO: More granular exception handling
+        catch (Exception e) {
             throw wrapException(e, "Failed to execute database transaction");
         }
         finally {

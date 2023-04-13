@@ -1,5 +1,13 @@
 TODO ---
 
+authentication service
+
+- periodically purge:
+  - expired sessions (frequent)
+  - "dangling" sessions whose Account ID no longer pertains to an existing
+    Account instance (infrequent)
+
+
 gateway
 
   - listen on port 80

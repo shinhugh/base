@@ -2,12 +2,12 @@ import { tests } from './authentication-service-tests.js';
 
 for (const test of tests) {
   const header = '[' + test.name + '] ';
-  console.log(header + 'Entering test');
   try {
     await test.run();
+    console.log(header + 'SUCCESS');
   }
   catch (e) {
     console.log(header + e.message);
+    console.log(header + 'FAILURE');
   }
-  console.log(header + 'Exiting test');
 }

@@ -183,10 +183,7 @@ public class AccountManager implements AccountService {
         try {
             authenticationServiceClient.logout(authority, match.getId());
         }
-        // TODO: Handle specific exceptions
-        catch (Exception e) {
-            throw wrapException(e, "Failed to invoke authentication service");
-        }
+        catch (Exception ignored) { }
         Account output = createServiceAccountFromRepositoryAccount(entry);
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM)) {
             output.setPasswordHash(null);
@@ -245,10 +242,7 @@ public class AccountManager implements AccountService {
         try {
             authenticationServiceClient.logout(authority, match.getId());
         }
-        // TODO: Handle specific exceptions
-        catch (Exception e) {
-            throw wrapException(e, "Failed to invoke authentication service");
-        }
+        catch (Exception ignored) { }
     }
 
     private String hashPassword(String password, String salt) {

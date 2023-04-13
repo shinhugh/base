@@ -11,14 +11,14 @@ public class Test {
 
     public void run() {
         String header = "[" + name + "] ";
-        System.out.println(header + "Entering test");
         try {
             runnable.run();
+            System.out.println(header + "SUCCESS");
         }
         catch (Exception e) {
             System.out.println(header + e.getMessage());
+            System.out.println(header + "FAILURE");
         }
-        System.out.println(header + "Exiting test");
     }
 
     public interface Runnable {
