@@ -1,15 +1,5 @@
 TODO ---
 
-authentication service
-
-  - capture specific internal error information somehow before translating to
-    domain error
-
-Account service
-
-  - capture specific internal exception information somehow before translating
-    to domain exception
-
 gateway
 
   - listen on port 80
