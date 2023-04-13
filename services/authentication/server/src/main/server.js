@@ -59,8 +59,8 @@ const handleRequest = async (req, res, endpoints) => {
   const request = {
     path: req.path,
     method: req.method,
-    headers: req.headers,
-    query: req.query
+    headers: req.headers, // TODO: What is the format for this if there are multiple values per key?
+    query: req.query // TODO: What is the format for this if there are multiple values per key?
   };
   if (req.headers['content-length'] != null) {
     request.body = req.body;
@@ -88,7 +88,7 @@ const handleRequest = async (req, res, endpoints) => {
   })();
   res.status(response.status);
   for (const headerName in response.headers) {
-    res.set(headerName, response.headers[headerName]);
+    res.set(headerName, response.headers[headerName]); // TODO: Support multiple values per key
   }
   if (response.body == null) {
     res.end();

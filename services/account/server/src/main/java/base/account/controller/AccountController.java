@@ -194,8 +194,8 @@ public class AccountController {
     }
 
     public static class Request {
-        private Map<String, String> headers;
-        private Map<String, String> query;
+        private Map<String, String> headers; // TODO: Support multiple values per key
+        private Map<String, String> query; // TODO: Support multiple values per key
         private InputStream body;
 
         public Request(Map<String, String> headers, Map<String, String> query, InputStream body) {
@@ -231,7 +231,7 @@ public class AccountController {
 
     public static class Response {
         private short status;
-        private Map<String, String> headers;
+        private Map<String, String> headers; // TODO: Support multiple values per key
         private InputStream body;
 
         public Response() { }

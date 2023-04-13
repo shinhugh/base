@@ -135,7 +135,7 @@ const validateRequest = (request) => {
     if (typeof request.headers !== 'object') {
       return false;
     }
-    for (const headerName in request.headers) {
+    for (const headerName in request.headers) { // TODO: Support multiple values per key
       if (typeof request.headers[headerName] !== 'string') {
         return false;
       }
@@ -145,7 +145,7 @@ const validateRequest = (request) => {
     if (typeof request.query !== 'object') {
       return false;
     }
-    for (const queryName in request.query) {
+    for (const queryName in request.query) { // TODO: Support multiple values per key
       if (typeof request.query[queryName] !== 'string') {
         return false;
       }
