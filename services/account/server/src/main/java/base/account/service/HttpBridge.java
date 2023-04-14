@@ -75,7 +75,7 @@ public class HttpBridge implements HttpClient {
                 connection = (HttpURLConnection) url.openConnection();
             }
             catch (Exception e) {
-                throw wrapException(e, String.format("Failed to create connection object for HTTP endpoint: %s", urlString));
+                throw wrapException(e, "Failed to create connection object");
             }
             try {
                 connection.setRequestMethod(request.getMethod().toString());
@@ -118,7 +118,12 @@ public class HttpBridge implements HttpClient {
                     throw wrapException(e, "Failed to write to request body stream");
                 }
             }
-            // TODO: Try to explicitly connect first to detect issue and throw exception with appropriate message?
+            try {
+                connection.connect();
+            }
+            catch (Exception e) {
+                throw wrapException(e, String.format("Failed to connect to HTTP endpoint: %s", urlString));
+            }
             short status;
             try {
                 status = (short) connection.getResponseCode();
