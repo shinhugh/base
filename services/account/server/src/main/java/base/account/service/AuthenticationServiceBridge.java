@@ -3,14 +3,22 @@ package base.account.service;
 import base.account.service.model.AccessDeniedException;
 import base.account.service.model.Authority;
 import base.account.service.model.IllegalArgumentException;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static base.account.Common.wrapException;
+
 public class AuthenticationServiceBridge implements AuthenticationServiceClient {
+    private static final int PORT_MAX_VALUE = 65535;
     private final HttpClient httpClient;
+    private final Gson gson = new GsonBuilder().create();
     private final String host;
     private final int port;
 
@@ -28,11 +36,6 @@ public class AuthenticationServiceBridge implements AuthenticationServiceClient 
 
     @Override
     public void logout(Authority authority, String accountId) throws IllegalArgumentException, AccessDeniedException {
-        // TODO: Bridge should not know what's acceptable or not for parameters - leave that up to actual service
-        // TODO: Invoke endpoint via HTTP request using httpClient
-        // TODO: Anticipate connection problems and invalid host/port values
-        //       Categorize these under unexpected exceptions - use wrapException() to wrap exception with custom
-        //       message
         Map<String, List<String>> requestHeaders = new HashMap<>();
         requestHeaders.put("content-type", List.of("application/json"));
         if (authority != null) {
@@ -42,9 +45,19 @@ public class AuthenticationServiceBridge implements AuthenticationServiceClient 
             requestHeaders.put("authority-roles", List.of(String.valueOf(authority.getRoles())));
             requestHeaders.put("authority-auth-time", List.of(String.valueOf(authority.getAuthTime())));
         }
-        InputStream requestBody = null; // TODO: Map accountId to body as JSON
+        Map<String, String> requestBodyObject = null;
+        if (accountId != null) {
+            requestBodyObject = Map.of("accountId", accountId);
+        }
+        InputStream requestBody = new ByteArrayInputStream(gson.toJson(requestBodyObject).getBytes(StandardCharsets.UTF_8));
         HttpClient.Request request = new HttpClient.Request(host, port, "/logout", HttpClient.Method.POST, requestHeaders, null, requestBody);
-        HttpClient.Response response = httpClient.sendRequest(request);
+        HttpClient.Response response;
+        try {
+            response = httpClient.sendRequest(request);
+        }
+        catch (Exception e) {
+            throw wrapException(e, "Failed to send request to authentication service");
+        }
         switch (response.getStatus()) {
             case 200: {
                 return;
@@ -65,7 +78,7 @@ public class AuthenticationServiceBridge implements AuthenticationServiceClient 
         if (config == null) {
             return true;
         }
-        if (!config.containsKey("host")) {
+        if (config.get("host") == null) {
             return false;
         }
         int port;
@@ -75,6 +88,6 @@ public class AuthenticationServiceBridge implements AuthenticationServiceClient 
         catch (Exception e) {
             return false;
         }
-        return port >= 0;
+        return port >= 0 && port <= PORT_MAX_VALUE;
     }
 }

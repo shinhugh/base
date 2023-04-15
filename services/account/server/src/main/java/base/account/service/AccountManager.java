@@ -265,7 +265,7 @@ public class AccountManager implements AccountService {
         if (modificationEnabledSessionAgeMaxValue < 0 || modificationEnabledSessionAgeMaxValue > TIME_MAX_VALUE) {
             return false;
         }
-        if (!config.containsKey("passwordHashAlgorithm")) {
+        if (config.get("passwordHashAlgorithm") == null) {
             return false;
         }
         return Security.getAlgorithms("MessageDigest").contains(config.get("passwordHashAlgorithm"));

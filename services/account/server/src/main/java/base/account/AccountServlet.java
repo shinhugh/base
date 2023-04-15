@@ -12,9 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class AccountServlet extends HttpServlet {
     private static final String DB_HOST = "localhost";
@@ -72,8 +70,10 @@ public class AccountServlet extends HttpServlet {
     private static void translateResponse(AccountController.Response src, HttpServletResponse dst) throws IOException {
         dst.setStatus(src.getStatus());
         if (src.getHeaders() != null) {
-            for (Map.Entry<String, String> header : src.getHeaders().entrySet()) {
-                dst.setHeader(header.getKey(), header.getValue());
+            for (Map.Entry<String, List<String>> entry : src.getHeaders().entrySet()) {
+                for (String headerValue : entry.getValue()) {
+                    dst.addHeader(entry.getKey(), headerValue);
+                }
             }
         }
         if (src.getBody() != null) {
@@ -81,28 +81,28 @@ public class AccountServlet extends HttpServlet {
         }
     }
 
-    private static Map<String, String> getHeaders(HttpServletRequest request) {
+    private static Map<String, List<String>> getHeaders(HttpServletRequest request) {
         Enumeration<String> headerNames = request.getHeaderNames();
-        if (headerNames != null) {
-            Map<String, String> headers = new HashMap<>();
-            while (headerNames.hasMoreElements()) {
-                String headerName = headerNames.nextElement();
-                headers.put(headerName, request.getHeader(headerName));
-            }
-            return headers;
+        if (headerNames == null) {
+            return null;
         }
-        return null;
+        Map<String, List<String>> headers = new HashMap<>();
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            headers.put(headerName, Collections.list(request.getHeaders(headerName)));
+        }
+        return headers;
     }
 
-    private static Map<String, String> getQuery(HttpServletRequest request) {
+    private static Map<String, List<String>> getQuery(HttpServletRequest request) {
         Map<String, String[]> parameterMap = request.getParameterMap();
-        if (parameterMap != null) {
-            Map<String, String> query = new HashMap<>();
-            for (Map.Entry<String, String[]> parameter : parameterMap.entrySet()) {
-                query.put(parameter.getKey(), parameter.getValue()[0]);
-            }
-            return query;
+        if (parameterMap == null) {
+            return null;
         }
-        return null;
+        Map<String, List<String>> query = new HashMap<>();
+        for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+            query.put(entry.getKey(), Arrays.asList(entry.getValue()));
+        }
+        return query;
     }
 }

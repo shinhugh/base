@@ -9,15 +9,6 @@ authentication service
 
 - support multiple values for a single key in the header and query
 
-- don't limit ports to 65535
-
-
-account service
-
-- support multiple values for a single key in the header and query
-
-- don't limit ports to 65535
-
 
 gateway
 

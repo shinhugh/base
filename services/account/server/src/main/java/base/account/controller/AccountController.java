@@ -10,6 +10,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 public class AccountController {
@@ -37,9 +38,13 @@ public class AccountController {
         }
         String id = null;
         String name = null;
-        if (request.query != null) {
-            id = request.query.get("id");
-            name = request.query.get("name");
+        if (request.getQuery() != null) {
+            if (request.getQuery().get("id") != null && !request.getQuery().get("id").isEmpty()) {
+                id = request.getQuery().get("id").get(0);
+            }
+            if (request.getQuery().get("name") != null && !request.getQuery().get("name").isEmpty()) {
+                name = request.getQuery().get("name").get(0);
+            }
         }
         Account output;
         try {
@@ -48,7 +53,7 @@ public class AccountController {
         catch (Exception e) {
             return new Response(mapExceptionToStatusCode(e), null, null);
         }
-        Map<String, String> responseHeaders = Map.of("content-type", "application/json");
+        Map<String, List<String>> responseHeaders = Map.of("content-type", List.of("application/json"));
         return new Response((short) 200, responseHeaders, new ByteArrayInputStream(gson.toJson(output).getBytes(StandardCharsets.UTF_8)));
     }
 
@@ -63,7 +68,10 @@ public class AccountController {
         catch (Exception e) {
             return new Response((short) 400, null, null);
         }
-        if (request.getHeaders() == null || !"application/json".equals(request.getHeaders().get("content-type"))) {
+        if (request.getHeaders() == null || request.getHeaders().get("content-type") == null || request.getHeaders().get("content-type").isEmpty() || !"application/json".equals(request.getHeaders().get("content-type").get(0))) {
+            return new Response((short) 400, null, null);
+        }
+        if (request.getBody() == null) {
             return new Response((short) 400, null, null);
         }
         Account account;
@@ -80,7 +88,7 @@ public class AccountController {
         catch (Exception e) {
             return new Response(mapExceptionToStatusCode(e), null, null);
         }
-        Map<String, String> responseHeaders = Map.of("content-type", "application/json");
+        Map<String, List<String>> responseHeaders = Map.of("content-type", List.of("application/json"));
         return new Response((short) 200, responseHeaders, new ByteArrayInputStream(gson.toJson(output).getBytes(StandardCharsets.UTF_8)));
     }
 
@@ -95,7 +103,10 @@ public class AccountController {
         catch (Exception e) {
             return new Response((short) 400, null, null);
         }
-        if (request.getHeaders() == null || !"application/json".equals(request.getHeaders().get("content-type"))) {
+        if (request.getHeaders() == null || request.getHeaders().get("content-type") == null || request.getHeaders().get("content-type").isEmpty() || !"application/json".equals(request.getHeaders().get("content-type").get(0))) {
+            return new Response((short) 400, null, null);
+        }
+        if (request.getBody() == null) {
             return new Response((short) 400, null, null);
         }
         Account account;
@@ -107,9 +118,13 @@ public class AccountController {
         }
         String id = null;
         String name = null;
-        if (request.query != null) {
-            id = request.query.get("id");
-            name = request.query.get("name");
+        if (request.getQuery() != null) {
+            if (request.getQuery().get("id") != null && !request.getQuery().get("id").isEmpty()) {
+                id = request.getQuery().get("id").get(0);
+            }
+            if (request.getQuery().get("name") != null && !request.getQuery().get("name").isEmpty()) {
+                name = request.getQuery().get("name").get(0);
+            }
         }
         Account output;
         try {
@@ -118,7 +133,7 @@ public class AccountController {
         catch (Exception e) {
             return new Response(mapExceptionToStatusCode(e), null, null);
         }
-        Map<String, String> responseHeaders = Map.of("content-type", "application/json");
+        Map<String, List<String>> responseHeaders = Map.of("content-type", List.of("application/json"));
         return new Response((short) 200, responseHeaders, new ByteArrayInputStream(gson.toJson(output).getBytes(StandardCharsets.UTF_8)));
     }
 
@@ -135,9 +150,13 @@ public class AccountController {
         }
         String id = null;
         String name = null;
-        if (request.query != null) {
-            id = request.query.get("id");
-            name = request.query.get("name");
+        if (request.getQuery() != null) {
+            if (request.getQuery().get("id") != null && !request.getQuery().get("id").isEmpty()) {
+                id = request.getQuery().get("id").get(0);
+            }
+            if (request.getQuery().get("name") != null && !request.getQuery().get("name").isEmpty()) {
+                name = request.getQuery().get("name").get(0);
+            }
         }
         try {
             accountService.delete(authority, id, name);
@@ -152,28 +171,31 @@ public class AccountController {
         if (request.getHeaders() == null) {
             return null;
         }
-        if (!request.getHeaders().containsKey("authority-id") && !request.getHeaders().containsKey("authority-roles") && !request.getHeaders().containsKey("authority-auth-time")) {
-            return null;
-        }
         Authority authority = new Authority();
-        authority.setId(request.getHeaders().get("authority-id"));
-        if (request.getHeaders().containsKey("authority-roles")) {
+        boolean isFieldSet = false;
+        if (request.getHeaders().get("authority-id") != null && !request.getHeaders().get("authority-id").isEmpty() && request.getHeaders().get("authority-id").get(0).length() > 0) {
+            authority.setId(request.getHeaders().get("authority-id").get(0));
+            isFieldSet = true;
+        }
+        if (request.getHeaders().get("authority-roles") != null && !request.getHeaders().get("authority-roles").isEmpty() && request.getHeaders().get("authority-roles").get(0).length() > 0) {
             try {
-                authority.setRoles(Short.parseShort(request.getHeaders().get("authority-roles")));
+                authority.setRoles(Short.parseShort(request.getHeaders().get("authority-roles").get(0)));
             }
             catch (Exception e) {
                 throw new Exception();
             }
+            isFieldSet = true;
         }
-        if (request.getHeaders().containsKey("authority-auth-time")) {
+        if (request.getHeaders().get("authority-auth-time") != null && !request.getHeaders().get("authority-auth-time").isEmpty() && request.getHeaders().get("authority-auth-time").get(0).length() > 0) {
             try {
-                authority.setAuthTime(Long.parseLong(request.getHeaders().get("authority-auth-time")));
+                authority.setAuthTime(Long.parseLong(request.getHeaders().get("authority-auth-time").get(0)));
             }
             catch (Exception e) {
                 throw new Exception();
             }
+            isFieldSet = true;
         }
-        return authority;
+        return isFieldSet ? authority : null;
     }
 
     private static short mapExceptionToStatusCode(Exception e) {
@@ -194,29 +216,29 @@ public class AccountController {
     }
 
     public static class Request {
-        private Map<String, String> headers; // TODO: Support multiple values per key
-        private Map<String, String> query; // TODO: Support multiple values per key
+        private Map<String, List<String>> headers;
+        private Map<String, List<String>> query;
         private InputStream body;
 
-        public Request(Map<String, String> headers, Map<String, String> query, InputStream body) {
+        public Request(Map<String, List<String>> headers, Map<String, List<String>> query, InputStream body) {
             this.headers = headers;
             this.query = query;
             this.body = body;
         }
 
-        public Map<String, String> getHeaders() {
+        public Map<String, List<String>> getHeaders() {
             return headers;
         }
 
-        public void setHeaders(Map<String, String> headers) {
+        public void setHeaders(Map<String, List<String>> headers) {
             this.headers = headers;
         }
 
-        public Map<String, String> getQuery() {
+        public Map<String, List<String>> getQuery() {
             return query;
         }
 
-        public void setQuery(Map<String, String> query) {
+        public void setQuery(Map<String, List<String>> query) {
             this.query = query;
         }
 
@@ -231,12 +253,12 @@ public class AccountController {
 
     public static class Response {
         private short status;
-        private Map<String, String> headers; // TODO: Support multiple values per key
+        private Map<String, List<String>> headers;
         private InputStream body;
 
         public Response() { }
 
-        public Response(short status, Map<String, String> headers, InputStream body) {
+        public Response(short status, Map<String, List<String>> headers, InputStream body) {
             this.status = status;
             this.headers = headers;
             this.body = body;
@@ -250,11 +272,11 @@ public class AccountController {
             this.status = status;
         }
 
-        public Map<String, String> getHeaders() {
+        public Map<String, List<String>> getHeaders() {
             return headers;
         }
 
-        public void setHeaders(Map<String, String> headers) {
+        public void setHeaders(Map<String, List<String>> headers) {
             this.headers = headers;
         }
 
