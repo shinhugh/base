@@ -47,7 +47,7 @@ class AuthenticationService {
     const tokenPayload = (() => {
       try {
         return jwt.verify(token, this.#config.tokenSecretKey, {
-          algorithms: [this.#config.tokenAlgorithm]
+          algorithms: [ this.#config.tokenAlgorithm ]
         });
       }
       catch (e) {

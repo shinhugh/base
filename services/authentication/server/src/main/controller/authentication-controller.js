@@ -16,7 +16,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.identify()');
     }
     const authority = parseAuthority(request);
-    if (request.headers?.['content-type'] !== 'application/json') { // TODO: Support multiple values per key
+    if (request.headers?.['content-type']?.length == 0 || request.headers?.['content-type']?.[0] !== 'application/json') {
       return {
         status: 400
       };
@@ -42,7 +42,7 @@ class AuthenticationController {
     return {
       status: 200,
       headers: {
-        'content-type': 'application/json' // TODO: Support multiple values per key
+        'content-type': [ 'application/json' ]
       },
       body: Buffer.from(JSON.stringify(output))
     };
@@ -53,7 +53,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.login()');
     }
     const authority = parseAuthority(request);
-    if (request.headers?.['content-type'] !== 'application/json') { // TODO: Support multiple values per key
+    if (request.headers?.['content-type']?.length == 0 || request.headers?.['content-type']?.[0] !== 'application/json') {
       return {
         status: 400
       };
@@ -79,7 +79,7 @@ class AuthenticationController {
     return {
       status: 200,
       headers: {
-        'content-type': 'application/json' // TODO: Support multiple values per key
+        'content-type': [ 'application/json' ]
       },
       body: Buffer.from(JSON.stringify(output))
     };
@@ -90,7 +90,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.logout()');
     }
     const authority = parseAuthority(request);
-    if (request.headers?.['content-type'] !== 'application/json') { // TODO: Support multiple values per key
+    if (request.headers?.['content-type']?.length == 0 || request.headers?.['content-type']?.[0] !== 'application/json') {
       return {
         status: 400
       };
@@ -135,9 +135,16 @@ const validateRequest = (request) => {
     if (typeof request.headers !== 'object') {
       return false;
     }
-    for (const headerName in request.headers) { // TODO: Support multiple values per key
-      if (typeof request.headers[headerName] !== 'string') {
-        return false;
+    for (const headerKey in request.headers) {
+      if (request.headers[headerKey] != null) {
+        if (typeof request.headers[headerKey] !== 'object' || typeof request.headers[headerKey].constructor !== 'function' || request.headers[headerKey].constructor.name !== 'Array') {
+          return false;
+        }
+        for (const headerValue of request.headers[headerKey]) {
+          if (headerValue != null && typeof headerValue !== 'string') {
+            return false;
+          }
+        }
       }
     }
   }
@@ -145,9 +152,16 @@ const validateRequest = (request) => {
     if (typeof request.query !== 'object') {
       return false;
     }
-    for (const queryName in request.query) { // TODO: Support multiple values per key
-      if (typeof request.query[queryName] !== 'string') {
-        return false;
+    for (const queryKey in request.query) {
+      if (request.query[queryKey] != null) {
+        if (typeof request.query[queryKey] !== 'object' || typeof request.query[queryKey].constructor !== 'function' || request.query[queryKey].constructor.name !== 'Array') {
+          return false;
+        }
+        for (const queryValue of request.query[queryKey]) {
+          if (queryValue != null && typeof queryValue !== 'string') {
+            return false;
+          }
+        }
       }
     }
   }
@@ -157,24 +171,21 @@ const validateRequest = (request) => {
   return true;
 };
 
-const parseAuthority = (request) => { // TODO: Support multiple values per key
+const parseAuthority = (request) => {
   if (request.headers == null) {
     return null;
   }
-  if (request.headers['authority-id'] == null && request.headers['authority-roles'] == null && request.headers['authority-auth-time'] == null) {
-    return null;
-  }
   const authority = { };
-  if (request.headers['authority-id'] != null) {
-    authority.id = request.headers['authority-id'];
+  if (request.headers['authority-id'] != null && request.headers['authority-id'].length > 0) {
+    authority.id = request.headers['authority-id'][0];
   }
-  if (request.headers['authority-roles'] != null) {
-    authority.roles = Number(request.headers['authority-roles']);
+  if (request.headers['authority-roles'] != null && request.headers['authority-roles'].length > 0) {
+    authority.roles = Number(request.headers['authority-roles'][0]);
   }
-  if (request.headers['authority-auth-time'] != null) {
-    authority.authTime = Number(request.headers['authority-auth-time']);
+  if (request.headers['authority-auth-time'] != null && request.headers['authority-auth-time'].length > 0) {
+    authority.authTime = Number(request.headers['authority-auth-time'][0]);
   }
-  return authority;
+  return Object.keys(authority).length == 0 ? null : authority;
 };
 
 const mapErrorToStatusCode = (e) => {

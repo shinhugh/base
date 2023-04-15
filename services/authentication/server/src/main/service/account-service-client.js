@@ -47,7 +47,7 @@ class AccountServiceClient {
       try {
         return await new Promise((resolve, reject) => {
           get(requestOptions, res => {
-            let body = [];
+            let body = [ ];
             res.on('data', chunk => {
               body.push(chunk);
             });

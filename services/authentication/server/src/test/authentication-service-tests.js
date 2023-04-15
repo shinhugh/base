@@ -68,7 +68,7 @@ const testLogin = async () => {
   }
   try {
     jwt.verify(output.idToken, Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding), {
-      algorithms: [config.authenticationService.tokenAlgorithm]
+      algorithms: [ config.authenticationService.tokenAlgorithm ]
     });
   }
   catch {
@@ -87,7 +87,7 @@ const testLogin = async () => {
   }
   try {
     jwt.verify(output.idToken, Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding), {
-      algorithms: [config.authenticationService.tokenAlgorithm]
+      algorithms: [ config.authenticationService.tokenAlgorithm ]
     });
   }
   catch {

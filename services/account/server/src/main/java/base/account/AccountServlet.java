@@ -11,7 +11,10 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 public class AccountServlet extends HttpServlet {
@@ -65,7 +68,10 @@ public class AccountServlet extends HttpServlet {
     }
 
     private static AccountController.Request translateRequest(HttpServletRequest request) throws IOException {
-        return new AccountController.Request(getHeaders(request), getQuery(request), request.getInputStream());
+        ByteArrayOutputStream bodyBufferStream = new ByteArrayOutputStream();
+        request.getInputStream().transferTo(bodyBufferStream);
+        InputStream bodyStream = new ByteArrayInputStream(bodyBufferStream.toByteArray());
+        return new AccountController.Request(getHeaders(request), getQuery(request), bodyStream);
     }
 
     private static void translateResponse(AccountController.Response src, HttpServletResponse dst) throws IOException {
