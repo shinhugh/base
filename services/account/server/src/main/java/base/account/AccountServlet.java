@@ -15,13 +15,14 @@ import java.io.IOException;
 import java.util.*;
 
 public class AccountServlet extends HttpServlet {
-    private static final String DB_HOST = "localhost";
-    private static final String DB_PORT = "3306";
-    private static final String DB_DATABASE = "base";
-    private static final String DB_USERNAME = "root";
-    private static final String DB_PASSWORD = "";
-    private static final String CONNECTION_URL_FORMAT = "jdbc:mysql://%s:%s/%s";
-    private static final Map<String, String> ACCOUNT_JPA_REPOSITORY_CONFIG = Map.of("hibernate.connection.url", String.format(CONNECTION_URL_FORMAT, DB_HOST, DB_PORT, DB_DATABASE), "hibernate.connection.username", DB_USERNAME, "hibernate.connection.password", DB_PASSWORD);
+    // Use environment variables for production; hard-coded for testing only
+    private static final String ACCOUNT_DB_HOST = "localhost";
+    private static final String ACCOUNT_DB_PORT = "3306";
+    private static final String ACCOUNT_DB_DATABASE = "base";
+    private static final String ACCOUNT_DB_USERNAME = "root";
+    private static final String ACCOUNT_DB_PASSWORD = "";
+    private static final String ACCOUNT_DB_CONNECTION_URL_FORMAT = "jdbc:mysql://%s:%s/%s";
+    private static final Map<String, String> ACCOUNT_JPA_REPOSITORY_CONFIG = Map.of("hibernate.connection.url", String.format(ACCOUNT_DB_CONNECTION_URL_FORMAT, ACCOUNT_DB_HOST, ACCOUNT_DB_PORT, ACCOUNT_DB_DATABASE), "hibernate.connection.username", ACCOUNT_DB_USERNAME, "hibernate.connection.password", ACCOUNT_DB_PASSWORD);
     private static final Map<String, String> AUTHENTICATION_SERVICE_BRIDGE_CONFIG = Map.of("host", "localhost", "port", "8000");
     private static final Map<String, String> ACCOUNT_MANAGER_CONFIG = Map.of("modificationEnabledSessionAgeMaxValue", "900", "passwordHashAlgorithm", "SHA-256");
     private final AccountJpaRepository accountJpaRepository = new AccountJpaRepository(ACCOUNT_JPA_REPOSITORY_CONFIG);
