@@ -7,8 +7,6 @@ authentication service
   - "dangling" sessions whose Account ID no longer pertains to an existing
     Account instance (infrequent)
 
-- support multiple values for a single key in the header and query
-
 
 gateway
 

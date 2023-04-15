@@ -16,7 +16,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.identify()');
     }
     const authority = parseAuthority(request);
-    if (request.headers?.['content-type'] !== 'application/json') {
+    if (request.headers?.['content-type'] !== 'application/json') { // TODO: Support multiple values per key
       return {
         status: 400
       };
@@ -42,7 +42,7 @@ class AuthenticationController {
     return {
       status: 200,
       headers: {
-        'content-type': 'application/json'
+        'content-type': 'application/json' // TODO: Support multiple values per key
       },
       body: Buffer.from(JSON.stringify(output))
     };
@@ -53,7 +53,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.login()');
     }
     const authority = parseAuthority(request);
-    if (request.headers?.['content-type'] !== 'application/json') {
+    if (request.headers?.['content-type'] !== 'application/json') { // TODO: Support multiple values per key
       return {
         status: 400
       };
@@ -79,7 +79,7 @@ class AuthenticationController {
     return {
       status: 200,
       headers: {
-        'content-type': 'application/json'
+        'content-type': 'application/json' // TODO: Support multiple values per key
       },
       body: Buffer.from(JSON.stringify(output))
     };
@@ -90,7 +90,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.logout()');
     }
     const authority = parseAuthority(request);
-    if (request.headers?.['content-type'] !== 'application/json') {
+    if (request.headers?.['content-type'] !== 'application/json') { // TODO: Support multiple values per key
       return {
         status: 400
       };
@@ -157,7 +157,7 @@ const validateRequest = (request) => {
   return true;
 };
 
-const parseAuthority = (request) => {
+const parseAuthority = (request) => { // TODO: Support multiple values per key
   if (request.headers == null) {
     return null;
   }
