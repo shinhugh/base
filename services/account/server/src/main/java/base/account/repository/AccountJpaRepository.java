@@ -166,7 +166,7 @@ public class AccountJpaRepository implements AccountRepository {
                 conflict = query.setParameter("name", account.getName()).getSingleResult();
             }
             catch (Exception ignored) { }
-            if (conflict != null) {
+            if (conflict != null && !match.getId().equals(conflict.getId())) {
                 entityManager.getTransaction().rollback();
                 throw new ConflictException();
             }
