@@ -1,5 +1,5 @@
-import { get } from 'http';
 import { wrapError } from '../common.js';
+import { sendRequest } from './httpClient.js';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError } from './model/errors.js';
 
 class AccountServiceClient {
@@ -16,64 +16,47 @@ class AccountServiceClient {
   }
 
   async readByName(authority, name) {
+    if (!validateAuthorityTypeOnly(authority)) {
+      throw new IllegalArgumentError();
+    }
     if (name != null && typeof name !== 'string') {
       throw new IllegalArgumentError();
     }
+    const request = {
+      host: this.#config.host,
+      port: this.#config.port,
+      path: '/account',
+      method: 'get',
+      queryParameters: {
+        name: [ name ]
+      }
+    };
     const requestHeaders = (() => {
-      if (authority == null || typeof authority !== 'object') {
+      if (authority == null) {
         return undefined;
       }
-      const output = { };
-      if (typeof authority.id == 'string') {
-        output['authority-id'] = authority.id;
+      const requestHeaders = { };
+      if (authority.id != null) {
+        requestHeaders['authority-id'] = [ authority.id ];
       }
-      if (Number.isInteger(authority.roles)) {
-        output['authority-roles'] = authority.roles.toString();
+      if (authority.roles != null) {
+        requestHeaders['authority-roles'] = [ authority.roles.toString() ];
       }
-      if (Number.isInteger(authority.authTime)) {
-        output['authority-auth-time'] = authority.authTime.toString();
+      if (authority.authTime != null) {
+        requestHeaders['authority-auth-time'] = [ authority.authTime.toString() ];
       }
-      return Object.keys(output).length == 0 ? undefined : output;
+      return Object.keys(requestHeaders).length == 0 ? undefined : requestHeaders;
     })();
-    const requestOptions = {
-      hostname: this.#config.host,
-      port: this.#config.port,
-      path: "/account?name=" + name
-    };
     if (requestHeaders != null) {
-      requestOptions.headers = requestHeaders;
+      request.headers = requestHeaders;
     }
-    const response = await (async () => {
-      try {
-        return await new Promise((resolve, reject) => {
-          get(requestOptions, res => {
-            let body = [ ];
-            res.on('data', chunk => {
-              body.push(chunk);
-            });
-            res.on('end', () => {
-              if (body.length == 0) {
-                resolve({
-                  status: res.statusCode
-                })
-              }
-              else {
-                resolve({
-                  status: res.statusCode,
-                  body: Buffer.concat(body)
-                });
-              }
-            });
-          })
-          .on('error', () => {
-            reject();
-          });
-        });
-      }
-      catch (e) {
-        throw wrapError(e, 'Failed to connect to account service endpoint');
-      }
-    })();
+    let response;
+    try {
+      response = await sendRequest(request);
+    }
+    catch (e) {
+      throw wrapError(e, 'Failed to send request to account service');
+    }
     switch (response.status) {
       case 200: {
         try {
@@ -110,6 +93,25 @@ const validateConfig = (config) => {
     return false;
   }
   if (!Number.isInteger(config.port) || config.port < 0 || config.port > portMaxValue) {
+    return false;
+  }
+  return true;
+};
+
+const validateAuthorityTypeOnly = (authority) => {
+  if (authority == null) {
+    return true;
+  }
+  if (typeof authority !== 'object') {
+    return false;
+  }
+  if (authority.id != null && typeof authority.id !== 'string') {
+    return false;
+  }
+  if (authority.roles != null && !Number.isInteger(authority.roles)) {
+    return false;
+  }
+  if (authority.authTime != null && !Number.isInteger(authority.authTime)) {
     return false;
   }
   return true;

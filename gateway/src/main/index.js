@@ -1,5 +1,6 @@
-import { request as httpRequest } from 'http';
+import { validate as validateUuid } from 'uuid';
 import express from 'express';
+import { sendRequest } from './httpClient.js';
 
 const handleRequest = async (req, res) => {
   const endpoint = endpoints[req.path]?.[req.method.toLowerCase()];
@@ -12,24 +13,40 @@ const handleRequest = async (req, res) => {
     const authorizationHeaderValueSegments = req.headers.authorization.split(' ');
     if (authorizationHeaderValueSegments.length == 2 && authorizationHeaderValueSegments[0] === 'Bearer') {
       const idToken = authorizationHeaderValueSegments[1];
+      const requestBody = Buffer.from(JSON.stringify(idToken));
       const identifyRequest = {
         host: identifyEndpoint.host,
         port: identifyEndpoint.port,
         path: identifyEndpoint.path,
         method: identifyEndpoint.method,
         headers: {
-          'authority-roles': '1'
+          'authority-roles': [ '1' ],
+          'content-type': [ 'application/json' ],
+          'content-length': [ requestBody.length.toString() ]
         },
-        body: Buffer.from(JSON.stringify({
-          idToken: idToken
-        }))
+        body: requestBody
       };
-      const identifyResponse = await sendRequest(identifyRequest);
-      if (identifyResponse == null || !validateResponse(response) || identifyResponse.status != 200) {
+      let identifyResponse;
+      try {
+        identifyResponse = await sendRequest(identifyRequest);
+      }
+      catch {
+        console.error('Failed to send request to authentication service for identification');
         res.status(500).end();
         return;
       }
-      if (identifyResponse.headers == null || identifyResponse.headers['content-type'] !== 'application/json' || identifyResponse.body == null) {
+      if (identifyResponse == null || !validateResponse(identifyResponse) || identifyResponse.status != 200) {
+        console.error('Invalid response received from identification call');
+        res.status(500).end();
+        return;
+      }
+      if (identifyResponse.headers == null || identifyResponse.headers['content-type'] == null || identifyResponse.headers['content-type'].length != 1 || !identifyResponse.headers['content-type'][0].includes('application/json')) {
+        console.error('Invalid response received from identification call');
+        res.status(500).end();
+        return;
+      }
+      if (identifyResponse.body == null) {
+        console.error('Invalid response received from identification call');
         res.status(500).end();
         return;
       }
@@ -37,10 +54,12 @@ const handleRequest = async (req, res) => {
         authority = JSON.parse(identifyResponse.body.toString());
       }
       catch {
+        console.error('Failed to parse body in identification call response');
         res.status(500).end();
         return;
       }
       if (!validateAuthority(authority)) {
+        console.error('Invalid authority received from identification call');
         res.status(500).end();
         return;
       }
@@ -52,19 +71,8 @@ const handleRequest = async (req, res) => {
     path: endpoint.path,
     method: endpoint.method,
     headers: { },
-    query: { }
+    queryParameters: { }
   };
-  if (authority != null) {
-    if (authority.id != null) {
-      request.headers['authority-id'] = [ authority.id ];
-    }
-    if (authority.roles != null) {
-      request.headers['authority-roles'] = [ authority.roles.toString() ];
-    }
-    if (authority.authTime != null) {
-      request.headers['authority-auth-time'] = [ authority.authTime.toString() ];
-    }
-  }
   for (const headerKey in req.headers) {
     if (request.headers[headerKey] == null) {
       request.headers[headerKey] = [ ];
@@ -74,30 +82,61 @@ const handleRequest = async (req, res) => {
       request.headers[headerKey].push(headerValue.trim());
     }
   }
-  for (const queryKey in req.query) {
-    if (request.query[queryKey] == null) {
-      request.query[queryKey] = [ ];
+  if (authority?.id != null) {
+    request.headers['authority-id'] = [ authority.id ];
+  }
+  else {
+    delete request.headers['authority-id'];
+  }
+  if (authority?.roles != null) {
+    request.headers['authority-roles'] = [ authority.roles.toString() ];
+  }
+  else {
+    delete request.headers['authority-roles'];
+  }
+  if (authority?.authTime != null) {
+    request.headers['authority-auth-time'] = [ authority.authTime.toString() ];
+  }
+  else {
+    delete request.headers['authority-auth-time'];
+  }
+  delete request.headers.authorization;
+  if (request.headers.host != null) {
+    request.headers.host = [ request.host + ':' + request.port ];
+  }
+  for (const queryParameterKey in req.query) {
+    if (request.queryParameters[queryParameterKey] == null) {
+      request.queryParameters[queryParameterKey] = [ ];
     }
-    if (typeof req.query[queryKey] === 'string') {
-      request.query[queryKey].push(req.query[queryKey]);
+    if (typeof req.query[queryParameterKey] === 'string') {
+      request.queryParameters[queryParameterKey].push(req.query[queryParameterKey]);
     }
     else {
-      for (const queryValue of req.query[queryKey]) {
-        request.query[queryKey].push(queryValue);
+      for (const queryParameterValue of req.query[queryParameterKey]) {
+        request.queryParameters[queryParameterKey].push(queryParameterValue);
       }
     }
   }
   if (Object.keys(request.headers).length == 0) {
     delete request.headers;
   }
-  if (Object.keys(request.query).length == 0) {
-    delete request.query;
+  if (Object.keys(request.queryParameters).length == 0) {
+    delete request.queryParameters;
   }
   if (req.body != null && req.headers['content-length'] != null) {
     request.body = req.body;
   }
-  const response = await sendRequest(request);
+  let response;
+  try {
+    response = await sendRequest(request);
+  }
+  catch {
+    console.error('Failed to send request to destination service');
+    res.status(500).end();
+    return;
+  }
   if (response == null || !validateResponse(response)) {
+    console.error('Invalid response received from destination service');
     res.status(500).end();
     return;
   }
@@ -126,92 +165,6 @@ const handleRequest = async (req, res) => {
   else {
     res.send(response.body);
   }
-};
-
-// {
-//   host,
-//   port,
-//   path,
-//   method,
-//   headers,
-//   query,
-//   body
-// }
-const sendRequest = async (request) => {
-  let queryString = '';
-  for (const queryKey in request.query) {
-    for (const queryValue of request.query[queryKey]) {
-      if (queryString.length == 0) {
-        queryString += '?';
-      }
-      else {
-        queryString += '&';
-      }
-      queryString += queryKey;
-      if (queryValue.length > 0) {
-        queryString += '=';
-        queryString += queryValue;
-      }
-    }
-  }
-  const requestHeaders = { };
-  for (const headerKey in request.headers) {
-    if (request.headers[headerKey].length == 1) {
-      requestHeaders[headerKey] = request.headers[headerKey][0];
-    }
-    else {
-      requestHeaders[headerKey] = request.headers[headerKey];
-    }
-  }
-  const options = {
-    hostname: request.host,
-    port: request.port,
-    path: request.path + queryString,
-    method: request.method,
-    headers: requestHeaders
-  };
-  return await new Promise((resolve, reject) => {
-    const req = httpRequest(options, res => {
-      const headers = { };
-      for (const headerKey in res.headers) {
-        if (headers[headerKey] == null) {
-          headers[headerKey] = [ ];
-        }
-        if (typeof res.headers[headerKey] === 'string') {
-          headers[headerKey].push(res.headers[headerKey]);
-        }
-        else {
-          for (const headerValue of res.headers[headerKey]) {
-            headers[headerKey].push(headerValue);
-          }
-        }
-      }
-      let body = [ ];
-      res.on('data', chunk => {
-        body.push(chunk);
-      });
-      res.on('end', () => {
-        const result = {
-          status: res.statusCode
-        };
-        if (Object.keys(headers).length > 0) {
-          result.headers = headers;
-        }
-        if (body.length > 0) {
-          result.body = Buffer.concat(body);
-        }
-        resolve(result);
-      });
-    });
-    req.on('error', (e) => { // TODO: Error info? Remove e
-      console.log(e); // DEBUG
-      reject();
-    });
-    if (request.body != null) {
-      req.write(request.body);
-    }
-    req.end();
-  });
 };
 
 const validateAuthority = (authority) => {
@@ -268,7 +221,7 @@ const validateResponse = (response) => {
 
 const identifyEndpoint = {
   host: 'localhost',
-  port: 8000,
+  port: 8081,
   path: '/identify',
   method: 'get'
 };
@@ -277,7 +230,7 @@ const endpoints = {
   '/api/login': {
     'post': {
       host: 'localhost',
-      port: 8000,
+      port: 8081,
       path: '/login',
       method: 'post'
     }
@@ -285,7 +238,7 @@ const endpoints = {
   '/api/logout': {
     'post': {
       host: 'localhost',
-      port: 8000,
+      port: 8081,
       path: '/logout',
       method: 'post'
     }
@@ -320,6 +273,8 @@ const endpoints = {
 
 const statusMinValue = 100;
 const statusMaxValue = 599;
+const rolesMaxValue = 255;
+const timeMaxValue = 4294967295;
 const app = express();
 
 app.use(express.raw({
@@ -327,4 +282,4 @@ app.use(express.raw({
 }));
 app.disable('x-powered-by');
 app.all('*', handleRequest);
-app.listen(8081); // TODO: Use port 80
+app.listen(80); // TODO: Expose as configurable

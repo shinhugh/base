@@ -25,7 +25,7 @@ const config = {
     volatileSessionDuration: 86400
   },
   server: {
-    port: 8000
+    port: 8081
   }
 };
 

@@ -16,7 +16,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.identify()');
     }
     const authority = parseAuthority(request);
-    if (request.headers?.['content-type']?.length == 0 || request.headers?.['content-type']?.[0] !== 'application/json') {
+    if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
       return {
         status: 400
       };
@@ -53,7 +53,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.login()');
     }
     const authority = parseAuthority(request);
-    if (request.headers?.['content-type']?.length == 0 || request.headers?.['content-type']?.[0] !== 'application/json') {
+    if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
       return {
         status: 400
       };
@@ -90,7 +90,7 @@ class AuthenticationController {
       throw new Error('Invalid request provided to AuthenticationController.logout()');
     }
     const authority = parseAuthority(request);
-    if (request.headers?.['content-type']?.length == 0 || request.headers?.['content-type']?.[0] !== 'application/json') {
+    if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
       return {
         status: 400
       };
@@ -122,9 +122,6 @@ const validateRequest = (request) => {
   if (request == null) {
     return true;
   }
-  if (typeof request !== 'object') {
-    return false;
-  }
   if (typeof request.path !== 'string') {
     return false;
   }
@@ -148,25 +145,27 @@ const validateRequest = (request) => {
       }
     }
   }
-  if (request.query != null) {
-    if (typeof request.query !== 'object') {
+  if (request.queryParameters != null) {
+    if (typeof request.queryParameters !== 'object') {
       return false;
     }
-    for (const queryKey in request.query) {
-      if (request.query[queryKey] != null) {
-        if (typeof request.query[queryKey] !== 'object' || typeof request.query[queryKey].constructor !== 'function' || request.query[queryKey].constructor.name !== 'Array') {
+    for (const queryParameterKey in request.queryParameters) {
+      if (request.queryParameters[queryParameterKey] != null) {
+        if (typeof request.queryParameters[queryParameterKey] !== 'object' || typeof request.queryParameters[queryParameterKey].constructor !== 'function' || request.queryParameters[queryParameterKey].constructor.name !== 'Array') {
           return false;
         }
-        for (const queryValue of request.query[queryKey]) {
-          if (queryValue != null && typeof queryValue !== 'string') {
+        for (const queryParameterValue of request.queryParameters[queryParameterKey]) {
+          if (queryParameterValue != null && typeof queryParameterValue !== 'string') {
             return false;
           }
         }
       }
     }
   }
-  if (request.body != null && (typeof request.body !== 'object' || typeof request.body.constructor !== 'function' || request.body.constructor.name !== 'Buffer')) {
-    return false;
+  if (request.body != null) {
+    if (typeof request.body !== 'object' || typeof request.body.constructor !== 'function' || request.body.constructor.name !== 'Buffer') {
+      return false;
+    }
   }
   return true;
 };

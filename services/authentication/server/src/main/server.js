@@ -60,7 +60,7 @@ const handleRequest = async (req, res, endpoints) => {
     path: req.path,
     method: req.method,
     headers: { },
-    query: { }
+    queryParameters: { }
   };
   for (const headerKey in req.headers) {
     if (request.headers[headerKey] == null) {
@@ -71,26 +71,26 @@ const handleRequest = async (req, res, endpoints) => {
       request.headers[headerKey].push(headerValue.trim());
     }
   }
-  for (const queryKey in req.query) {
-    if (request.query[queryKey] == null) {
-      request.query[queryKey] = [ ];
+  for (const queryParameterKey in req.query) {
+    if (request.queryParameters[queryParameterKey] == null) {
+      request.queryParameters[queryParameterKey] = [ ];
     }
-    if (typeof req.query[queryKey] === 'string') {
-      request.query[queryKey].push(req.query[queryKey]);
+    if (typeof req.query[queryParameterKey] === 'string') {
+      request.queryParameters[queryParameterKey].push(req.query[queryParameterKey]);
     }
     else {
-      for (const queryValue of req.query[queryKey]) {
-        request.query[queryKey].push(queryValue);
+      for (const queryParameterValue of req.query[queryParameterKey]) {
+        request.queryParameters[queryParameterKey].push(queryParameterValue);
       }
     }
   }
   if (Object.keys(request.headers).length == 0) {
     delete request.headers;
   }
-  if (Object.keys(request.query).length == 0) {
-    delete request.query;
+  if (Object.keys(request.queryParameters).length == 0) {
+    delete request.queryParameters;
   }
-  if (req.body != null && req.headers['content-length'] != null) {
+  if (req.body != null && req.body.length > 0) {
     request.body = req.body;
   }
   const response = await (async () => {
