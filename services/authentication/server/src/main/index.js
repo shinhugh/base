@@ -52,3 +52,39 @@ const server = new Server({
 }, config.server.port);
 
 server.start();
+
+let purgeExpiredSessionsFailCount = 0;
+let purgeExpiredSessionsInterval = setInterval(() => {
+  try {
+    authenticationService.purgeExpiredSessions();
+    purgeExpiredSessionsFailCount = 0;
+  }
+  catch {
+    purgeExpiredSessionsFailCount++;
+    if (purgeExpiredSessionsFailCount == 3) {
+      clearInterval(purgeExpiredSessionsInterval);
+      console.error('Failed to purge expired sessions; canceled task');
+    }
+    else {
+      console.error('Failed to purge expired sessions');
+    }
+  }
+}, 60000);
+
+let purgeDanglingSessionsFailCount = 0;
+let purgeDanglingSessionsInterval = setInterval(() => {
+  try {
+    authenticationService.purgeDanglingSessions();
+    purgeDanglingSessionsFailCount = 0;
+  }
+  catch {
+    purgeDanglingSessionsFailCount++;
+    if (purgeDanglingSessionsFailCount == 3) {
+      clearInterval(purgeDanglingSessionsInterval);
+      console.error('Failed to purge dangling sessions; canceled task');
+    }
+    else {
+      console.error('Failed to purge dangling sessions');
+    }
+  }
+}, 3600000);

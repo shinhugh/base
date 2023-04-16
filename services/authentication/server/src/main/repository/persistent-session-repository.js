@@ -1,5 +1,5 @@
 import { v4 as generateUuid } from 'uuid';
-import { Sequelize, DataTypes } from 'sequelize';
+import { Sequelize, DataTypes, Op } from 'sequelize';
 import { wrapError } from '../common.js';
 import { RepositoryIllegalArgumentError, RepositoryConflictError } from './model/errors.js';
 
@@ -24,7 +24,7 @@ class PersistentSessionRepository {
     if (typeof id !== 'string' || id.length > idMaxLength) {
       throw new RepositoryIllegalArgumentError();
     }
-    await this.#openSequelize(this.#config);
+    await this.#openSequelize();
     try {
       return await this.#sequelize.models.persistentSessions.findAll({
         where: {
@@ -44,7 +44,7 @@ class PersistentSessionRepository {
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
       throw new RepositoryIllegalArgumentError();
     }
-    await this.#openSequelize(this.#config);
+    await this.#openSequelize();
     try {
       return await this.#sequelize.models.persistentSessions.findAll({
         where: {
@@ -71,7 +71,7 @@ class PersistentSessionRepository {
       creationTime: persistentSession.creationTime,
       expirationTime: persistentSession.expirationTime
     };
-    await this.#openSequelize(this.#config);
+    await this.#openSequelize();
     try {
       entry.id = await this.#generateId();
       try {
@@ -94,7 +94,7 @@ class PersistentSessionRepository {
     if (typeof accountId !== 'string' || accountId.length > accountIdMaxLength) {
       throw new RepositoryIllegalArgumentError();
     }
-    await this.#openSequelize(this.#config);
+    await this.#openSequelize();
     try {
       return await this.#sequelize.models.persistentSessions.destroy({
         where: {
@@ -114,11 +114,33 @@ class PersistentSessionRepository {
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
       throw new RepositoryIllegalArgumentError();
     }
-    await this.#openSequelize(this.#config);
+    await this.#openSequelize();
     try {
       return await this.#sequelize.models.persistentSessions.destroy({
         where: {
           refreshToken: refreshToken
+        }
+      });
+    }
+    catch (e) {
+      throw wrapError(e, 'Failed to execute database transaction');
+    }
+    finally {
+      await this.#closeSequelize();
+    }
+  }
+
+  async deleteByLessThanExpirationTime(expirationTime) {
+    if (!Number.isInteger(expirationTime) || expirationTime < 0 || expirationTime > expirationTimeMaxValue) {
+      throw new RepositoryIllegalArgumentError();
+    }
+    await this.#openSequelize();
+    try {
+      return await this.#sequelize.models.persistentSessions.destroy({
+        where: {
+          expirationTime: {
+            [Op.lte]: expirationTime
+          }
         }
       });
     }
@@ -153,14 +175,14 @@ class PersistentSessionRepository {
     return id;
   }
 
-  async #openSequelize(config) {
+  async #openSequelize() {
     if (this.#sequelize == null) {
       this.#sequelize = new Sequelize({
-        host: config.host,
-        port: config.port,
-        database: config.database,
-        username: config.username,
-        password: config.password,
+        host: this.#config.host,
+        port: this.#config.port,
+        database: this.#config.database,
+        username: this.#config.username,
+        password: this.#config.password,
         dialect: sequelizeOptions.dialect,
         logging: sequelizeOptions.logging,
         pool: sequelizeOptions.pool

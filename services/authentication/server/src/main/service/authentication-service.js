@@ -127,6 +127,20 @@ class AuthenticationService {
     throw new IllegalArgumentError();
   }
 
+  async purgeExpiredSessions() {
+    const currentTime = Math.floor(Date.now() / 1000);
+    try {
+      await this.#persistentSessionRepository.deleteByLessThanExpirationTime(currentTime);
+    }
+    catch (e) {
+      throw wrapError(e, 'Failed to write to session store');
+    }
+  }
+
+  async purgeDanglingSessions() {
+    // TODO: Implement
+  }
+
   async #loginViaCredentials(authority, credentials) {
     const account = await (async () => {
       try {
