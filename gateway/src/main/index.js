@@ -226,6 +226,7 @@ const identifyEndpoint = {
   method: 'get'
 };
 
+// Use environment variables for production; hard-coded for testing only
 const endpoints = {
   '/api/login': {
     'post': {
@@ -282,4 +283,4 @@ app.use(express.raw({
 }));
 app.disable('x-powered-by');
 app.all('*', handleRequest);
-app.listen(80); // TODO: Expose as configurable
+app.listen(80); // Use environment variables for production; hard-coded for testing only

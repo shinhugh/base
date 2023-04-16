@@ -15,7 +15,7 @@ public class HttpBridge implements HttpClient {
     private static final String URL_FORMAT = "http://%s:%d%s%s";
 
     @Override
-    public Response sendRequest(Request request) { // TODO: Should this method declare exceptions?
+    public Response sendRequest(Request request) {
         StringBuilder queryString = new StringBuilder();
         if (request.getQuery() != null) {
             for (Map.Entry<String, List<String>> entry : request.getQuery().entrySet()) {
