@@ -1,14 +1,19 @@
 import { wrapError } from '../common.js';
-import { sendRequest } from './httpClient.js';
+import { HttpClient } from './http-client.js';
 import { AccessDeniedError, IllegalArgumentError, NotFoundError } from './model/errors.js';
 
 class AccountServiceClient {
+  #httpClient;
   #config;
 
-  constructor(config) {
+  constructor(httpClient, config) {
+    if (!(httpClient instanceof HttpClient)) {
+      throw new Error('Invalid httpClient provided to AccountServiceClient constructor');
+    }
     if (config == null || !validateConfig(config)) {
       throw new Error('Invalid config provided to AccountServiceClient constructor');
     }
+    this.#httpClient = httpClient;
     this.#config = {
       host: config.host,
       port: config.port
@@ -52,7 +57,7 @@ class AccountServiceClient {
     }
     let response;
     try {
-      response = await sendRequest(request);
+      response = await this.#httpClient.sendRequest(request);
     }
     catch (e) {
       throw wrapError(e, 'Failed to send request to account service');

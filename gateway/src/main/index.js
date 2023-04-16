@@ -1,6 +1,6 @@
 import { validate as validateUuid } from 'uuid';
 import express from 'express';
-import { sendRequest } from './httpClient.js';
+import { HttpClient } from './http-client.js';
 
 const handleRequest = async (req, res) => {
   const endpoint = endpoints[req.path]?.[req.method.toLowerCase()];
@@ -28,7 +28,7 @@ const handleRequest = async (req, res) => {
       };
       let identifyResponse;
       try {
-        identifyResponse = await sendRequest(identifyRequest);
+        identifyResponse = await httpClient.sendRequest(identifyRequest);
       }
       catch {
         console.error('Failed to send request to authentication service for identification');
@@ -128,7 +128,7 @@ const handleRequest = async (req, res) => {
   }
   let response;
   try {
-    response = await sendRequest(request);
+    response = await httpClient.sendRequest(request);
   }
   catch {
     console.error('Failed to send request to destination service');
@@ -277,6 +277,7 @@ const statusMaxValue = 599;
 const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
 const app = express();
+const httpClient = new HttpClient();
 
 app.use(express.raw({
   type: () => { return true; }

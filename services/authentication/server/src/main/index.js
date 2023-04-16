@@ -1,3 +1,4 @@
+import { HttpClient } from './service/http-client.js';
 import { PersistentSessionRepository } from './repository/persistent-session-repository.js';
 import { AccountServiceClient } from './service/account-service-client.js';
 import { AuthenticationService } from './service/authentication-service.js';
@@ -29,8 +30,9 @@ const config = {
   }
 };
 
+const httpClient = new HttpClient();
 const persistentSessionRepository = new PersistentSessionRepository(config.persistentSessionRepository);
-const accountServiceClient = new AccountServiceClient(config.accountServiceClient);
+const accountServiceClient = new AccountServiceClient(httpClient, config.accountServiceClient);
 const authenticationService = new AuthenticationService(persistentSessionRepository, accountServiceClient, config.authenticationService);
 const authenticationController = new AuthenticationController(authenticationService);
 const server = new Server({
