@@ -62,31 +62,33 @@ const handleRequest = async (req, res, endpoints) => {
     headers: { },
     query: { }
   };
-  if (req.headers != null) {
-    for (const headerKey in req.headers) {
-      if (request.headers[headerKey] == null) {
-        request.headers[headerKey] = [ ];
-      }
-      const headerValues = req.headers[headerKey].split(',');
-      for (const headerValue of headerValues) {
-        request.headers[headerKey].push(headerValue.trim());
+  for (const headerKey in req.headers) {
+    if (request.headers[headerKey] == null) {
+      request.headers[headerKey] = [ ];
+    }
+    const headerValues = req.headers[headerKey].split(',');
+    for (const headerValue of headerValues) {
+      request.headers[headerKey].push(headerValue.trim());
+    }
+  }
+  for (const queryKey in req.query) {
+    if (request.query[queryKey] == null) {
+      request.query[queryKey] = [ ];
+    }
+    if (typeof req.query[queryKey] === 'string') {
+      request.query[queryKey].push(req.query[queryKey]);
+    }
+    else {
+      for (const queryValue of req.query[queryKey]) {
+        request.query[queryKey].push(queryValue);
       }
     }
   }
-  if (req.query != null) {
-    for (const queryKey in req.query) {
-      if (request.query[queryKey] == null) {
-        request.query[queryKey] = [ ];
-      }
-      if (typeof req.query[queryKey] === 'string') {
-        request.query[queryKey].push(req.query[queryKey]);
-      }
-      else {
-        for (const queryValue of req.query[queryKey]) {
-          request.query[queryKey].push(queryValue);
-        }
-      }
-    }
+  if (Object.keys(request.headers).length == 0) {
+    delete request.headers;
+  }
+  if (Object.keys(request.query).length == 0) {
+    delete request.query;
   }
   if (req.body != null && req.headers['content-length'] != null) {
     request.body = req.body;

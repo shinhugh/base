@@ -7,19 +7,6 @@ authentication service
   - "dangling" sessions whose Account ID no longer pertains to an existing
     Account instance (infrequent)
 
-
-gateway
-
-  - listen on port 80
-
-  - invoke /identify on authentication service endpoint
-
-  - populate authority-* headers in original request using /identify payload
-
-  - forward modified request to mapped service endpoint
-
-  - track all ongoing requests to enable response forwarding
-
 --------------------------------------------------------------------------------
 
 QUESTIONS ---

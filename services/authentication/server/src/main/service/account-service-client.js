@@ -54,14 +54,12 @@ class AccountServiceClient {
             res.on('end', () => {
               if (body.length == 0) {
                 resolve({
-                  status: res.statusCode,
-                  headers: res.headers
+                  status: res.statusCode
                 })
               }
               else {
                 resolve({
                   status: res.statusCode,
-                  headers: res.headers,
                   body: Buffer.concat(body)
                 });
               }
