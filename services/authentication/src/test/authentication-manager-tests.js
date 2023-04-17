@@ -33,7 +33,7 @@ const testLogin = async () => {
   persistentSessionRepositorySpy.resetSpy();
   accountRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.createReturnValue = mockPersistentSession;
-  accountRepositorySpy.readByNameReturnValue = mockAccount;
+  accountRepositorySpy.readByNameReturnValue = [ mockAccount ];
   let output = await authenticationManager.login(authority, {
     credentials: {
       name: mockAccount.name,
