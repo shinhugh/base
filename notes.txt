@@ -1,12 +1,10 @@
 TODO ---
 
-authentication service
-
 - periodically purge "dangling" sessions whose Account ID no longer pertains to
   an existing Account instance (infrequent)
 
-general
-
-- merge authentication and account services?
+- merge authentication and account services
 
 - build profile service (CRUD)
+
+- concurrent requests may invoke closeSequelize()

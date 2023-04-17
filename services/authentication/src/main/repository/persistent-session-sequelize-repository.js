@@ -1,5 +1,5 @@
 import { v4 as generateUuid } from 'uuid';
-import { Sequelize, DataTypes, Op } from 'sequelize';
+import { Sequelize, DataTypes, Op, UniqueConstraintError } from 'sequelize';
 import { PersistentSessionRepository } from './persistent-session-repository.js';
 import { wrapError } from '../common.js';
 import { IllegalArgumentError, ConflictError } from './model/errors.js';
@@ -29,6 +29,7 @@ class PersistentSessionSequelizeRepository extends PersistentSessionRepository {
     await this.#openSequelize();
     try {
       return await this.#sequelize.models.persistentSessions.findAll({
+        raw: true,
         where: {
           id: id
         }
@@ -49,6 +50,7 @@ class PersistentSessionSequelizeRepository extends PersistentSessionRepository {
     await this.#openSequelize();
     try {
       return await this.#sequelize.models.persistentSessions.findAll({
+        raw: true,
         where: {
           refreshToken: refreshToken
         }
@@ -80,7 +82,7 @@ class PersistentSessionSequelizeRepository extends PersistentSessionRepository {
         await this.#sequelize.models.persistentSessions.create(entry);
       }
       catch (e) {
-        if (e instanceof Sequelize.ValidationError) {
+        if (e instanceof UniqueConstraintError) {
           throw new ConflictError();
         }
         throw wrapError(e, 'Failed to execute database transaction');
@@ -155,8 +157,8 @@ class PersistentSessionSequelizeRepository extends PersistentSessionRepository {
   }
 
   async #generateId() {
-    let id = generateUuid();
     while (true) {
+      const id = generateUuid();
       const match = await (async () => {
         try {
           return await this.#sequelize.models.persistentSessions.findOne({
@@ -170,11 +172,9 @@ class PersistentSessionSequelizeRepository extends PersistentSessionRepository {
         }
       })();
       if (match == null) {
-        break;
+        return id;
       }
-      id = generateUuid();
     }
-    return id;
   }
 
   async #openSequelize() {
