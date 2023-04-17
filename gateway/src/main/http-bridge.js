@@ -4,7 +4,7 @@ import { HttpClient } from './http-client.js';
 class HttpBridge extends HttpClient {
   async sendRequest(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to HttpClient.sendRequest()');
+      throw new Error('Invalid request provided to HttpBridge.sendRequest()');
     }
     const queryString = (() => {
       let queryString = '';
