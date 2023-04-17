@@ -17,16 +17,6 @@ class PersistentSessionRepositorySpy extends PersistentSessionRepository {
   #deleteByRefreshTokenInvokeCount;
   #deleteByRefreshTokenRefreshTokenArgument;
 
-  constructor() {
-    super({
-      host: '',
-      port: 0,
-      database: '',
-      username: '',
-      password: ''
-    });
-  }
-
   async readById(id) {
     this.#readByIdInvokeCount++;
     this.#readByIdIdArgument = id;

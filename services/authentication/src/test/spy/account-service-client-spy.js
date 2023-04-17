@@ -1,18 +1,10 @@
 import { AccountServiceClient } from '../../main/service/account-service-client.js';
-import { HttpClient } from '../../main/service/http-client.js';
 
 class AccountServiceClientSpy extends AccountServiceClient {
   #readByNameReturnValue;
   #readByNameInvokeCount;
   #readByNameAuthorityArgument;
   #readByNameNameArgument;
-
-  constructor() {
-    super(new HttpClient(), {
-      host: '',
-      port: 0
-    });
-  }
 
   async readByName(authority, name) {
     this.#readByNameInvokeCount++;

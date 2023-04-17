@@ -1,24 +1,24 @@
-import { HttpClient } from './service/http-client.js';
-import { PersistentSessionRepository } from './repository/persistent-session-repository.js';
-import { AccountServiceClient } from './service/account-service-client.js';
-import { AuthenticationService } from './service/authentication-service.js';
+import { HttpBridge } from './service/http-bridge.js';
+import { PersistentSessionSequelizeRepository } from './repository/persistent-session-sequelize-repository.js';
+import { AccountServiceBridge } from './service/account-service-bridge.js';
+import { AuthenticationManager } from './service/authentication-manager.js';
 import { AuthenticationController } from './controller/authentication-controller.js';
 import { Server } from './server.js';
 
 // Use environment variables for production; hard-coded for testing only
 const config = {
-  persistentSessionRepository: {
+  persistentSessionSequelizeRepository: {
     host: 'localhost',
     port: 3306,
     database: 'base',
     username: 'root',
     password: ''
   },
-  accountServiceClient: {
+  accountServiceBridge: {
     host: 'localhost',
     port: 8080
   },
-  authenticationService: {
+  authenticationManager: {
     tokenAlgorithm: 'HS256',
     tokenSecretKey: Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64'),
     passwordHashAlgorithm: 'sha256',
@@ -62,11 +62,11 @@ const config = {
   }
 };
 
-const httpClient = new HttpClient();
-const persistentSessionRepository = new PersistentSessionRepository(config.persistentSessionRepository);
-const accountServiceClient = new AccountServiceClient(httpClient, config.accountServiceClient);
-const authenticationService = new AuthenticationService(persistentSessionRepository, accountServiceClient, config.authenticationService);
-const authenticationController = new AuthenticationController(authenticationService);
+const httpBridge = new HttpBridge();
+const persistentSessionSequelizeRepository = new PersistentSessionSequelizeRepository(config.persistentSessionSequelizeRepository);
+const accountServiceBridge = new AccountServiceBridge(httpBridge, config.accountServiceBridge);
+const authenticationManager = new AuthenticationManager(persistentSessionSequelizeRepository, accountServiceBridge, config.authenticationManager);
+const authenticationController = new AuthenticationController(authenticationManager);
 const server = new Server(config.server);
 
 server.start();
@@ -74,7 +74,7 @@ server.start();
 let purgeExpiredSessionsFailCount = 0;
 let purgeExpiredSessionsInterval = setInterval(() => {
   try {
-    authenticationService.purgeExpiredSessions();
+    authenticationManager.purgeExpiredSessions();
     purgeExpiredSessionsFailCount = 0;
   }
   catch {
@@ -92,7 +92,7 @@ let purgeExpiredSessionsInterval = setInterval(() => {
 let purgeDanglingSessionsFailCount = 0;
 let purgeDanglingSessionsInterval = setInterval(() => {
   try {
-    authenticationService.purgeDanglingSessions();
+    authenticationManager.purgeDanglingSessions();
     purgeDanglingSessionsFailCount = 0;
   }
   catch {

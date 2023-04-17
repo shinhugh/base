@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { Role } from '../main/service/model/role.js';
 import { PersistentSessionRepositorySpy } from './spy/persistent-session-repository-spy.js';
 import { AccountServiceClientSpy } from './spy/account-service-client-spy.js';
-import { AuthenticationService } from '../main/service/authentication-service.js';
+import { AuthenticationManager } from '../main/service/authentication-manager.js';
 
 const testIdentify = async () => {
   persistentSessionRepositorySpy.resetSpy();
@@ -10,10 +10,10 @@ const testIdentify = async () => {
   const token = jwt.sign({
     sessionId: mockPersistentSession.id,
     exp: Math.floor(Date.now() / 1000) + 60
-  }, Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding), {
-    algorithm: config.authenticationService.tokenAlgorithm
+  }, Buffer.from(config.authenticationManager.tokenSecretKey, config.authenticationManager.tokenSecretKeyEncoding), {
+    algorithm: config.authenticationManager.tokenAlgorithm
   });
-  const output = await authenticationService.identify(authority, token);
+  const output = await authenticationManager.identify(authority, token);
   if (persistentSessionRepositorySpy.readByIdInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readById(): Invocation count');
   }
@@ -25,7 +25,7 @@ const testIdentify = async () => {
     roles: mockPersistentSession.roles,
     authTime: mockPersistentSession.creationTime
   })) {
-    throw new Error('Actual value does not match expected value: AuthenticationService.identify(): Return value');
+    throw new Error('Actual value does not match expected value: AuthenticationManager.identify(): Return value');
   }
 };
 
@@ -34,7 +34,7 @@ const testLogin = async () => {
   accountServiceClientSpy.resetSpy();
   persistentSessionRepositorySpy.createReturnValue = mockPersistentSession;
   accountServiceClientSpy.readByNameReturnValue = mockAccount;
-  let output = await authenticationService.login(authority, {
+  let output = await authenticationManager.login(authority, {
     credentials: {
       name: mockAccount.name,
       password: mockPassword
@@ -67,16 +67,16 @@ const testLogin = async () => {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.create(): persistentSession argument');
   }
   try {
-    jwt.verify(output.idToken, Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding), {
-      algorithms: [ config.authenticationService.tokenAlgorithm ]
+    jwt.verify(output.idToken, Buffer.from(config.authenticationManager.tokenSecretKey, config.authenticationManager.tokenSecretKeyEncoding), {
+      algorithms: [ config.authenticationManager.tokenAlgorithm ]
     });
   }
   catch {
-    throw new Error('Actual value does not match expected value: AuthenticationService.login(): Return value');
+    throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
   }
   persistentSessionRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.readByRefreshTokenReturnValue = [ mockPersistentSession ];
-  output = await authenticationService.login(authority, {
+  output = await authenticationManager.login(authority, {
     refreshToken: mockPersistentSession.refreshToken
   });
   if (persistentSessionRepositorySpy.readByRefreshTokenInvokeCount != 1) {
@@ -86,19 +86,19 @@ const testLogin = async () => {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readByRefreshToken(): refreshToken argument');
   }
   try {
-    jwt.verify(output.idToken, Buffer.from(config.authenticationService.tokenSecretKey, config.authenticationService.tokenSecretKeyEncoding), {
-      algorithms: [ config.authenticationService.tokenAlgorithm ]
+    jwt.verify(output.idToken, Buffer.from(config.authenticationManager.tokenSecretKey, config.authenticationManager.tokenSecretKeyEncoding), {
+      algorithms: [ config.authenticationManager.tokenAlgorithm ]
     });
   }
   catch {
-    throw new Error('Actual value does not match expected value: AuthenticationService.login(): Return value');
+    throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
   }
 };
 
 const testLogout = async () => {
   persistentSessionRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.deleteByAccountIdReturnValue = 2;
-  await authenticationService.logout(authority, {
+  await authenticationManager.logout(authority, {
     accountId: mockPersistentSession.accountId
   });
   if (persistentSessionRepositorySpy.deleteByAccountIdInvokeCount != 1) {
@@ -109,7 +109,7 @@ const testLogout = async () => {
   }
   persistentSessionRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.deleteByRefreshTokenReturnValue = 1;
-  await authenticationService.logout(authority, {
+  await authenticationManager.logout(authority, {
     refreshToken: mockPersistentSession.refreshToken
   });
   if (persistentSessionRepositorySpy.deleteByRefreshTokenInvokeCount != 1) {
@@ -168,7 +168,7 @@ const verifyEqualityBetweenPersistentSessions = (first, second) => {
 };
 
 const config = {
-  authenticationService: {
+  authenticationManager: {
     tokenAlgorithm: 'HS256',
     tokenSecretKey: Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64'),
     passwordHashAlgorithm: 'sha256',
@@ -196,7 +196,7 @@ const mockPassword = 'Qwer!234';
 const authority = { roles: Role.System };
 const persistentSessionRepositorySpy = new PersistentSessionRepositorySpy();
 const accountServiceClientSpy = new AccountServiceClientSpy();
-const authenticationService = new AuthenticationService(persistentSessionRepositorySpy, accountServiceClientSpy, config.authenticationService);
+const authenticationManager = new AuthenticationManager(persistentSessionRepositorySpy, accountServiceClientSpy, config.authenticationManager);
 
 const tests = [
   { name: 'Identify', run: testIdentify },

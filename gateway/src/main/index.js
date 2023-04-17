@@ -1,6 +1,6 @@
 import { validate as validateUuid } from 'uuid';
 import express from 'express';
-import { HttpClient } from './http-client.js';
+import { HttpBridge } from './http-bridge.js';
 
 const handleRequest = async (req, res) => {
   const endpoint = endpoints[req.path]?.[req.method.toLowerCase()];
@@ -277,7 +277,7 @@ const statusMaxValue = 599;
 const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
 const app = express();
-const httpClient = new HttpClient();
+const httpClient = new HttpBridge();
 
 app.use(express.raw({
   type: () => { return true; }

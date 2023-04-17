@@ -10,8 +10,6 @@ general
 
 - merge authentication and account services
 
-- remove all tests
-
 - build profile service (CRUD)
 
 
