@@ -67,8 +67,8 @@ public class AccountManager implements AccountService {
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
         }
-        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
-        if (onlyAuthorizedAsUser && authority.getId() == null) {
+        boolean authorizedAsAdminOrSystem = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
+        if (!authorizedAsAdminOrSystem && authority.getId() == null) {
             throw new AccessDeniedException();
         }
         base.account.repository.model.Account[] matches;
@@ -79,13 +79,13 @@ public class AccountManager implements AccountService {
             throw wrapException(e, "Failed to read from account store");
         }
         if (matches.length == 0) {
-            if (onlyAuthorizedAsUser) {
-                throw new AccessDeniedException();
+            if (authorizedAsAdminOrSystem) {
+                throw new NotFoundException();
             }
-            throw new NotFoundException();
+            throw new AccessDeniedException();
         }
         base.account.repository.model.Account match = matches[0];
-        if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
+        if (!authorizedAsAdminOrSystem && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
         Account output = createServiceAccountFromRepositoryAccount(match);
@@ -101,12 +101,12 @@ public class AccountManager implements AccountService {
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        if (account == null || !validateAccount(account)) {
+        if (account == null || !validateAccount(account, false)) {
             throw new IllegalArgumentException();
         }
         String passwordSalt = generateRandomString(PASSWORD_SALT_ALLOWED_CHARS, PASSWORD_SALT_LENGTH);
         String passwordHash = hashPassword(account.getPassword(), passwordSalt);
-        base.account.repository.model.Account entry = new base.account.repository.model.Account(null, account.getName(), passwordHash, passwordSalt, account.getRoles());
+        base.account.repository.model.Account entry = new base.account.repository.model.Account(null, account.getName(), passwordHash, passwordSalt, Role.USER);
         try {
             entry = accountRepository.create(entry);
         }
@@ -138,14 +138,14 @@ public class AccountManager implements AccountService {
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        if (account == null || !validateAccount(account)) {
+        boolean authorizedAsAdminOrSystem = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
+        if (account == null || !validateAccount(account, authorizedAsAdminOrSystem)) {
             throw new IllegalArgumentException();
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
         }
-        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
-        if (onlyAuthorizedAsUser && authority.getId() == null) {
+        if (!authorizedAsAdminOrSystem && authority.getId() == null) {
             throw new AccessDeniedException();
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM) && modificationEnabledSessionAgeMaxValue > 0 && authority.getAuthTime() + modificationEnabledSessionAgeMaxValue < (System.currentTimeMillis() / 1000)) {
@@ -159,18 +159,19 @@ public class AccountManager implements AccountService {
             throw wrapException(e, "Failed to read from account store");
         }
         if (matches.length == 0) {
-            if (onlyAuthorizedAsUser) {
-                throw new AccessDeniedException();
+            if (authorizedAsAdminOrSystem) {
+                throw new NotFoundException();
             }
-            throw new NotFoundException();
+            throw new AccessDeniedException();
         }
         base.account.repository.model.Account match = matches[0];
-        if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
+        if (!authorizedAsAdminOrSystem && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
         String passwordSalt = generateRandomString(PASSWORD_SALT_ALLOWED_CHARS, PASSWORD_SALT_LENGTH);
         String passwordHash = hashPassword(account.getPassword(), passwordSalt);
-        base.account.repository.model.Account entry = new base.account.repository.model.Account(null, account.getName(), passwordHash, passwordSalt, account.getRoles());
+        short roles = authorizedAsAdminOrSystem ? account.getRoles() : match.getRoles();
+        base.account.repository.model.Account entry = new base.account.repository.model.Account(null, account.getName(), passwordHash, passwordSalt, roles);
         try {
             entry = accountRepository.updateByIdAndName(id, name, entry);
         }
@@ -209,8 +210,8 @@ public class AccountManager implements AccountService {
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
         }
-        boolean onlyAuthorizedAsUser = !verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
-        if (onlyAuthorizedAsUser && authority.getId() == null) {
+        boolean authorizedAsAdminOrSystem = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
+        if (!authorizedAsAdminOrSystem && authority.getId() == null) {
             throw new AccessDeniedException();
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.SYSTEM) && modificationEnabledSessionAgeMaxValue > 0 && authority.getAuthTime() + modificationEnabledSessionAgeMaxValue < (System.currentTimeMillis() / 1000)) {
@@ -224,13 +225,13 @@ public class AccountManager implements AccountService {
             throw wrapException(e, "Failed to read from account store");
         }
         if (matches.length == 0) {
-            if (onlyAuthorizedAsUser) {
-                throw new AccessDeniedException();
+            if (authorizedAsAdminOrSystem) {
+                throw new NotFoundException();
             }
-            throw new NotFoundException();
+            throw new AccessDeniedException();
         }
         base.account.repository.model.Account match = matches[0];
-        if (onlyAuthorizedAsUser && !match.getId().equals(authority.getId())) {
+        if (!authorizedAsAdminOrSystem && !match.getId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
         try {
@@ -297,7 +298,7 @@ public class AccountManager implements AccountService {
         return authority.getAuthTime() >= 0 && authority.getAuthTime() <= TIME_MAX_VALUE;
     }
 
-    private static boolean validateAccount(Account account) {
+    private static boolean validateAccount(Account account, boolean validateRoles) {
         if (account == null) {
             return true;
         }
@@ -307,7 +308,7 @@ public class AccountManager implements AccountService {
         if (account.getPassword() == null || !validatePassword(account.getPassword())) {
             return false;
         }
-        return account.getRoles() >= 0 && account.getRoles() <= ROLES_MAX_VALUE;
+        return !validateRoles || (account.getRoles() >= 0 && account.getRoles() <= ROLES_MAX_VALUE);
     }
 
     private static boolean validateName(String name) {

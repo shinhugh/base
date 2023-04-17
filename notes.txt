@@ -6,17 +6,7 @@ authentication service
   an existing Account instance (infrequent)
 
 
-account service
-
-- user should not be able to specify roles during account create
-  use Role.User
-
-- only admin and system should be able to specify roles during account update
-
-
 general
-
-- make sure SQL injection is not possible
 
 - merge authentication and account services
 
