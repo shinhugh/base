@@ -43,6 +43,11 @@ const config = {
         }
       }
     },
+    internalErrorCallback: async (request) => {
+      return {
+        status: 500
+      };
+    },
     notFoundCallback: async (request) => {
       return {
         status: 404

@@ -3,6 +3,7 @@ import express from 'express';
 class Server {
   #app;
   #endpoints;
+  #internalErrorCallback;
   #notFoundCallback;
   #methodNotAllowedCallback;
   #port;
@@ -17,7 +18,7 @@ class Server {
     }));
     this.#app.disable('x-powered-by');
     this.#app.all('/*', async (req, res) => {
-      await handleRequest(req, res, this.#endpoints, this.#notFoundCallback, this.#methodNotAllowedCallback);
+      await handleRequest(req, res, this.#endpoints, this.#internalErrorCallback, this.#notFoundCallback, this.#methodNotAllowedCallback);
     });
     this.#endpoints = { };
     for (const path in config.endpoints) {
@@ -31,6 +32,7 @@ class Server {
         delete this.#endpoints[path];
       }
     }
+    this.#internalErrorCallback = config.internalErrorCallback;
     this.#notFoundCallback = config.notFoundCallback;
     this.#methodNotAllowedCallback = config.methodNotAllowedCallback;
     this.#port = config.port;
@@ -64,6 +66,9 @@ const validateConfig = (config) => {
         }
       }
     }
+  }
+  if (typeof config.internalErrorCallback !== 'function') {
+    return false;
   }
   if (typeof config.notFoundCallback !== 'function') {
     return false;
@@ -110,7 +115,7 @@ const validateResponse = (response) => {
   return true;
 };
 
-const handleRequest = async (req, res, endpoints, notFoundCallback, methodNotAllowedCallback) => {
+const handleRequest = async (req, res, endpoints, internalErrorCallback, notFoundCallback, methodNotAllowedCallback) => {
   const request = { };
   translateRequest(req, request);
   const response = await (async () => {
@@ -130,6 +135,9 @@ const handleRequest = async (req, res, endpoints, notFoundCallback, methodNotAll
     }
     return await endpoint(request);
   })();
+  if (response == null || !validateResponse(response)) {
+    response = await internalErrorCallback(request);
+  }
   translateResponse(response, res);
 };
 
@@ -173,8 +181,9 @@ const translateRequest = (req, request) => {
 
 const translateResponse = (response, res) => {
   if (response == null || !validateResponse(response)) {
-    res.status(500).end();
-    return;
+    response = {
+      status: 500
+    };
   }
   res.status(response.status);
   for (const headerKey in response.headers) {
