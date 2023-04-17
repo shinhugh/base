@@ -8,13 +8,9 @@ authentication service
 
 general
 
-- share Error types amongst all code?
-
 - merge authentication and account services
 
-- restructure file hierarchy
-  - remove all tests
-  - remove server/ layer
+- remove all tests
 
 
 --------------------------------------------------------------------------------
