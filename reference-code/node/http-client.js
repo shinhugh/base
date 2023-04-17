@@ -3,7 +3,7 @@ import { request as httpRequest } from 'http';
 class HttpClient {
   async sendRequest(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided');
+      throw new Error('Invalid request provided to HttpClient.sendRequest()');
     }
     const queryString = (() => {
       let queryString = '';

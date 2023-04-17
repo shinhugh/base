@@ -2,9 +2,27 @@ TODO ---
 
 authentication service
 
-- periodically purge:
-  - "dangling" sessions whose Account ID no longer pertains to an existing
-    Account instance (infrequent)
+- periodically purge "dangling" sessions whose Account ID no longer pertains to
+  an existing Account instance (infrequent)
+
+
+general
+
+- copy reference-code/node/server.js to server.js under authentication server
+
+- use reference-code/node/server.js in gateway
+
+- is it possible to define same name classes in different files and somehow
+  import them into the same file without conflict?
+
+- share Error types amongst all code?
+
+- merge authentication and account services
+
+- restructure file hierarchy
+  - remove all tests
+  - remove server/ layer
+
 
 --------------------------------------------------------------------------------
 
