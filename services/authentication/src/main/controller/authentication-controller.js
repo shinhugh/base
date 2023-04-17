@@ -116,6 +116,22 @@ class AuthenticationController {
       status: 200
     };
   }
+
+  async readAccount(request) {
+    // TODO: Implement
+  }
+
+  async createAccount(request) {
+    // TODO: Implement
+  }
+
+  async updateAccount(request) {
+    // TODO: Implement
+  }
+
+  async deleteAccount(request) {
+    // TODO: Implement
+  }
 }
 
 const validateRequest = (request) => {

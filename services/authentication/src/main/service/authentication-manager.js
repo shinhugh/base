@@ -129,6 +129,22 @@ class AuthenticationManager extends AuthenticationService {
     throw new IllegalArgumentError();
   }
 
+  async readAccount(authority, id, name) {
+    // TODO: Implement
+  }
+
+  async createAccount(authority, account) {
+    // TODO: Implement
+  }
+
+  async updateAccount(authority, id, name, account) {
+    // TODO: Implement
+  }
+
+  async deleteAccount(authority, id, name) {
+    // TODO: Implement
+  }
+
   async purgeExpiredSessions() {
     const currentTime = Math.floor(Date.now() / 1000);
     try {

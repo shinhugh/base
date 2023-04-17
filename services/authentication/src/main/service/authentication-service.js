@@ -5,6 +5,14 @@ class AuthenticationService {
 
   async logout(authority, logoutInfo) { }
 
+  async readAccount(authority, id, name) { }
+
+  async createAccount(authority, account) { }
+
+  async updateAccount(authority, id, name, account) { }
+
+  async deleteAccount(authority, id, name) { }
+
   async purgeExpiredSessions() { }
 
   async purgeDanglingSessions() { }

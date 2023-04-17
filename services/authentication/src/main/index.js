@@ -43,6 +43,20 @@ const config = {
         post: async (request) => {
           return await authenticationController.logout(request);
         }
+      },
+      '/account': {
+        get: async (request) => {
+          return await authenticationController.readAccount(request);
+        },
+        post: async (request) => {
+          return await authenticationController.createAccount(request);
+        },
+        put: async (request) => {
+          return await authenticationController.updateAccount(request);
+        },
+        delete: async (request) => {
+          return await authenticationController.deleteAccount(request);
+        }
       }
     },
     internalErrorCallback: async (request) => {

@@ -7,4 +7,11 @@ TODO ---
 
 - concurrent requests may invoke closeSequelize()
 
-- expose account crud operations on AuthenticationService/AuthenticationManager
+- delete existing account service and rename authentication service to account
+  service
+
+- write tests for Authenticationmanager account crud operations
+
+- implement account crud operations in AuthenticationManager
+
+- implement account crud operations in AuthenticationController
