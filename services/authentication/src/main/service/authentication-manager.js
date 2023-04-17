@@ -3,30 +3,30 @@ import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { AuthenticationService } from './authentication-service.js';
 import { wrapError } from '../common.js';
-import { IllegalArgumentError as RepositoryIllegalArgumentError, ConflictError as RepositoryConflictError } from '../repository/model/errors.js';
+import { IllegalArgumentError as RepositoryIllegalArgumentError, NotFoundError as RepositoryNotFoundError, ConflictError as RepositoryConflictError } from '../repository/model/errors.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
-import { AccessDeniedError, IllegalArgumentError, NotFoundError } from './model/errors.js';
+import { AccountRepository } from '../repository/account-repository.js';
+import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './model/errors.js';
 import { Role } from './model/role.js';
-import { AccountServiceClient } from './account-service-client.js';
 
 class AuthenticationManager extends AuthenticationService {
   #persistentSessionRepository;
-  #accountServiceClient;
+  #accountRepository;
   #config;
 
-  constructor(persistentSessionRepository, accountServiceClient, config) {
+  constructor(persistentSessionRepository, accountRepository, config) {
     super();
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
       throw new Error('Invalid persistentSessionRepository provided to AuthenticationManager constructor');
     }
-    if (!(accountServiceClient instanceof AccountServiceClient)) {
-      throw new Error('Invalid accountServiceClient provided to AuthenticationManager constructor');
+    if (!(accountRepository instanceof AccountRepository)) {
+      throw new Error('Invalid accountRepository provided to AuthenticationManager constructor');
     }
     if (config == null || !validateConfig(config)) {
       throw new Error('Invalid config provided to AuthenticationManager constructor');
     }
     this.#persistentSessionRepository = persistentSessionRepository;
-    this.#accountServiceClient = accountServiceClient;
+    this.#accountRepository = accountRepository;
     this.#config = {
       tokenAlgorithm: config.tokenAlgorithm,
       tokenSecretKey: config.tokenSecretKey,
@@ -145,16 +145,18 @@ class AuthenticationManager extends AuthenticationService {
 
   async #loginViaCredentials(authority, credentials) {
     const account = await (async () => {
+      let accountMatches;
       try {
-        return await this.#accountServiceClient.readByName(systemAuthority, credentials.name);
+        accountMatches = await this.#accountRepository.readByName(credentials.name);
       }
       catch (e) {
-        if (e instanceof IllegalArgumentError || e instanceof NotFoundError) {
-          throw new AccessDeniedError();
-        }
-        throw wrapError(e, 'Failed to invoke account service');
+        throw wrapError(e, 'Failed to read from account store');
       }
+      return accountMatches[0];
     })();
+    if (account == null) {
+      throw new AccessDeniedError();
+    }
     const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, credentials.password, account.passwordSalt);
     if (passwordHash !== account.passwordHash) {
       throw new AccessDeniedError();

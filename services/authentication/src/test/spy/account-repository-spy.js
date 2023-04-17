@@ -1,21 +1,18 @@
-import { AccountServiceClient } from '../../main/service/account-service-client.js';
+import { AccountRepository } from '../../main/repository/account-repository.js';
 
-class AccountServiceClientSpy extends AccountServiceClient {
+class AccountRepositorySpy extends AccountRepository {
   #readByNameReturnValue;
   #readByNameInvokeCount;
-  #readByNameAuthorityArgument;
   #readByNameNameArgument;
 
-  async readByName(authority, name) {
+  async readByName(name) {
     this.#readByNameInvokeCount++;
-    this.#readByNameAuthorityArgument = authority;
     this.#readByNameNameArgument = name;
     return this.#readByNameReturnValue;
   }
 
   resetSpy() {
     this.#readByNameInvokeCount = 0;
-    this.#readByNameAuthorityArgument = undefined;
     this.#readByNameNameArgument = undefined;
   }
 
@@ -27,15 +24,11 @@ class AccountServiceClientSpy extends AccountServiceClient {
     return this.#readByNameInvokeCount;
   }
 
-  get readByNameAuthorityArgument() {
-    return this.#readByNameAuthorityArgument;
-  }
-
   get readByNameNameArgument() {
     return this.#readByNameNameArgument;
   }
 }
 
 export {
-  AccountServiceClientSpy
+  AccountRepositorySpy
 };

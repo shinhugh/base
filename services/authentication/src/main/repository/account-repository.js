@@ -1,4 +1,6 @@
 class AccountRepository {
+  async readByName(name) { }
+
   async readByIdAndName(id, name) { }
 
   async create(account) { }

@@ -22,6 +22,27 @@ class AccountSequelizeRepository extends AccountRepository {
     };
   }
 
+  async readByName(name) {
+    if (typeof name !== 'string' || name.length > nameMaxLength) {
+      throw new IllegalArgumentError();
+    }
+    await this.#openSequelize();
+    try {
+      return await this.#sequelize.models.accounts.findAll({
+        raw: true,
+        where: {
+          name: name
+        }
+      });
+    }
+    catch (e) {
+      throw wrapError(e, 'Failed to execute database transaction');
+    }
+    finally {
+      await this.#closeSequelize();
+    }
+  }
+
   async readByIdAndName(id, name) {
     if (id == null && name == null) {
       throw new IllegalArgumentError();

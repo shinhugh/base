@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { Role } from '../main/service/model/role.js';
 import { PersistentSessionRepositorySpy } from './spy/persistent-session-repository-spy.js';
-import { AccountServiceClientSpy } from './spy/account-service-client-spy.js';
+import { AccountRepositorySpy } from './spy/account-repository-spy.js';
 import { AuthenticationManager } from '../main/service/authentication-manager.js';
 
 const testIdentify = async () => {
@@ -31,24 +31,19 @@ const testIdentify = async () => {
 
 const testLogin = async () => {
   persistentSessionRepositorySpy.resetSpy();
-  accountServiceClientSpy.resetSpy();
+  accountRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.createReturnValue = mockPersistentSession;
-  accountServiceClientSpy.readByNameReturnValue = mockAccount;
+  accountRepositorySpy.readByNameReturnValue = mockAccount;
   let output = await authenticationManager.login(authority, {
     credentials: {
       name: mockAccount.name,
       password: mockPassword
     }
   });
-  if (accountServiceClientSpy.readByNameInvokeCount != 1) {
+  if (accountRepositorySpy.readByNameInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: AccountServiceClient.read(): Invocation count');
   }
-  if (!verifyEqualityBetweenAuthorities(accountServiceClientSpy.readByNameAuthorityArgument, {
-    roles: 1
-  })) {
-    throw new Error('Actual value does not match expected value: AccountServiceClient.read(): authority argument');
-  }
-  if (accountServiceClientSpy.readByNameNameArgument !== mockAccount.name) {
+  if (accountRepositorySpy.readByNameNameArgument !== mockAccount.name) {
     throw new Error('Actual value does not match expected value: AccountServiceClient.read(): name argument');
   }
   if (persistentSessionRepositorySpy.createInvokeCount != 1) {
@@ -195,8 +190,8 @@ const mockPassword = 'Qwer!234';
 
 const authority = { roles: Role.System };
 const persistentSessionRepositorySpy = new PersistentSessionRepositorySpy();
-const accountServiceClientSpy = new AccountServiceClientSpy();
-const authenticationManager = new AuthenticationManager(persistentSessionRepositorySpy, accountServiceClientSpy, config.authenticationManager);
+const accountRepositorySpy = new AccountRepositorySpy();
+const authenticationManager = new AuthenticationManager(persistentSessionRepositorySpy, accountRepositorySpy, config.authenticationManager);
 
 const tests = [
   { name: 'Identify', run: testIdentify },

@@ -1,6 +1,5 @@
-import { HttpBridge } from './service/http-bridge.js';
 import { PersistentSessionSequelizeRepository } from './repository/persistent-session-sequelize-repository.js';
-import { AccountServiceBridge } from './service/account-service-bridge.js';
+import { AccountSequelizeRepository } from './repository/account-sequelize-repository.js';
 import { AuthenticationManager } from './service/authentication-manager.js';
 import { AuthenticationController } from './controller/authentication-controller.js';
 import { Server } from './server.js';
@@ -14,9 +13,12 @@ const config = {
     username: 'root',
     password: ''
   },
-  accountServiceBridge: {
+  accountSequelizeRepository: {
     host: 'localhost',
-    port: 8080
+    port: 3306,
+    database: 'base',
+    username: 'root',
+    password: ''
   },
   authenticationManager: {
     tokenAlgorithm: 'HS256',
@@ -62,10 +64,9 @@ const config = {
   }
 };
 
-const httpBridge = new HttpBridge();
 const persistentSessionSequelizeRepository = new PersistentSessionSequelizeRepository(config.persistentSessionSequelizeRepository);
-const accountServiceBridge = new AccountServiceBridge(httpBridge, config.accountServiceBridge);
-const authenticationManager = new AuthenticationManager(persistentSessionSequelizeRepository, accountServiceBridge, config.authenticationManager);
+const accountSequelizeRepository = new AccountSequelizeRepository(config.accountSequelizeRepository);
+const authenticationManager = new AuthenticationManager(persistentSessionSequelizeRepository, accountSequelizeRepository, config.authenticationManager);
 const authenticationController = new AuthenticationController(authenticationManager);
 const server = new Server(config.server);
 
