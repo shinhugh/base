@@ -2,9 +2,9 @@ import { createHash, getHashes } from 'crypto';
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { wrapError } from '../common.js';
-import { RepositoryIllegalArgumentError, RepositoryConflictError } from '../repository/model/errors.js';
+import { IllegalArgumentError as RepositoryIllegalArgumentError, ConflictError as RepositoryConflictError } from '../repository/model/errors.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
-import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from './model/errors.js';
+import { AccessDeniedError, IllegalArgumentError, NotFoundError } from './model/errors.js';
 import { Role } from './model/role.js';
 import { AccountServiceClient } from './account-service-client.js';
 

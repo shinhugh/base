@@ -1,21 +1,21 @@
-class RepositoryIllegalArgumentError extends Error {
+class IllegalArgumentError extends Error {
   constructor() {
-    super(repositoryIllegalArgumentErrorMessage);
+    super(IllegalArgumentErrorMessage);
     this.name = this.constructor.name;
   }
 }
 
-class RepositoryConflictError extends Error {
+class ConflictError extends Error {
   constructor() {
-    super(repositoryConflictErrorMessage);
+    super(ConflictErrorMessage);
     this.name = this.constructor.name;
   }
 }
 
-const repositoryIllegalArgumentErrorMessage = 'Illegal argument';
-const repositoryConflictErrorMessage = 'Conflict';
+const IllegalArgumentErrorMessage = 'Illegal argument';
+const ConflictErrorMessage = 'Conflict';
 
 export {
-  RepositoryIllegalArgumentError,
-  RepositoryConflictError
+  IllegalArgumentError,
+  ConflictError
 };

@@ -1,7 +1,7 @@
 import { v4 as generateUuid } from 'uuid';
 import { Sequelize, DataTypes, Op } from 'sequelize';
 import { wrapError } from '../common.js';
-import { RepositoryIllegalArgumentError, RepositoryConflictError } from './model/errors.js';
+import { IllegalArgumentError, ConflictError } from './model/errors.js';
 
 class PersistentSessionRepository {
   #sequelize;
@@ -22,7 +22,7 @@ class PersistentSessionRepository {
 
   async readById(id) {
     if (typeof id !== 'string' || id.length > idMaxLength) {
-      throw new RepositoryIllegalArgumentError();
+      throw new IllegalArgumentError();
     }
     await this.#openSequelize();
     try {
@@ -42,7 +42,7 @@ class PersistentSessionRepository {
 
   async readByRefreshToken(refreshToken) {
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
-      throw new RepositoryIllegalArgumentError();
+      throw new IllegalArgumentError();
     }
     await this.#openSequelize();
     try {
@@ -62,7 +62,7 @@ class PersistentSessionRepository {
 
   async create(persistentSession) {
     if (persistentSession == null || !validatePersistentSession(persistentSession)) {
-      throw new RepositoryIllegalArgumentError();
+      throw new IllegalArgumentError();
     }
     const entry = {
       accountId: persistentSession.accountId,
@@ -79,7 +79,7 @@ class PersistentSessionRepository {
       }
       catch (e) {
         if (e instanceof Sequelize.ValidationError) {
-          throw new RepositoryConflictError();
+          throw new ConflictError();
         }
         throw wrapError(e, 'Failed to execute database transaction');
       }
@@ -92,7 +92,7 @@ class PersistentSessionRepository {
 
   async deleteByAccountId(accountId) {
     if (typeof accountId !== 'string' || accountId.length > accountIdMaxLength) {
-      throw new RepositoryIllegalArgumentError();
+      throw new IllegalArgumentError();
     }
     await this.#openSequelize();
     try {
@@ -112,7 +112,7 @@ class PersistentSessionRepository {
 
   async deleteByRefreshToken(refreshToken) {
     if (typeof refreshToken !== 'string' || refreshToken.length > refreshTokenMaxLength) {
-      throw new RepositoryIllegalArgumentError();
+      throw new IllegalArgumentError();
     }
     await this.#openSequelize();
     try {
@@ -132,7 +132,7 @@ class PersistentSessionRepository {
 
   async deleteByLessThanExpirationTime(expirationTime) {
     if (!Number.isInteger(expirationTime) || expirationTime < 0 || expirationTime > expirationTimeMaxValue) {
-      throw new RepositoryIllegalArgumentError();
+      throw new IllegalArgumentError();
     }
     await this.#openSequelize();
     try {

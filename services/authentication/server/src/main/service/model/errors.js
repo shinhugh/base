@@ -19,21 +19,12 @@ class NotFoundError extends Error {
   }
 }
 
-class ConflictError extends Error {
-  constructor() {
-    super(conflictErrorMessage);
-    this.name = this.constructor.name;
-  }
-}
-
 const accessDeniedErrorMessage = 'Access denied';
 const illegalArgumentErrorMessage = 'Illegal argument';
 const notFoundErrorMessage = 'Not found';
-const conflictErrorMessage = 'Conflict';
 
 export {
   AccessDeniedError,
   IllegalArgumentError,
-  NotFoundError,
-  ConflictError
+  NotFoundError
 };

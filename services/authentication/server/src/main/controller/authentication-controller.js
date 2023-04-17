@@ -1,4 +1,4 @@
-import { AccessDeniedError, IllegalArgumentError, NotFoundError, ConflictError } from '../service/model/errors.js';
+import { AccessDeniedError, IllegalArgumentError } from '../service/model/errors.js';
 import { AuthenticationService } from '../service/authentication-service.js';
 
 class AuthenticationController {
@@ -193,12 +193,6 @@ const mapErrorToStatusCode = (e) => {
   }
   if (e instanceof AccessDeniedError) {
     return 401;
-  }
-  if (e instanceof NotFoundError) {
-    return 404;
-  }
-  if (e instanceof ConflictError) {
-    return 409;
   }
   console.error('Unexpected error:\n' + e);
   if (typeof e.inner === 'object') {
