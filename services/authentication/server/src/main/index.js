@@ -26,6 +26,33 @@ const config = {
     volatileSessionDuration: 86400
   },
   server: {
+    endpoints: {
+      '/identify': {
+        get: async (request) => {
+          return await authenticationController.identify(request);
+        }
+      },
+      '/login': {
+        post: async (request) => {
+          return await authenticationController.login(request);
+        }
+      },
+      '/logout': {
+        post: async (request) => {
+          return await authenticationController.logout(request);
+        }
+      }
+    },
+    notFoundCallback: async (request) => {
+      return {
+        status: 404
+      };
+    },
+    methodNotAllowedCallback: async (request) => {
+      return {
+        status: 405
+      };
+    },
     port: 8081
   }
 };
@@ -35,23 +62,7 @@ const persistentSessionRepository = new PersistentSessionRepository(config.persi
 const accountServiceClient = new AccountServiceClient(httpClient, config.accountServiceClient);
 const authenticationService = new AuthenticationService(persistentSessionRepository, accountServiceClient, config.authenticationService);
 const authenticationController = new AuthenticationController(authenticationService);
-const server = new Server({
-  '/identify': {
-    get: async (request) => {
-      return await authenticationController.identify(request);
-    }
-  },
-  '/login': {
-    post: async (request) => {
-      return await authenticationController.login(request);
-    }
-  },
-  '/logout': {
-    post: async (request) => {
-      return await authenticationController.logout(request);
-    }
-  }
-}, config.server.port);
+const server = new Server(config.server);
 
 server.start();
 
