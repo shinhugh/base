@@ -1,4 +1,5 @@
 import { AccountServiceClient } from '../../main/service/account-service-client.js';
+import { HttpClient } from '../../main/service/http-client.js';
 
 class AccountServiceClientSpy extends AccountServiceClient {
   #readByNameReturnValue;
@@ -7,7 +8,7 @@ class AccountServiceClientSpy extends AccountServiceClient {
   #readByNameNameArgument;
 
   constructor() {
-    super({
+    super(new HttpClient(), {
       host: '',
       port: 0
     });
