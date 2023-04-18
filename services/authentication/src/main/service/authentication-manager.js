@@ -32,7 +32,8 @@ class AuthenticationManager extends AuthenticationService {
       tokenSecretKey: config.tokenSecretKey,
       passwordHashAlgorithm: config.passwordHashAlgorithm,
       persistentSessionDuration: config.persistentSessionDuration,
-      volatileSessionDuration: config.volatileSessionDuration
+      volatileSessionDuration: config.volatileSessionDuration,
+      modificationEnabledSessionAgeMaxValue: config.modificationEnabledSessionAgeMaxValue
     };
   }
 
@@ -113,7 +114,7 @@ class AuthenticationManager extends AuthenticationService {
       throw new IllegalArgumentError();
     }
     if (logoutInfo.accountId != null) {
-      if (typeof logoutInfo.accountId !== 'string' || !validateUuid(logoutInfo.accountId)) {
+      if (!validateUuid(logoutInfo.accountId)) {
         throw new IllegalArgumentError();
       }
       await this.#logoutViaAccountId(authority, logoutInfo.accountId);
@@ -130,19 +131,197 @@ class AuthenticationManager extends AuthenticationService {
   }
 
   async readAccount(authority, id, name) {
-    // TODO: Implement
+    if (!validateAuthority(authority)) {
+      throw new IllegalArgumentError();
+    }
+    if (id == null && name == null) {
+      throw new IllegalArgumentError();
+    }
+    if (id != null && !validateUuid(id)) {
+      throw new IllegalArgumentError();
+    }
+    if (!validateName(name)) {
+      throw new IllegalArgumentError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
+      throw new AccessDeniedError();
+    }
+    const authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin);
+    if (!authorizedAsSystemOrAdmin && authority.id == null) {
+      throw new AccessDeniedError();
+    }
+    const matches = await (async () => {
+      try {
+        return await this.#accountRepository.readByIdAndName(id, name);
+      }
+      catch (e) {
+        throw wrapError(e, 'Failed to read from account store');
+      }
+    })();
+    if (matches.length == 0) {
+      if (authorizedAsSystemOrAdmin) {
+        throw new NotFoundError();
+      }
+      throw new AccessDeniedError();
+    }
+    const match = matches[0];
+    if (!authorizedAsSystemOrAdmin && match.id !== authority.id) {
+      throw new AccessDeniedError();
+    }
+    delete match.passwordHash;
+    delete match.passwordSalt;
+    return match;
   }
 
   async createAccount(authority, account) {
-    // TODO: Implement
+    if (!validateAuthority(authority)) {
+      throw new IllegalArgumentError();
+    }
+    if (account == null || !validateAccount(account, false)) {
+      throw new IllegalArgumentError();
+    }
+    const passwordSalt = generateRandomString(passwordSaltAllowedChars, passwordSaltLength);
+    const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, account.password, passwordSalt);
+    let entry = {
+      name: account.name,
+      passwordHash: passwordHash,
+      passwordSalt: passwordSalt,
+      roles: Role.User
+    };
+    try {
+      entry = await this.#accountRepository.create(entry);
+    }
+    catch (e) {
+      if (e instanceof RepositoryConflictError) {
+        throw new ConflictError();
+      }
+      throw wrapError(e, 'Failed to write to account store');
+    }
+    delete entry.passwordHash;
+    delete entry.passwordSalt;
+    return entry;
   }
 
   async updateAccount(authority, id, name, account) {
-    // TODO: Implement
+    if (!validateAuthority(authority)) {
+      throw new IllegalArgumentError();
+    }
+    if (id == null && name == null) {
+      throw new IllegalArgumentError();
+    }
+    if (id != null && !validateUuid(id)) {
+      throw new IllegalArgumentError();
+    }
+    if (!validateName(name)) {
+      throw new IllegalArgumentError();
+    }
+    const authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin);
+    if (account == null || !validateAccount(account, authorizedAsSystemOrAdmin)) {
+      throw new IllegalArgumentError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
+      throw new AccessDeniedError();
+    }
+    if (!authorizedAsSystemOrAdmin && authority.id == null) {
+      throw new AccessDeniedError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && authority.authTime + this.#config.modificationEnabledSessionAgeMaxValue < (Date.now() / 1000)) {
+      throw new AccessDeniedError();
+    }
+    let matches;
+    try {
+      matches = await this.#accountRepository.readByIdAndName(id, name);
+    }
+    catch (e) {
+      throw wrapError(e, 'Failed to read from account store');
+    }
+    if (matches.length == 0) {
+      if (authorizedAsSystemOrAdmin) {
+        throw new NotFoundError();
+      }
+      throw new AccessDeniedError();
+    }
+    const match = matches[0];
+    if (!authorizedAsSystemOrAdmin && match.id !== authority.id) {
+      throw new AccessDeniedError();
+    }
+    const passwordSalt = generateRandomString(passwordSaltAllowedChars, passwordSaltLength);
+    const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, account.password, passwordSalt);
+    const roles = authorizedAsSystemOrAdmin ? account.roles : match.roles;
+    let entry = {
+      name: account.name,
+      passwordHash: passwordHash,
+      passwordSalt: passwordSalt,
+      roles: roles
+    };
+    try {
+      entry = await this.#accountRepository.updateByIdAndName(id, name, entry);
+    }
+    catch (e) {
+      if (e instanceof RepositoryConflictError) {
+        throw new ConflictError();
+      }
+      throw wrapError(e, 'Failed to write to account store');
+    }
+    try {
+      await this.#persistentSessionRepository.deleteByAccountId(entry.id);
+    }
+    catch { }
+    delete entry.passwordHash;
+    delete entry.passwordSalt;
+    return entry;
   }
 
   async deleteAccount(authority, id, name) {
-    // TODO: Implement
+    if (!validateAuthority(authority)) {
+      throw new IllegalArgumentError();
+    }
+    if (id == null && name == null) {
+      throw new IllegalArgumentError();
+    }
+    if (id != null && !validateUuid(id)) {
+      throw new IllegalArgumentError();
+    }
+    if (!validateName(name)) {
+      throw new IllegalArgumentError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
+      throw new AccessDeniedError();
+    }
+    const authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin);
+    if (!authorizedAsSystemOrAdmin && authority.id == null) {
+      throw new AccessDeniedError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && authority.authTime + this.#config.modificationEnabledSessionAgeMaxValue < (Date.now() / 1000)) {
+      throw new AccessDeniedError();
+    }
+    let matches;
+    try {
+      matches = await this.#accountRepository.readByIdAndName(id, name);
+    }
+    catch (e) {
+      throw wrapError(e, 'Failed to read from account store');
+    }
+    if (matches.length == 0) {
+      if (authorizedAsSystemOrAdmin) {
+        throw new NotFoundError();
+      }
+      throw new AccessDeniedError();
+    }
+    const match = matches[0];
+    if (!authorizedAsSystemOrAdmin && match.id !== authority.id) {
+      throw new AccessDeniedError();
+    }
+    try {
+      await this.#accountRepository.deleteByIdAndName(id, name);
+    }
+    catch (e) {
+      throw wrapError(e, 'Failed to write to account store');
+    }
+    try {
+      await this.#persistentSessionRepository.deleteByAccountId(match.id);
+    }
+    catch { }
   }
 
   async purgeExpiredSessions() {
@@ -263,7 +442,7 @@ class AuthenticationManager extends AuthenticationService {
   }
 
   async #logoutViaAccountId(authority, accountId) {
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin | Role.User)) {
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
       throw new AccessDeniedError();
     }
     if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin)) {
@@ -317,6 +496,9 @@ const validateConfig = (config) => {
   if (!Number.isInteger(config.volatileSessionDuration) || config.volatileSessionDuration < 0 || config.volatileSessionDuration > timeMaxValue) {
     return false;
   }
+  if (!Number.isInteger(config.modificationEnabledSessionAgeMaxValue) || config.modificationEnabledSessionAgeMaxValue < 0 || config.modificationEnabledSessionAgeMaxValue > timeMaxValue) {
+    return false;
+  }
   return true;
 };
 
@@ -327,7 +509,7 @@ const validateAuthority = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && (typeof authority.id !== 'string' || !validateUuid(authority.id))) {
+  if (authority.id != null && !validateUuid(authority.id)) {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
@@ -355,6 +537,49 @@ const validateCredentials = (credentials) => {
   return true;
 };
 
+const validateName = (name) => {
+  if (name == null) {
+    return true;
+  }
+  if (typeof name !== 'string' || name.length < nameMinLength || name.length > nameMaxLength) {
+    return false;
+  }
+  for (let i = 0; i < name.length; i++) {
+    if (!nameAllowedChars.includes(name[i])) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const validatePassword = (password) => {
+  if (password == null) {
+    return true;
+  }
+  if (typeof password !== 'string' || password.length < passwordMinLength || password.length > passwordMaxLength) {
+    return false;
+  }
+  for (let i = 0; i < password.length; i++) {
+    if (!passwordAllowedChars.includes(password[i])) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const validateAccount = (account, validateRoles) => {
+  if (account == null) {
+    return true;
+  }
+  if (account.name == null || !validateName(account.name)) {
+    return false;
+  }
+  if (account.password == null || !validatePassword(account.password)) {
+    return false;
+  }
+  return !validateRoles || (Number.isInteger(account.roles) && account.roles >= 0 && account.roles <= rolesMaxValue);
+};
+
 const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
   if (roles == null || roles == 0) {
     return true;
@@ -377,11 +602,18 @@ const generateRandomString = (pool, length) => {
   return output;
 };
 
-const systemAuthority = { roles: Role.System };
 const rolesMaxValue = 255;
 const timeMaxValue = 4294967295;
 const refreshTokenAllowedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const refreshTokenLength = 128;
+const nameAllowedChars = '-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+const nameMinLength = 4;
+const nameMaxLength = 32;
+const passwordAllowedChars = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+const passwordMinLength = 8;
+const passwordMaxLength = 32;
+const passwordSaltAllowedChars = passwordAllowedChars;
+const passwordSaltLength = 32;
 
 export {
   AuthenticationManager

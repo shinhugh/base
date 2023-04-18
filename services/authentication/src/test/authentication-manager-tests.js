@@ -6,14 +6,16 @@ import { AuthenticationManager } from '../main/service/authentication-manager.js
 
 const testIdentify = async () => {
   persistentSessionRepositorySpy.resetSpy();
-  persistentSessionRepositorySpy.readByIdReturnValue = [ mockPersistentSession ];
+  persistentSessionRepositorySpy.readByIdReturnValue = [ createMockPersistentSession() ];
   const token = jwt.sign({
     sessionId: mockPersistentSession.id,
     exp: Math.floor(Date.now() / 1000) + 60
   }, Buffer.from(config.authenticationManager.tokenSecretKey, config.authenticationManager.tokenSecretKeyEncoding), {
     algorithm: config.authenticationManager.tokenAlgorithm
   });
-  const output = await authenticationManager.identify(authority, token);
+  const output = await authenticationManager.identify({
+    roles: Role.System
+  }, token);
   if (persistentSessionRepositorySpy.readByIdInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readById(): Invocation count');
   }
@@ -32,9 +34,9 @@ const testIdentify = async () => {
 const testLogin = async () => {
   persistentSessionRepositorySpy.resetSpy();
   accountRepositorySpy.resetSpy();
-  persistentSessionRepositorySpy.createReturnValue = mockPersistentSession;
-  accountRepositorySpy.readByNameReturnValue = [ mockAccount ];
-  let output = await authenticationManager.login(authority, {
+  persistentSessionRepositorySpy.createReturnValue = createMockPersistentSession();
+  accountRepositorySpy.readByNameReturnValue = [ createMockAccount() ];
+  let output = await authenticationManager.login(undefined, {
     credentials: {
       name: mockAccount.name,
       password: mockPassword
@@ -70,8 +72,8 @@ const testLogin = async () => {
     throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
   }
   persistentSessionRepositorySpy.resetSpy();
-  persistentSessionRepositorySpy.readByRefreshTokenReturnValue = [ mockPersistentSession ];
-  output = await authenticationManager.login(authority, {
+  persistentSessionRepositorySpy.readByRefreshTokenReturnValue = [ createMockPersistentSession() ];
+  output = await authenticationManager.login(undefined, {
     refreshToken: mockPersistentSession.refreshToken
   });
   if (persistentSessionRepositorySpy.readByRefreshTokenInvokeCount != 1) {
@@ -93,7 +95,10 @@ const testLogin = async () => {
 const testLogout = async () => {
   persistentSessionRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.deleteByAccountIdReturnValue = 2;
-  await authenticationManager.logout(authority, {
+  await authenticationManager.logout({
+    id: mockPersistentSession.accountId,
+    roles: Role.User
+  }, {
     accountId: mockPersistentSession.accountId
   });
   if (persistentSessionRepositorySpy.deleteByAccountIdInvokeCount != 1) {
@@ -104,7 +109,7 @@ const testLogout = async () => {
   }
   persistentSessionRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.deleteByRefreshTokenReturnValue = 1;
-  await authenticationManager.logout(authority, {
+  await authenticationManager.logout(undefined, {
     refreshToken: mockPersistentSession.refreshToken
   });
   if (persistentSessionRepositorySpy.deleteByRefreshTokenInvokeCount != 1) {
@@ -113,6 +118,60 @@ const testLogout = async () => {
   if (persistentSessionRepositorySpy.deleteByRefreshTokenRefreshTokenArgument !== mockPersistentSession.refreshToken) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByRefreshToken(): refreshToken argument');
   }
+};
+
+const testReadAccount = async () => {
+  accountRepositorySpy.resetSpy();
+  accountRepositorySpy.readByIdAndNameReturnValue = [ createMockAccount() ];
+  const output = await authenticationManager.readAccount({
+    id: mockAccount.id,
+    roles: Role.User
+  }, mockAccount.id, mockAccount.name);
+  if (accountRepositorySpy.readByIdAndNameInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): Invocation count');
+  }
+  if (accountRepositorySpy.readByIdAndNameIdArgument !== mockAccount.id) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): id argument');
+  }
+  if (accountRepositorySpy.readByIdAndNameNameArgument !== mockAccount.name) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): name argument');
+  }
+  if (!verifyEqualityBetweenAccounts(output, mockAccount, true, false)) {
+    throw new Error('Actual value does not match expected value: AuthenticationManager.readAccount(): Return value');
+  }
+};
+
+const testCreateAccount = async () => {
+  accountRepositorySpy.resetSpy();
+  accountRepositorySpy.createReturnValue = createMockAccount();
+  const output = await authenticationManager.createAccount(null, {
+    name: mockAccount.name,
+    password: mockPassword
+  });
+  if (accountRepositorySpy.createInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: AccountRepository.create(): Invocation count');
+  }
+  if (!verifyEqualityBetweenAccounts(accountRepositorySpy.createAccountArgument, {
+    name: mockAccount.name,
+    roles: Role.User
+  }, false, false)) {
+    throw new Error('Actual value does not match expected value: AccountRepository.create(): account argument');
+  }
+  if (!verifyEqualityBetweenAccounts(output, mockAccount, true, false)) {
+    throw new Error('Actual value does not match expected value: AuthenticationManager.create(): Return value');
+  }
+};
+
+const testUpdateAccount = async () => {
+  accountRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.resetSpy();
+  // TODO: Implement
+};
+
+const testDeleteAccount = async () => {
+  accountRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.resetSpy();
+  // TODO: Implement
 };
 
 const verifyEqualityBetweenAuthorities = (first, second) => {
@@ -162,19 +221,68 @@ const verifyEqualityBetweenPersistentSessions = (first, second) => {
   return true;
 };
 
+const verifyEqualityBetweenAccounts = (first, second, compareIds, comparePasswordHashesAndSalts) => {
+  if (first == null && second == null) {
+    return true;
+  }
+  if (first == null || second == null) {
+    return false;
+  }
+  if (compareIds && first.id !== second.id) {
+    return false;
+  }
+  if (first.name !== second.name) {
+    return false;
+  }
+  if (comparePasswordHashesAndSalts) {
+    if (first.passwordHash !== second.passwordHash) {
+      return false;
+    }
+    if (first.passwordSalt !== second.passwordSalt) {
+      return false;
+    }
+  }
+  if (first.roles != second.roles) {
+    return false;
+  }
+  return true;
+};
+
+const createMockPersistentSession = () => {
+  return {
+    id: mockPersistentSession.id,
+    accountId: mockPersistentSession.accountId,
+    roles: mockPersistentSession.roles,
+    refreshToken: mockPersistentSession.refreshToken,
+    creationTime: mockPersistentSession.creationTime,
+    expirationTime: mockPersistentSession.expirationTime
+  };
+};
+
+const createMockAccount = () => {
+  return {
+    id: mockAccount.id,
+    name: mockAccount.name,
+    passwordHash: mockAccount.passwordHash,
+    passwordSalt: mockAccount.passwordSalt,
+    roles: mockAccount.roles
+  };
+};
+
 const config = {
   authenticationManager: {
     tokenAlgorithm: 'HS256',
     tokenSecretKey: Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64'),
     passwordHashAlgorithm: 'sha256',
     persistentSessionDuration: 1209600,
-    volatileSessionDuration: 86400
+    volatileSessionDuration: 86400,
+    modificationEnabledSessionAgeMaxValue: 900
   }
 };
 const mockPersistentSession = {
   id: '00000000-0000-0000-0000-000000000000',
   accountId: '00000000-0000-0000-0000-000000000000',
-  roles: 6,
+  roles: 2,
   refreshToken: '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
   creationTime: Math.floor(Date.now() / 1000),
   expirationTime: 4294967295
@@ -184,11 +292,10 @@ const mockAccount = {
   name: 'qwer',
   passwordHash: 'bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3',
   passwordSalt: '00000000000000000000000000000000',
-  roles: 6
+  roles: 2
 };
 const mockPassword = 'Qwer!234';
 
-const authority = { roles: Role.System };
 const persistentSessionRepositorySpy = new PersistentSessionRepositorySpy();
 const accountRepositorySpy = new AccountRepositorySpy();
 const authenticationManager = new AuthenticationManager(persistentSessionRepositorySpy, accountRepositorySpy, config.authenticationManager);
@@ -197,6 +304,10 @@ const tests = [
   { name: 'Identify', run: testIdentify },
   { name: 'Login', run: testLogin },
   { name: 'Logout', run: testLogout },
+  { name: 'Read Account', run: testReadAccount },
+  { name: 'Create Account', run: testCreateAccount },
+  { name: 'Update Account', run: testUpdateAccount },
+  { name: 'Delete Account', run: testDeleteAccount }
 ];
 
 export {

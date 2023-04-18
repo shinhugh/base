@@ -98,7 +98,7 @@ const validateResponse = (response) => {
     }
     for (const headerKey in response.headers) {
       if (response.headers[headerKey] != null) {
-        if (typeof response.headers[headerKey] !== 'object' || typeof response.headers[headerKey].constructor !== 'function' || response.headers[headerKey].constructor.name !== 'Array') {
+        if (!(response.headers[headerKey] instanceof Array)) {
           return false;
         }
         for (const headerValue of response.headers[headerKey]) {
@@ -109,7 +109,7 @@ const validateResponse = (response) => {
       }
     }
   }
-  if (response.body != null && (typeof response.body !== 'object' || typeof response.body.constructor !== 'function' || response.body.constructor.name !== 'Buffer')) {
+  if (response.body != null && !(response.body instanceof Buffer)) {
     return false;
   }
   return true;

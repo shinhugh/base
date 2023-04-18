@@ -25,7 +25,8 @@ const config = {
     tokenSecretKey: Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64'),
     passwordHashAlgorithm: 'sha256',
     persistentSessionDuration: 1209600,
-    volatileSessionDuration: 86400
+    volatileSessionDuration: 86400,
+    modificationEnabledSessionAgeMaxValue: 900
   },
   server: {
     endpoints: {

@@ -132,7 +132,7 @@ const validateRequest = (request) => {
     }
     for (const headerKey in request.headers) {
       if (request.headers[headerKey] != null) {
-        if (typeof request.headers[headerKey] !== 'object' || typeof request.headers[headerKey].constructor !== 'function' || request.headers[headerKey].constructor.name !== 'Array') {
+        if (!(request.headers[headerKey] instanceof Array)) {
           return false;
         }
         for (const headerValue of request.headers[headerKey]) {
@@ -149,7 +149,7 @@ const validateRequest = (request) => {
     }
     for (const queryParameterKey in request.queryParameters) {
       if (request.queryParameters[queryParameterKey] != null) {
-        if (typeof request.queryParameters[queryParameterKey] !== 'object' || typeof request.queryParameters[queryParameterKey].constructor !== 'function' || request.queryParameters[queryParameterKey].constructor.name !== 'Array') {
+        if (!(request.queryParameters[queryParameterKey] instanceof Array)) {
           return false;
         }
         for (const queryParameterValue of request.queryParameters[queryParameterKey]) {
@@ -160,10 +160,8 @@ const validateRequest = (request) => {
       }
     }
   }
-  if (request.body != null) {
-    if (typeof request.body !== 'object' || typeof request.body.constructor !== 'function' || request.body.constructor.name !== 'Buffer') {
-      return false;
-    }
+  if (request.body != null && !(request.body instanceof Buffer)) {
+    return false;
   }
   return true;
 };

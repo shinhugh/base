@@ -1,4 +1,4 @@
-import { AccessDeniedError, IllegalArgumentError } from '../service/model/errors.js';
+import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from '../service/model/errors.js';
 import { AuthenticationService } from '../service/authentication-service.js';
 
 class AuthenticationController {
@@ -118,19 +118,124 @@ class AuthenticationController {
   }
 
   async readAccount(request) {
-    // TODO: Implement
+    if (request == null || !validateRequest(request)) {
+      throw new Error('Invalid request provided to AuthenticationController.readAccount()');
+    }
+    const authority = parseAuthority(request);
+    const id = request.queryParameters?.id?.[0];
+    const name = request.queryParameters?.name?.[0];
+    let output;
+    try {
+      output = await this.#authenticationService.readAccount(authority, id, name);
+    }
+    catch (e) {
+      return {
+        status: mapErrorToStatusCode(e)
+      };
+    }
+    return {
+      status: 200,
+      headers: {
+        'content-type': [ 'application/json' ]
+      },
+      body: Buffer.from(JSON.stringify(output))
+    };
   }
 
   async createAccount(request) {
-    // TODO: Implement
+    if (request == null || !validateRequest(request)) {
+      throw new Error('Invalid request provided to AuthenticationController.createAccount()');
+    }
+    const authority = parseAuthority(request);
+    if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
+      return {
+        status: 400
+      };
+    }
+    let account;
+    try {
+      account = JSON.parse(request.body.toString());
+    }
+    catch {
+      return {
+        status: 400
+      };
+    }
+    let output;
+    try {
+      output = await this.#authenticationService.createAccount(authority, account);
+    }
+    catch (e) {
+      return {
+        status: mapErrorToStatusCode(e)
+      };
+    }
+    return {
+      status: 200,
+      headers: {
+        'content-type': [ 'application/json' ]
+      },
+      body: Buffer.from(JSON.stringify(output))
+    };
   }
 
   async updateAccount(request) {
-    // TODO: Implement
+    if (request == null || !validateRequest(request)) {
+      throw new Error('Invalid request provided to AuthenticationController.updateAccount()');
+    }
+    const authority = parseAuthority(request);
+    const id = request.queryParameters?.id?.[0];
+    const name = request.queryParameters?.name?.[0];
+    if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
+      return {
+        status: 400
+      };
+    }
+    let account;
+    try {
+      account = JSON.parse(request.body.toString());
+    }
+    catch {
+      return {
+        status: 400
+      };
+    }
+    let output;
+    try {
+      output = await this.#authenticationService.updateAccount(authority, id, name, account);
+    }
+    catch (e) {
+      return {
+        status: mapErrorToStatusCode(e)
+      };
+    }
+    return {
+      status: 200,
+      headers: {
+        'content-type': [ 'application/json' ]
+      },
+      body: Buffer.from(JSON.stringify(output))
+    };
   }
 
   async deleteAccount(request) {
-    // TODO: Implement
+    if (request == null || !validateRequest(request)) {
+      throw new Error('Invalid request provided to AuthenticationController.deleteAccount()');
+    }
+    const authority = parseAuthority(request);
+    const id = request.queryParameters?.id?.[0];
+    const name = request.queryParameters?.name?.[0];
+    try {
+      await this.#authenticationService.deleteAccount(authority, id, name);
+    }
+    catch (e) {
+      return {
+        status: mapErrorToStatusCode(e)
+      };
+    }
+    return {
+      status: 200
+    };
   }
 }
 
@@ -150,7 +255,7 @@ const validateRequest = (request) => {
     }
     for (const headerKey in request.headers) {
       if (request.headers[headerKey] != null) {
-        if (typeof request.headers[headerKey] !== 'object' || typeof request.headers[headerKey].constructor !== 'function' || request.headers[headerKey].constructor.name !== 'Array') {
+        if (!(request.headers[headerKey] instanceof Array)) {
           return false;
         }
         for (const headerValue of request.headers[headerKey]) {
@@ -167,7 +272,7 @@ const validateRequest = (request) => {
     }
     for (const queryParameterKey in request.queryParameters) {
       if (request.queryParameters[queryParameterKey] != null) {
-        if (typeof request.queryParameters[queryParameterKey] !== 'object' || typeof request.queryParameters[queryParameterKey].constructor !== 'function' || request.queryParameters[queryParameterKey].constructor.name !== 'Array') {
+        if (!(request.queryParameters[queryParameterKey] instanceof Array)) {
           return false;
         }
         for (const queryParameterValue of request.queryParameters[queryParameterKey]) {
@@ -178,10 +283,8 @@ const validateRequest = (request) => {
       }
     }
   }
-  if (request.body != null) {
-    if (typeof request.body !== 'object' || typeof request.body.constructor !== 'function' || request.body.constructor.name !== 'Buffer') {
-      return false;
-    }
+  if (request.body != null && !(request.body instanceof Buffer)) {
+    return false;
   }
   return true;
 };
@@ -209,6 +312,12 @@ const mapErrorToStatusCode = (e) => {
   }
   if (e instanceof AccessDeniedError) {
     return 401;
+  }
+  if (e instanceof NotFoundError) {
+    return 404;
+  }
+  if (e instanceof ConflictError) {
+    return 409;
   }
   console.error('Unexpected error:\n' + e);
   if (typeof e.inner === 'object') {

@@ -5,13 +5,12 @@ TODO ---
 - periodically purge "dangling" sessions whose Account ID no longer pertains to
   an existing Account instance (infrequent)
 
+- consider service that requires websockets - how would a connection work
+  through the gateway?
+
 - concurrent requests may invoke closeSequelize()
 
 - delete existing account service and rename authentication service to account
   service
 
-- write tests for Authenticationmanager account crud operations
-
-- implement account crud operations in AuthenticationManager
-
-- implement account crud operations in AuthenticationController
+- write tests for AuthenticationManager account crud operations
