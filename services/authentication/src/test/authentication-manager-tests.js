@@ -2,14 +2,17 @@ import jwt from 'jsonwebtoken';
 import { Role } from '../main/service/model/role.js';
 import { PersistentSessionRepositorySpy } from './spy/persistent-session-repository-spy.js';
 import { AccountRepositorySpy } from './spy/account-repository-spy.js';
+import { RandomServiceSpy } from './spy/random-service-spy.js'
+import { TimeServiceSpy } from './spy/time-service-spy.js'
 import { AuthenticationManager } from '../main/service/authentication-manager.js';
 
 const testIdentify = async () => {
   persistentSessionRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.readByIdReturnValue = [ createMockPersistentSession() ];
+  timeServiceSpy.currentTimeSecondsReturnValue = 0;
   const token = jwt.sign({
     sessionId: mockPersistentSession.id,
-    exp: Math.floor(Date.now() / 1000) + 60
+    exp: 4294967295
   }, Buffer.from(config.authenticationManager.tokenSecretKey, config.authenticationManager.tokenSecretKeyEncoding), {
     algorithm: config.authenticationManager.tokenAlgorithm
   });
@@ -36,6 +39,8 @@ const testLogin = async () => {
   accountRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.createReturnValue = createMockPersistentSession();
   accountRepositorySpy.readByNameReturnValue = [ createMockAccount() ];
+  randomServiceSpy.generateRandomStringReturnValue = mockPersistentSession.refreshToken;
+  timeServiceSpy.currentTimeSecondsReturnValue = 0;
   let output = await authenticationManager.login(undefined, {
     credentials: {
       name: mockAccount.name,
@@ -51,15 +56,12 @@ const testLogin = async () => {
   if (persistentSessionRepositorySpy.createInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.create(): Invocation count');
   }
-  const generatedRefreshToken = persistentSessionRepositorySpy.createPersistentSessionArgument.refreshToken;
-  const generatedCreationTime = persistentSessionRepositorySpy.createPersistentSessionArgument.creationTime;
-  const generatedExpirationTime = persistentSessionRepositorySpy.createPersistentSessionArgument.expirationTime;
   if (!verifyEqualityBetweenPersistentSessions(persistentSessionRepositorySpy.createPersistentSessionArgument, {
     accountId: mockAccount.id,
     roles: mockAccount.roles,
-    refreshToken: generatedRefreshToken,
-    creationTime: generatedCreationTime,
-    expirationTime: generatedExpirationTime
+    refreshToken: mockPersistentSession.refreshToken,
+    creationTime: 0,
+    expirationTime: config.authenticationManager.persistentSessionDuration
   })) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.create(): persistentSession argument');
   }
@@ -73,6 +75,7 @@ const testLogin = async () => {
   }
   persistentSessionRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.readByRefreshTokenReturnValue = [ createMockPersistentSession() ];
+  timeServiceSpy.currentTimeSecondsReturnValue = Math.floor(Date.now() / 1000); // TODO
   output = await authenticationManager.login(undefined, {
     refreshToken: mockPersistentSession.refreshToken
   });
@@ -144,6 +147,7 @@ const testReadAccount = async () => {
 const testCreateAccount = async () => {
   accountRepositorySpy.resetSpy();
   accountRepositorySpy.createReturnValue = createMockAccount();
+  randomServiceSpy.generateRandomStringReturnValue = mockAccount.passwordSalt;
   const output = await authenticationManager.createAccount(null, {
     name: mockAccount.name,
     password: mockPassword
@@ -284,7 +288,7 @@ const mockPersistentSession = {
   accountId: '00000000-0000-0000-0000-000000000000',
   roles: 2,
   refreshToken: '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-  creationTime: Math.floor(Date.now() / 1000),
+  creationTime: 0,
   expirationTime: 4294967295
 };
 const mockAccount = {
@@ -298,7 +302,9 @@ const mockPassword = 'Qwer!234';
 
 const persistentSessionRepositorySpy = new PersistentSessionRepositorySpy();
 const accountRepositorySpy = new AccountRepositorySpy();
-const authenticationManager = new AuthenticationManager(persistentSessionRepositorySpy, accountRepositorySpy, config.authenticationManager);
+const randomServiceSpy = new RandomServiceSpy();
+const timeServiceSpy = new TimeServiceSpy();
+const authenticationManager = new AuthenticationManager(persistentSessionRepositorySpy, accountRepositorySpy, randomServiceSpy, timeServiceSpy, config.authenticationManager);
 
 const tests = [
   { name: 'Identify', run: testIdentify },

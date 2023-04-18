@@ -1,5 +1,7 @@
 import { PersistentSessionSequelizeRepository } from './repository/persistent-session-sequelize-repository.js';
 import { AccountSequelizeRepository } from './repository/account-sequelize-repository.js';
+import { RandomManager } from './service/random-manager.js'
+import { TimeManager } from './service/time-manager.js'
 import { AuthenticationManager } from './service/authentication-manager.js';
 import { AuthenticationController } from './controller/authentication-controller.js';
 import { Server } from './server.js';
@@ -81,7 +83,9 @@ const config = {
 
 const persistentSessionSequelizeRepository = new PersistentSessionSequelizeRepository(config.persistentSessionSequelizeRepository);
 const accountSequelizeRepository = new AccountSequelizeRepository(config.accountSequelizeRepository);
-const authenticationManager = new AuthenticationManager(persistentSessionSequelizeRepository, accountSequelizeRepository, config.authenticationManager);
+const randomManager = new RandomManager();
+const timeManager = new TimeManager();
+const authenticationManager = new AuthenticationManager(persistentSessionSequelizeRepository, accountSequelizeRepository, randomManager, timeManager, config.authenticationManager);
 const authenticationController = new AuthenticationController(authenticationManager);
 const server = new Server(config.server);
 

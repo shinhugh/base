@@ -6,15 +6,19 @@ import { wrapError } from '../common.js';
 import { IllegalArgumentError as RepositoryIllegalArgumentError, NotFoundError as RepositoryNotFoundError, ConflictError as RepositoryConflictError } from '../repository/model/errors.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
 import { AccountRepository } from '../repository/account-repository.js';
+import { RandomService } from './random-service.js';
+import { TimeService } from './time-service.js';
 import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './model/errors.js';
 import { Role } from './model/role.js';
 
 class AuthenticationManager extends AuthenticationService {
   #persistentSessionRepository;
   #accountRepository;
+  #randomService;
+  #timeService;
   #config;
 
-  constructor(persistentSessionRepository, accountRepository, config) {
+  constructor(persistentSessionRepository, accountRepository, randomService, timeService, config) {
     super();
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
       throw new Error('Invalid persistentSessionRepository provided to AuthenticationManager constructor');
@@ -22,11 +26,19 @@ class AuthenticationManager extends AuthenticationService {
     if (!(accountRepository instanceof AccountRepository)) {
       throw new Error('Invalid accountRepository provided to AuthenticationManager constructor');
     }
+    if (!(randomService instanceof RandomService)) {
+      throw new Error('Invalid randomService provided to AuthenticationManager constructor');
+    }
+    if (!(timeService instanceof TimeService)) {
+      throw new Error('Invalid timeService provided to AuthenticationManager constructor');
+    }
     if (config == null || !validateConfig(config)) {
       throw new Error('Invalid config provided to AuthenticationManager constructor');
     }
     this.#persistentSessionRepository = persistentSessionRepository;
     this.#accountRepository = accountRepository;
+    this.#randomService = randomService;
+    this.#timeService = timeService;
     this.#config = {
       tokenAlgorithm: config.tokenAlgorithm,
       tokenSecretKey: config.tokenSecretKey,
@@ -74,7 +86,7 @@ class AuthenticationManager extends AuthenticationService {
         throw wrapError(e, 'Failed to read from session store');
       }
     })();
-    if (persistentSession == null || persistentSession.expirationTime <= (Date.now() / 1000)) {
+    if (persistentSession == null || persistentSession.expirationTime <= this.#timeService.currentTimeSeconds()) {
       return { };
     }
     return {
@@ -180,7 +192,7 @@ class AuthenticationManager extends AuthenticationService {
     if (account == null || !validateAccount(account, false)) {
       throw new IllegalArgumentError();
     }
-    const passwordSalt = generateRandomString(passwordSaltAllowedChars, passwordSaltLength);
+    const passwordSalt = this.#randomService.generateRandomString(passwordSaltAllowedChars, passwordSaltLength);
     const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, account.password, passwordSalt);
     let entry = {
       name: account.name,
@@ -225,7 +237,7 @@ class AuthenticationManager extends AuthenticationService {
     if (!authorizedAsSystemOrAdmin && authority.id == null) {
       throw new AccessDeniedError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && authority.authTime + this.#config.modificationEnabledSessionAgeMaxValue < (Date.now() / 1000)) {
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && authority.authTime + this.#config.modificationEnabledSessionAgeMaxValue <= this.#timeService.currentTimeSeconds()) {
       throw new AccessDeniedError();
     }
     let matches;
@@ -245,7 +257,7 @@ class AuthenticationManager extends AuthenticationService {
     if (!authorizedAsSystemOrAdmin && match.id !== authority.id) {
       throw new AccessDeniedError();
     }
-    const passwordSalt = generateRandomString(passwordSaltAllowedChars, passwordSaltLength);
+    const passwordSalt = this.#randomService.generateRandomString(passwordSaltAllowedChars, passwordSaltLength);
     const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, account.password, passwordSalt);
     const roles = authorizedAsSystemOrAdmin ? account.roles : match.roles;
     let entry = {
@@ -292,7 +304,7 @@ class AuthenticationManager extends AuthenticationService {
     if (!authorizedAsSystemOrAdmin && authority.id == null) {
       throw new AccessDeniedError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && authority.authTime + this.#config.modificationEnabledSessionAgeMaxValue < (Date.now() / 1000)) {
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && authority.authTime + this.#config.modificationEnabledSessionAgeMaxValue <= this.#timeService.currentTimeSeconds()) {
       throw new AccessDeniedError();
     }
     let matches;
@@ -325,7 +337,7 @@ class AuthenticationManager extends AuthenticationService {
   }
 
   async purgeExpiredSessions() {
-    const currentTime = Math.floor(Date.now() / 1000);
+    const currentTime = this.#timeService.currentTimeSeconds();
     try {
       await this.#persistentSessionRepository.deleteByLessThanExpirationTime(currentTime);
     }
@@ -359,8 +371,8 @@ class AuthenticationManager extends AuthenticationService {
     let refreshToken;
     const persistentSession = await (async () => {
       while (true) {
-        refreshToken = generateRandomString(refreshTokenAllowedChars, refreshTokenLength);
-        const currentTime = Math.floor(Date.now() / 1000);
+        refreshToken = this.#randomService.generateRandomString(refreshTokenAllowedChars, refreshTokenLength);
+        const currentTime = this.#timeService.currentTimeSeconds();
         try {
           return await this.#persistentSessionRepository.create({
             accountId: account.id,
@@ -418,7 +430,7 @@ class AuthenticationManager extends AuthenticationService {
     if (persistentSession == null) {
       throw new AccessDeniedError();
     }
-    const currentTime = Math.floor(Date.now() / 1000);
+    const currentTime = this.#timeService.currentTimeSeconds();
     if (persistentSession.expirationTime <= currentTime) {
       throw new AccessDeniedError();
     }
@@ -592,14 +604,6 @@ const verifyAuthorityContainsAtLeastOneRole = (authority, roles) => {
 
 const hashPassword = (algorithm, password, salt) => {
   return createHash(algorithm).update(password + salt).digest('hex');
-};
-
-const generateRandomString = (pool, length) => {
-  let output = '';
-  for (let i = 0; i < length; i++) {
-    output += pool.charAt(Math.floor(Math.random() * pool.length));
-  }
-  return output;
 };
 
 const rolesMaxValue = 255;
