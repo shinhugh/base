@@ -167,6 +167,13 @@ const handleRequest = async (req, res) => {
   }
 };
 
+const validateId = (id) => {
+  if (id == null) {
+    return true;
+  }
+  return validateUuid(id);
+};
+
 const validateAuthority = (authority) => {
   if (authority == null) {
     return true;
@@ -174,7 +181,7 @@ const validateAuthority = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && !validateUuid(authority.id)) {
+  if (!validateId(authority.id)) {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
@@ -267,6 +274,32 @@ const endpoints = {
       host: 'localhost',
       port: 8081,
       path: '/account',
+      method: 'delete'
+    }
+  },
+  '/api/profile': {
+    'get': {
+      host: 'localhost',
+      port: 8080,
+      path: '/profile',
+      method: 'get'
+    },
+    'post': {
+      host: 'localhost',
+      port: 8080,
+      path: '/profile',
+      method: 'post'
+    },
+    'put': {
+      host: 'localhost',
+      port: 8080,
+      path: '/profile',
+      method: 'put'
+    },
+    'delete': {
+      host: 'localhost',
+      port: 8080,
+      path: '/profile',
       method: 'delete'
     }
   }

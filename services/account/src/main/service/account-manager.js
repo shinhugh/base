@@ -126,7 +126,7 @@ class AccountManager extends AccountService {
       throw new IllegalArgumentError();
     }
     if (logoutInfo.accountId != null) {
-      if (!validateUuid(logoutInfo.accountId)) {
+      if (!validateId(logoutInfo.accountId)) {
         throw new IllegalArgumentError();
       }
       await this.#logoutViaAccountId(authority, logoutInfo.accountId);
@@ -149,19 +149,14 @@ class AccountManager extends AccountService {
     if (id == null && name == null) {
       throw new IllegalArgumentError();
     }
-    if (id != null && !validateUuid(id)) {
+    if (!validateId(id)) {
       throw new IllegalArgumentError();
     }
     if (!validateName(name)) {
       throw new IllegalArgumentError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
-      throw new AccessDeniedError();
-    }
+    const queryContainsPrivateData = name != null;
     const authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin);
-    if (!authorizedAsSystemOrAdmin && authority.id == null) {
-      throw new AccessDeniedError();
-    }
     const matches = await (async () => {
       try {
         return await this.#accountRepository.readByIdAndName(id, name);
@@ -171,14 +166,18 @@ class AccountManager extends AccountService {
       }
     })();
     if (matches.length == 0) {
-      if (authorizedAsSystemOrAdmin) {
-        throw new NotFoundError();
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
       }
-      throw new AccessDeniedError();
+      throw new NotFoundError();
     }
     const match = matches[0];
-    if (!authorizedAsSystemOrAdmin && match.id !== authority.id) {
-      throw new AccessDeniedError();
+    const owner = match.id === authority?.id;
+    if (!authorizedAsSystemOrAdmin && !owner) {
+      if (queryContainsPrivateData) {
+        throw new AccessDeniedError();
+      }
+      delete match.name;
     }
     delete match.passwordHash;
     delete match.passwordSalt;
@@ -221,7 +220,7 @@ class AccountManager extends AccountService {
     if (id == null && name == null) {
       throw new IllegalArgumentError();
     }
-    if (id != null && !validateUuid(id)) {
+    if (!validateId(id)) {
       throw new IllegalArgumentError();
     }
     if (!validateName(name)) {
@@ -231,30 +230,27 @@ class AccountManager extends AccountService {
     if (account == null || !validateAccount(account, authorizedAsSystemOrAdmin)) {
       throw new IllegalArgumentError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
-      throw new AccessDeniedError();
-    }
-    if (!authorizedAsSystemOrAdmin && authority.id == null) {
-      throw new AccessDeniedError();
-    }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && authority.authTime + this.#config.modificationEnabledSessionAgeMaxValue <= this.#timeService.currentTimeSeconds()) {
-      throw new AccessDeniedError();
-    }
-    let matches;
-    try {
-      matches = await this.#accountRepository.readByIdAndName(id, name);
-    }
-    catch (e) {
-      throw wrapError(e, 'Failed to read from account store');
-    }
-    if (matches.length == 0) {
-      if (authorizedAsSystemOrAdmin) {
-        throw new NotFoundError();
+    const queryContainsPrivateData = name != null;
+    const matches = await (async () => {
+      try {
+        return await this.#accountRepository.readByIdAndName(id, name);
       }
-      throw new AccessDeniedError();
+      catch (e) {
+        throw wrapError(e, 'Failed to read from account store');
+      }
+    })();
+    if (matches.length == 0) {
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
+      }
+      throw new NotFoundError();
     }
     const match = matches[0];
-    if (!authorizedAsSystemOrAdmin && match.id !== authority.id) {
+    const owner = match.id === authority?.id;
+    if (!authorizedAsSystemOrAdmin && !owner) {
+      throw new AccessDeniedError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && (authority?.authTime ?? 0) + this.#config.modificationEnabledSessionAgeMaxValue <= this.#timeService.currentTimeSeconds()) {
       throw new AccessDeniedError();
     }
     const passwordSalt = this.#randomService.generateRandomString(passwordSaltAllowedChars, passwordSaltLength);
@@ -291,37 +287,34 @@ class AccountManager extends AccountService {
     if (id == null && name == null) {
       throw new IllegalArgumentError();
     }
-    if (id != null && !validateUuid(id)) {
+    if (!validateId(id)) {
       throw new IllegalArgumentError();
     }
     if (!validateName(name)) {
       throw new IllegalArgumentError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
-      throw new AccessDeniedError();
-    }
+    const queryContainsPrivateData = name != null;
     const authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin);
-    if (!authorizedAsSystemOrAdmin && authority.id == null) {
-      throw new AccessDeniedError();
-    }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && authority.authTime + this.#config.modificationEnabledSessionAgeMaxValue <= this.#timeService.currentTimeSeconds()) {
-      throw new AccessDeniedError();
-    }
-    let matches;
-    try {
-      matches = await this.#accountRepository.readByIdAndName(id, name);
-    }
-    catch (e) {
-      throw wrapError(e, 'Failed to read from account store');
-    }
-    if (matches.length == 0) {
-      if (authorizedAsSystemOrAdmin) {
-        throw new NotFoundError();
+    const matches = await (async () => {
+      try {
+        return await this.#accountRepository.readByIdAndName(id, name);
       }
-      throw new AccessDeniedError();
+      catch (e) {
+        throw wrapError(e, 'Failed to read from account store');
+      }
+    })();
+    if (matches.length == 0) {
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
+      }
+      throw new NotFoundError();
     }
     const match = matches[0];
-    if (!authorizedAsSystemOrAdmin && match.id !== authority.id) {
+    const owner = match.id === authority?.id;
+    if (!authorizedAsSystemOrAdmin && !owner) {
+      throw new AccessDeniedError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && (authority?.authTime ?? 0) + this.#config.modificationEnabledSessionAgeMaxValue <= this.#timeService.currentTimeSeconds()) {
       throw new AccessDeniedError();
     }
     try {
@@ -514,6 +507,13 @@ const validateConfig = (config) => {
   return true;
 };
 
+const validateId = (id) => {
+  if (id == null) {
+    return true;
+  }
+  return validateUuid(id);
+};
+
 const validateAuthority = (authority) => {
   if (authority == null) {
     return true;
@@ -521,7 +521,7 @@ const validateAuthority = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && !validateUuid(authority.id)) {
+  if (!validateId(authority.id)) {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
