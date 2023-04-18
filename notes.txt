@@ -1,7 +1,5 @@
 TODO ---
 
-- build profile service (CRUD)
-
 - periodically purge "dangling" sessions whose Account ID no longer pertains to
   an existing Account instance (infrequent)
 
@@ -9,3 +7,5 @@ TODO ---
   through the gateway?
 
 - concurrent requests may invoke closeSequelize()
+
+- build profile service (CRUD)

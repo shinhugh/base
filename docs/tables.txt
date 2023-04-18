@@ -1,4 +1,4 @@
-PersistentSessions:
+PersistentSession:
 
 CREATE TABLE PersistentSessions (
   Id VARCHAR(36) NOT NULL PRIMARY KEY,
@@ -11,7 +11,7 @@ CREATE TABLE PersistentSessions (
 
 ------------------------------------------------------------
 
-Accounts:
+Account:
 
 CREATE TABLE Accounts (
   Id VARCHAR(36) NOT NULL PRIMARY KEY,
@@ -19,4 +19,13 @@ CREATE TABLE Accounts (
   PasswordHash VARCHAR(64) NOT NULL,
   PasswordSalt VARCHAR(32) NOT NULL,
   Roles TINYINT UNSIGNED NOT NULL
+);
+
+------------------------------------------------------------
+
+Profile:
+
+CREATE TABLE Profiles (
+  Id VARCHAR(36) NOT NULL PRIMARY KEY,
+  Name VARCHAR(16) NOT NULL UNIQUE
 );
