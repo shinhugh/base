@@ -4,10 +4,10 @@ for (const test of tests) {
   const header = '[' + test.name + '] ';
   try {
     await test.run();
-    console.log(header + 'SUCCESS');
+    console.log(header + 'PASS');
   }
   catch (e) {
     console.log(header + e.message);
-    console.log(header + 'FAILURE');
+    console.log(header + 'FAIL');
   }
 }

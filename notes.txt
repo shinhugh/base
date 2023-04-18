@@ -12,5 +12,3 @@ TODO ---
 
 - delete existing account service and rename authentication service to account
   service
-
-- write tests for AuthenticationManager account crud operations

@@ -8,308 +8,366 @@ import { AuthenticationManager } from '../main/service/authentication-manager.js
 
 const testIdentify = async () => {
   persistentSessionRepositorySpy.resetSpy();
-  persistentSessionRepositorySpy.readByIdReturnValue = [ createMockPersistentSession() ];
-  timeServiceSpy.currentTimeSecondsReturnValue = 0;
-  const token = jwt.sign({
-    sessionId: mockPersistentSession.id,
-    exp: 4294967295
-  }, Buffer.from(config.authenticationManager.tokenSecretKey, config.authenticationManager.tokenSecretKeyEncoding), {
-    algorithm: config.authenticationManager.tokenAlgorithm
-  });
-  const output = await authenticationManager.identify({
+  persistentSessionRepositorySpy.readByIdReturnValue = [
+    {
+      id: persistentSessionId,
+      accountId: accountId,
+      roles: accountRoles,
+      refreshToken: persistentSessionRefreshToken,
+      creationTime: 0,
+      expirationTime: persistentSessionDuration
+    }
+  ];
+  timeServiceSpy.currentTimeSecondsReturnValue = 1;
+  const authority = {
     roles: Role.System
-  }, token);
+  };
+  const token = jwt.sign({
+    sessionId: persistentSessionId,
+    iat: currentTime,
+    exp: currentTime + volatileSessionDuration
+  }, tokenSecretKey, {
+    algorithm: tokenAlgorithm
+  });
+  const output = await authenticationManager.identify(authority, token);
   if (persistentSessionRepositorySpy.readByIdInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readById(): Invocation count');
   }
-  if (persistentSessionRepositorySpy.readByIdIdArgument !== mockPersistentSession.id) {
+  if (persistentSessionRepositorySpy.readByIdIdArgument !== persistentSessionId) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readById(): id argument');
   }
-  if (!verifyEqualityBetweenAuthorities(output, {
-    id: mockPersistentSession.accountId,
-    roles: mockPersistentSession.roles,
-    authTime: mockPersistentSession.creationTime
-  })) {
+  if (output == null || output.id !== accountId || output.roles != accountRoles || output.authTime != 0) {
     throw new Error('Actual value does not match expected value: AuthenticationManager.identify(): Return value');
   }
 };
 
-const testLogin = async () => {
+const testLoginCredentials = async () => {
   persistentSessionRepositorySpy.resetSpy();
   accountRepositorySpy.resetSpy();
-  persistentSessionRepositorySpy.createReturnValue = createMockPersistentSession();
-  accountRepositorySpy.readByNameReturnValue = [ createMockAccount() ];
-  randomServiceSpy.generateRandomStringReturnValue = mockPersistentSession.refreshToken;
-  timeServiceSpy.currentTimeSecondsReturnValue = 0;
-  let output = await authenticationManager.login(undefined, {
+  persistentSessionRepositorySpy.createReturnValue = {
+    id: persistentSessionId,
+    accountId: accountId,
+    roles: accountRoles,
+    refreshToken: persistentSessionRefreshToken,
+    creationTime: currentTime,
+    expirationTime: currentTime + persistentSessionDuration
+  };
+  accountRepositorySpy.readByNameReturnValue = [
+    {
+      id: accountId,
+      name: accountName,
+      passwordHash: accountPasswordHash,
+      passwordSalt: accountPasswordSalt,
+      roles: accountRoles
+    }
+  ];
+  randomServiceSpy.generateRandomStringReturnValue = persistentSessionRefreshToken;
+  timeServiceSpy.currentTimeSecondsReturnValue = currentTime;
+  const authority = undefined;
+  const output = await authenticationManager.login(authority, {
     credentials: {
-      name: mockAccount.name,
-      password: mockPassword
+      name: accountName,
+      password: accountPassword
     }
   });
-  if (accountRepositorySpy.readByNameInvokeCount != 1) {
-    throw new Error('Actual value does not match expected value: AccountServiceClient.read(): Invocation count');
-  }
-  if (accountRepositorySpy.readByNameNameArgument !== mockAccount.name) {
-    throw new Error('Actual value does not match expected value: AccountServiceClient.read(): name argument');
-  }
   if (persistentSessionRepositorySpy.createInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.create(): Invocation count');
   }
-  if (!verifyEqualityBetweenPersistentSessions(persistentSessionRepositorySpy.createPersistentSessionArgument, {
-    accountId: mockAccount.id,
-    roles: mockAccount.roles,
-    refreshToken: mockPersistentSession.refreshToken,
-    creationTime: 0,
-    expirationTime: config.authenticationManager.persistentSessionDuration
-  })) {
+  if (persistentSessionRepositorySpy.createPersistentSessionArgument == null || persistentSessionRepositorySpy.createPersistentSessionArgument.accountId !== accountId || persistentSessionRepositorySpy.createPersistentSessionArgument.roles != accountRoles || persistentSessionRepositorySpy.createPersistentSessionArgument.refreshToken !== persistentSessionRefreshToken || persistentSessionRepositorySpy.createPersistentSessionArgument.creationTime != currentTime || persistentSessionRepositorySpy.createPersistentSessionArgument.expirationTime != currentTime + persistentSessionDuration) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.create(): persistentSession argument');
   }
+  if (accountRepositorySpy.readByNameInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByName(): Invocation count');
+  }
+  if (accountRepositorySpy.readByNameNameArgument !== accountName) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByName(): name argument');
+  }
+  if (output?.refreshToken !== persistentSessionRefreshToken) {
+    throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
+  }
+  let verifiedToken;
   try {
-    jwt.verify(output.idToken, Buffer.from(config.authenticationManager.tokenSecretKey, config.authenticationManager.tokenSecretKeyEncoding), {
-      algorithms: [ config.authenticationManager.tokenAlgorithm ]
+    verifiedToken = jwt.verify(output?.idToken, tokenSecretKey, {
+      algorithms: [ tokenAlgorithm ]
     });
   }
   catch {
     throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
   }
-  persistentSessionRepositorySpy.resetSpy();
-  persistentSessionRepositorySpy.readByRefreshTokenReturnValue = [ createMockPersistentSession() ];
-  timeServiceSpy.currentTimeSecondsReturnValue = Math.floor(Date.now() / 1000); // TODO
-  output = await authenticationManager.login(undefined, {
-    refreshToken: mockPersistentSession.refreshToken
-  });
-  if (persistentSessionRepositorySpy.readByRefreshTokenInvokeCount != 1) {
-    throw new Error('Actual value does not match expected value: PersistentSessionRepository.readByRefreshToken(): Invocation count');
-  }
-  if (persistentSessionRepositorySpy.readByRefreshTokenRefreshTokenArgument !== mockPersistentSession.refreshToken) {
-    throw new Error('Actual value does not match expected value: PersistentSessionRepository.readByRefreshToken(): refreshToken argument');
-  }
-  try {
-    jwt.verify(output.idToken, Buffer.from(config.authenticationManager.tokenSecretKey, config.authenticationManager.tokenSecretKeyEncoding), {
-      algorithms: [ config.authenticationManager.tokenAlgorithm ]
-    });
-  }
-  catch {
+  if (verifiedToken.sessionId !== persistentSessionId || verifiedToken.iat != currentTime || verifiedToken.exp != currentTime + volatileSessionDuration) {
     throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
   }
 };
 
-const testLogout = async () => {
+const testLoginRefreshToken = async () => {
   persistentSessionRepositorySpy.resetSpy();
-  persistentSessionRepositorySpy.deleteByAccountIdReturnValue = 2;
-  await authenticationManager.logout({
-    id: mockPersistentSession.accountId,
+  persistentSessionRepositorySpy.readByRefreshTokenReturnValue = [
+    {
+      id: persistentSessionId,
+      accountId: accountId,
+      roles: accountRoles,
+      refreshToken: persistentSessionRefreshToken,
+      creationTime: currentTime,
+      expirationTime: currentTime + persistentSessionDuration
+    }
+  ];
+  timeServiceSpy.currentTimeSecondsReturnValue = currentTime;
+  const authority = undefined;
+  const output = await authenticationManager.login(authority, {
+    refreshToken: persistentSessionRefreshToken
+  });
+  if (persistentSessionRepositorySpy.readByRefreshTokenInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.readByRefreshToken(): Invocation count');
+  }
+  if (persistentSessionRepositorySpy.readByRefreshTokenRefreshTokenArgument !== persistentSessionRefreshToken) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.readByRefreshToken(): refreshToken argument');
+  }
+  let verifiedToken;
+  try {
+    verifiedToken = jwt.verify(output?.idToken, tokenSecretKey, {
+      algorithms: [ tokenAlgorithm ]
+    });
+  }
+  catch {
+    throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
+  }
+  if (verifiedToken.sessionId !== persistentSessionId || verifiedToken.iat != currentTime || verifiedToken.exp != currentTime + volatileSessionDuration) {
+    throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
+  }
+};
+
+const testLogoutAccountId = async () => {
+  persistentSessionRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.deleteByAccountIdReturnValue = 0;
+  const authority = {
+    id: accountId,
     roles: Role.User
-  }, {
-    accountId: mockPersistentSession.accountId
+  };
+  await authenticationManager.logout(authority, {
+    accountId: accountId
   });
   if (persistentSessionRepositorySpy.deleteByAccountIdInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): Invocation count');
   }
-  if (persistentSessionRepositorySpy.deleteByAccountIdAccountIdArgument !== mockPersistentSession.accountId) {
+  if (persistentSessionRepositorySpy.deleteByAccountIdAccountIdArgument !== accountId) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): accountId argument');
   }
+};
+
+const testLogoutRefreshToken = async () => {
   persistentSessionRepositorySpy.resetSpy();
-  persistentSessionRepositorySpy.deleteByRefreshTokenReturnValue = 1;
-  await authenticationManager.logout(undefined, {
-    refreshToken: mockPersistentSession.refreshToken
+  persistentSessionRepositorySpy.deleteByRefreshTokenReturnValue = 0;
+  const authority = undefined;
+  await authenticationManager.logout(authority, {
+    refreshToken: persistentSessionRefreshToken
   });
   if (persistentSessionRepositorySpy.deleteByRefreshTokenInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByRefreshToken(): Invocation count');
   }
-  if (persistentSessionRepositorySpy.deleteByRefreshTokenRefreshTokenArgument !== mockPersistentSession.refreshToken) {
+  if (persistentSessionRepositorySpy.deleteByRefreshTokenRefreshTokenArgument !== persistentSessionRefreshToken) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByRefreshToken(): refreshToken argument');
   }
 };
 
 const testReadAccount = async () => {
   accountRepositorySpy.resetSpy();
-  accountRepositorySpy.readByIdAndNameReturnValue = [ createMockAccount() ];
-  const output = await authenticationManager.readAccount({
-    id: mockAccount.id,
+  accountRepositorySpy.readByIdAndNameReturnValue = [
+    {
+      id: accountId,
+      name: accountName,
+      passwordHash: accountPasswordHash,
+      passwordSalt: accountPasswordSalt,
+      roles: accountRoles
+    }
+  ];
+  const authority = {
+    id: accountId,
     roles: Role.User
-  }, mockAccount.id, mockAccount.name);
+  };
+  const output = await authenticationManager.readAccount(authority, accountId, accountName);
   if (accountRepositorySpy.readByIdAndNameInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): Invocation count');
   }
-  if (accountRepositorySpy.readByIdAndNameIdArgument !== mockAccount.id) {
+  if (accountRepositorySpy.readByIdAndNameIdArgument !== accountId) {
     throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): id argument');
   }
-  if (accountRepositorySpy.readByIdAndNameNameArgument !== mockAccount.name) {
+  if (accountRepositorySpy.readByIdAndNameNameArgument !== accountName) {
     throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): name argument');
   }
-  if (!verifyEqualityBetweenAccounts(output, mockAccount, true, false)) {
+  if (output == null || output.id !== accountId || output.name !== accountName || output.passwordHash != null || output.passwordSalt != null || output.roles != accountRoles) {
     throw new Error('Actual value does not match expected value: AuthenticationManager.readAccount(): Return value');
   }
 };
 
 const testCreateAccount = async () => {
   accountRepositorySpy.resetSpy();
-  accountRepositorySpy.createReturnValue = createMockAccount();
-  randomServiceSpy.generateRandomStringReturnValue = mockAccount.passwordSalt;
-  const output = await authenticationManager.createAccount(null, {
-    name: mockAccount.name,
-    password: mockPassword
+  accountRepositorySpy.createReturnValue = {
+    id: accountId,
+    name: accountName,
+    passwordHash: accountPasswordHash,
+    passwordSalt: accountPasswordSalt,
+    roles: accountRoles
+  };
+  randomServiceSpy.generateRandomStringReturnValue = accountPasswordSalt;
+  const authority = undefined;
+  const output = await authenticationManager.createAccount(authority, {
+    name: accountName,
+    password: accountPassword
   });
   if (accountRepositorySpy.createInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: AccountRepository.create(): Invocation count');
   }
-  if (!verifyEqualityBetweenAccounts(accountRepositorySpy.createAccountArgument, {
-    name: mockAccount.name,
-    roles: Role.User
-  }, false, false)) {
+  if (accountRepositorySpy.createAccountArgument == null || accountRepositorySpy.createAccountArgument.name !== accountName || accountRepositorySpy.createAccountArgument.passwordHash !== accountPasswordHash || accountRepositorySpy.createAccountArgument.passwordSalt !== accountPasswordSalt || accountRepositorySpy.createAccountArgument.roles != accountRoles) {
     throw new Error('Actual value does not match expected value: AccountRepository.create(): account argument');
   }
-  if (!verifyEqualityBetweenAccounts(output, mockAccount, true, false)) {
-    throw new Error('Actual value does not match expected value: AuthenticationManager.create(): Return value');
+  if (output == null || output.id !== accountId || output.name !== accountName || output.passwordHash != null || output.passwordSalt != null || output.roles != accountRoles) {
+    throw new Error('Actual value does not match expected value: AuthenticationManager.createAccount(): Return value');
   }
 };
 
 const testUpdateAccount = async () => {
-  accountRepositorySpy.resetSpy();
+  const modifiedName = 'changed';
   persistentSessionRepositorySpy.resetSpy();
-  // TODO: Implement
+  accountRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.deleteByAccountIdReturnValue = 0;
+  accountRepositorySpy.readByIdAndNameReturnValue = [
+    {
+      id: accountId,
+      name: accountName,
+      passwordHash: accountPasswordHash,
+      passwordSalt: accountPasswordSalt,
+      roles: accountRoles
+    }
+  ];
+  accountRepositorySpy.updateByIdAndNameReturnValue = {
+    id: accountId,
+    name: modifiedName,
+    passwordHash: accountPasswordHash,
+    passwordSalt: accountPasswordSalt,
+    roles: accountRoles
+  };
+  const authority = {
+    id: accountId,
+    roles: accountRoles,
+    authTime: currentTime
+  };
+  const output = await authenticationManager.updateAccount(authority, accountId, accountName, {
+    name: modifiedName,
+    password: accountPassword
+  });
+  if (persistentSessionRepositorySpy.deleteByAccountIdInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): Invocation count');
+  }
+  if (persistentSessionRepositorySpy.deleteByAccountIdAccountIdArgument !== accountId) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): accountId argument');
+  }
+  if (accountRepositorySpy.readByIdAndNameInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): Invocation count');
+  }
+  if (accountRepositorySpy.readByIdAndNameIdArgument !== accountId) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): id argument');
+  }
+  if (accountRepositorySpy.readByIdAndNameNameArgument !== accountName) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): name argument');
+  }
+  if (accountRepositorySpy.updateByIdAndNameInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: AccountRepository.updateByIdAndName(): Invocation count');
+  }
+  if (accountRepositorySpy.updateByIdAndNameIdArgument !== accountId) {
+    throw new Error('Actual value does not match expected value: AccountRepository.updateByIdAndName(): id argument');
+  }
+  if (accountRepositorySpy.updateByIdAndNameNameArgument !== accountName) {
+    throw new Error('Actual value does not match expected value: AccountRepository.updateByIdAndName(): name argument');
+  }
+  if (accountRepositorySpy.updateByIdAndNameAccountArgument == null || accountRepositorySpy.updateByIdAndNameAccountArgument.name !== modifiedName || accountRepositorySpy.updateByIdAndNameAccountArgument.passwordHash !== accountPasswordHash || accountRepositorySpy.updateByIdAndNameAccountArgument.passwordSalt !== accountPasswordSalt || accountRepositorySpy.updateByIdAndNameAccountArgument.roles != accountRoles) {
+    throw new Error('Actual value does not match expected value: AccountRepository.updateByIdAndName(): account argument');
+  }
+  if (output == null || output.id !== accountId || output.name !== modifiedName || output.passwordHash != null || output.passwordSalt != null || output.roles != accountRoles) {
+    throw new Error('Actual value does not match expected value: AuthenticationManager.updateAccount(): Return value');
+  }
 };
 
 const testDeleteAccount = async () => {
-  accountRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.resetSpy();
-  // TODO: Implement
-};
-
-const verifyEqualityBetweenAuthorities = (first, second) => {
-  if (first == null && second == null) {
-    return true;
-  }
-  if (first == null || second == null) {
-    return false;
-  }
-  if (first.id !== second.id) {
-    return false;
-  }
-  if (first.roles != second.roles) {
-    return false;
-  }
-  if (first.authTime != second.authTime) {
-    return false;
-  }
-  return true;
-};
-
-const verifyEqualityBetweenPersistentSessions = (first, second) => {
-  if (first == null && second == null) {
-    return true;
-  }
-  if (first == null || second == null) {
-    return false;
-  }
-  if (first.id !== second.id) {
-    return false;
-  }
-  if (first.accountId !== second.accountId) {
-    return false;
-  }
-  if (first.roles != second.roles) {
-    return false;
-  }
-  if (first.refreshToken !== second.refreshToken) {
-    return false;
-  }
-  if (first.creationTime != second.creationTime) {
-    return false;
-  }
-  if (first.expirationTime != second.expirationTime) {
-    return false;
-  }
-  return true;
-};
-
-const verifyEqualityBetweenAccounts = (first, second, compareIds, comparePasswordHashesAndSalts) => {
-  if (first == null && second == null) {
-    return true;
-  }
-  if (first == null || second == null) {
-    return false;
-  }
-  if (compareIds && first.id !== second.id) {
-    return false;
-  }
-  if (first.name !== second.name) {
-    return false;
-  }
-  if (comparePasswordHashesAndSalts) {
-    if (first.passwordHash !== second.passwordHash) {
-      return false;
+  accountRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.deleteByAccountIdReturnValue = 0;
+  accountRepositorySpy.readByIdAndNameReturnValue = [
+    {
+      id: accountId,
+      name: accountName,
+      passwordHash: accountPasswordHash,
+      passwordSalt: accountPasswordSalt,
+      roles: accountRoles
     }
-    if (first.passwordSalt !== second.passwordSalt) {
-      return false;
-    }
-  }
-  if (first.roles != second.roles) {
-    return false;
-  }
-  return true;
-};
-
-const createMockPersistentSession = () => {
-  return {
-    id: mockPersistentSession.id,
-    accountId: mockPersistentSession.accountId,
-    roles: mockPersistentSession.roles,
-    refreshToken: mockPersistentSession.refreshToken,
-    creationTime: mockPersistentSession.creationTime,
-    expirationTime: mockPersistentSession.expirationTime
+  ];
+  accountRepositorySpy.deleteByIdAndNameReturnValue = 0;
+  const authority = {
+    id: accountId,
+    roles: accountRoles,
+    authTime: currentTime
   };
-};
-
-const createMockAccount = () => {
-  return {
-    id: mockAccount.id,
-    name: mockAccount.name,
-    passwordHash: mockAccount.passwordHash,
-    passwordSalt: mockAccount.passwordSalt,
-    roles: mockAccount.roles
-  };
-};
-
-const config = {
-  authenticationManager: {
-    tokenAlgorithm: 'HS256',
-    tokenSecretKey: Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64'),
-    passwordHashAlgorithm: 'sha256',
-    persistentSessionDuration: 1209600,
-    volatileSessionDuration: 86400,
-    modificationEnabledSessionAgeMaxValue: 900
+  await authenticationManager.deleteAccount(authority, accountId, accountName);
+  if (persistentSessionRepositorySpy.deleteByAccountIdInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): Invocation count');
+  }
+  if (persistentSessionRepositorySpy.deleteByAccountIdAccountIdArgument !== accountId) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): accountId argument');
+  }
+  if (accountRepositorySpy.readByIdAndNameInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): Invocation count');
+  }
+  if (accountRepositorySpy.readByIdAndNameIdArgument !== accountId) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): id argument');
+  }
+  if (accountRepositorySpy.readByIdAndNameNameArgument !== accountName) {
+    throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): name argument');
+  }
+  if (accountRepositorySpy.deleteByIdAndNameInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: AccountRepository.deleteByIdAndName(): Invocation count');
+  }
+  if (accountRepositorySpy.deleteByIdAndNameIdArgument !== accountId) {
+    throw new Error('Actual value does not match expected value: AccountRepository.deleteByIdAndName(): id argument');
+  }
+  if (accountRepositorySpy.deleteByIdAndNameNameArgument !== accountName) {
+    throw new Error('Actual value does not match expected value: AccountRepository.deleteByIdAndName(): name argument');
   }
 };
-const mockPersistentSession = {
-  id: '00000000-0000-0000-0000-000000000000',
-  accountId: '00000000-0000-0000-0000-000000000000',
-  roles: 2,
-  refreshToken: '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-  creationTime: 0,
-  expirationTime: 4294967295
-};
-const mockAccount = {
-  id: '00000000-0000-0000-0000-000000000000',
-  name: 'qwer',
-  passwordHash: 'bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3',
-  passwordSalt: '00000000000000000000000000000000',
-  roles: 2
-};
-const mockPassword = 'Qwer!234';
+
+const currentTime = Math.floor(Date.now() / 1000);
+const tokenAlgorithm = 'HS256';
+const tokenSecretKey = Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64');
+const passwordHashAlgorithm = 'sha256';
+const persistentSessionDuration = 1209600;
+const volatileSessionDuration = 86400;
+const modificationEnabledSessionAgeMaxValue = 900;
+const accountId = '00000000-0000-0000-0000-000000000000';
+const accountName = 'qwer';
+const accountPassword = 'Qwer!234';
+const accountPasswordHash = 'bbf55461cbb04963ee7347e5e014f76defa26a8af960be40e644f4f204ddc7a3';
+const accountPasswordSalt = '00000000000000000000000000000000';
+const accountRoles = 2;
+const persistentSessionId = '00000000-0000-0000-0000-000000000000';
+const persistentSessionRefreshToken = '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
 
 const persistentSessionRepositorySpy = new PersistentSessionRepositorySpy();
 const accountRepositorySpy = new AccountRepositorySpy();
 const randomServiceSpy = new RandomServiceSpy();
 const timeServiceSpy = new TimeServiceSpy();
-const authenticationManager = new AuthenticationManager(persistentSessionRepositorySpy, accountRepositorySpy, randomServiceSpy, timeServiceSpy, config.authenticationManager);
+const authenticationManager = new AuthenticationManager(persistentSessionRepositorySpy, accountRepositorySpy, randomServiceSpy, timeServiceSpy, {
+  tokenAlgorithm: tokenAlgorithm,
+  tokenSecretKey: tokenSecretKey,
+  passwordHashAlgorithm: passwordHashAlgorithm,
+  persistentSessionDuration: persistentSessionDuration,
+  volatileSessionDuration: volatileSessionDuration,
+  modificationEnabledSessionAgeMaxValue: modificationEnabledSessionAgeMaxValue
+});
 
 const tests = [
   { name: 'Identify', run: testIdentify },
-  { name: 'Login', run: testLogin },
-  { name: 'Logout', run: testLogout },
+  { name: 'Login with credentials', run: testLoginCredentials },
+  { name: 'Login with refresh token', run: testLoginRefreshToken },
+  { name: 'Logout with account ID', run: testLogoutAccountId },
+  { name: 'Logout with refresh token', run: testLogoutRefreshToken },
   { name: 'Read Account', run: testReadAccount },
   { name: 'Create Account', run: testCreateAccount },
   { name: 'Update Account', run: testUpdateAccount },
