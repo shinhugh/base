@@ -31,7 +31,7 @@ const handleRequest = async (req, res) => {
         identifyResponse = await httpClient.sendRequest(identifyRequest);
       }
       catch {
-        console.error('Failed to send request to authentication service for identification');
+        console.error('Failed to send request to account service for identification');
         res.status(500).end();
         return;
       }

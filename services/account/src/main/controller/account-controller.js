@@ -1,19 +1,19 @@
 import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from '../service/model/errors.js';
-import { AuthenticationService } from '../service/authentication-service.js';
+import { AccountService } from '../service/account-service.js';
 
-class AuthenticationController {
-  #authenticationService;
+class AccountController {
+  #accountService;
 
-  constructor(authenticationService) {
-    if (!(authenticationService instanceof AuthenticationService)) {
-      throw new Error('Invalid authenticationService provided to AuthenticationController constructor');
+  constructor(accountService) {
+    if (!(accountService instanceof AccountService)) {
+      throw new Error('Invalid accountService provided to AccountController constructor');
     }
-    this.#authenticationService = authenticationService;
+    this.#accountService = accountService;
   }
 
   async identify(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AuthenticationController.identify()');
+      throw new Error('Invalid request provided to AccountController.identify()');
     }
     const authority = parseAuthority(request);
     if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
@@ -32,7 +32,7 @@ class AuthenticationController {
     }
     let output;
     try {
-      output = await this.#authenticationService.identify(authority, token);
+      output = await this.#accountService.identify(authority, token);
     }
     catch (e) {
       return {
@@ -50,7 +50,7 @@ class AuthenticationController {
 
   async login(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AuthenticationController.login()');
+      throw new Error('Invalid request provided to AccountController.login()');
     }
     const authority = parseAuthority(request);
     if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
@@ -69,7 +69,7 @@ class AuthenticationController {
     }
     let output;
     try {
-      output = await this.#authenticationService.login(authority, loginInfo);
+      output = await this.#accountService.login(authority, loginInfo);
     }
     catch (e) {
       return {
@@ -87,7 +87,7 @@ class AuthenticationController {
 
   async logout(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AuthenticationController.logout()');
+      throw new Error('Invalid request provided to AccountController.logout()');
     }
     const authority = parseAuthority(request);
     if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
@@ -105,7 +105,7 @@ class AuthenticationController {
       };
     }
     try {
-      await this.#authenticationService.logout(authority, logoutInfo);
+      await this.#accountService.logout(authority, logoutInfo);
     }
     catch (e) {
       return {
@@ -119,14 +119,14 @@ class AuthenticationController {
 
   async readAccount(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AuthenticationController.readAccount()');
+      throw new Error('Invalid request provided to AccountController.readAccount()');
     }
     const authority = parseAuthority(request);
     const id = request.queryParameters?.id?.[0];
     const name = request.queryParameters?.name?.[0];
     let output;
     try {
-      output = await this.#authenticationService.readAccount(authority, id, name);
+      output = await this.#accountService.readAccount(authority, id, name);
     }
     catch (e) {
       return {
@@ -144,7 +144,7 @@ class AuthenticationController {
 
   async createAccount(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AuthenticationController.createAccount()');
+      throw new Error('Invalid request provided to AccountController.createAccount()');
     }
     const authority = parseAuthority(request);
     if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
@@ -163,7 +163,7 @@ class AuthenticationController {
     }
     let output;
     try {
-      output = await this.#authenticationService.createAccount(authority, account);
+      output = await this.#accountService.createAccount(authority, account);
     }
     catch (e) {
       return {
@@ -181,7 +181,7 @@ class AuthenticationController {
 
   async updateAccount(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AuthenticationController.updateAccount()');
+      throw new Error('Invalid request provided to AccountController.updateAccount()');
     }
     const authority = parseAuthority(request);
     const id = request.queryParameters?.id?.[0];
@@ -202,7 +202,7 @@ class AuthenticationController {
     }
     let output;
     try {
-      output = await this.#authenticationService.updateAccount(authority, id, name, account);
+      output = await this.#accountService.updateAccount(authority, id, name, account);
     }
     catch (e) {
       return {
@@ -220,13 +220,13 @@ class AuthenticationController {
 
   async deleteAccount(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AuthenticationController.deleteAccount()');
+      throw new Error('Invalid request provided to AccountController.deleteAccount()');
     }
     const authority = parseAuthority(request);
     const id = request.queryParameters?.id?.[0];
     const name = request.queryParameters?.name?.[0];
     try {
-      await this.#authenticationService.deleteAccount(authority, id, name);
+      await this.#accountService.deleteAccount(authority, id, name);
     }
     catch (e) {
       return {
@@ -327,5 +327,5 @@ const mapErrorToStatusCode = (e) => {
 };
 
 export {
-  AuthenticationController
+  AccountController
 };

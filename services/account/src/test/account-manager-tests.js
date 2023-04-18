@@ -4,7 +4,7 @@ import { PersistentSessionRepositorySpy } from './spy/persistent-session-reposit
 import { AccountRepositorySpy } from './spy/account-repository-spy.js';
 import { RandomServiceSpy } from './spy/random-service-spy.js'
 import { TimeServiceSpy } from './spy/time-service-spy.js'
-import { AuthenticationManager } from '../main/service/authentication-manager.js';
+import { AccountManager } from '../main/service/account-manager.js';
 
 const testIdentify = async () => {
   persistentSessionRepositorySpy.resetSpy();
@@ -29,7 +29,7 @@ const testIdentify = async () => {
   }, tokenSecretKey, {
     algorithm: tokenAlgorithm
   });
-  const output = await authenticationManager.identify(authority, token);
+  const output = await accountManager.identify(authority, token);
   if (persistentSessionRepositorySpy.readByIdInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readById(): Invocation count');
   }
@@ -37,7 +37,7 @@ const testIdentify = async () => {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.readById(): id argument');
   }
   if (output == null || output.id !== accountId || output.roles != accountRoles || output.authTime != 0) {
-    throw new Error('Actual value does not match expected value: AuthenticationManager.identify(): Return value');
+    throw new Error('Actual value does not match expected value: AccountManager.identify(): Return value');
   }
 };
 
@@ -64,7 +64,7 @@ const testLoginCredentials = async () => {
   randomServiceSpy.generateRandomStringReturnValue = persistentSessionRefreshToken;
   timeServiceSpy.currentTimeSecondsReturnValue = currentTime;
   const authority = undefined;
-  const output = await authenticationManager.login(authority, {
+  const output = await accountManager.login(authority, {
     credentials: {
       name: accountName,
       password: accountPassword
@@ -83,7 +83,7 @@ const testLoginCredentials = async () => {
     throw new Error('Actual value does not match expected value: AccountRepository.readByName(): name argument');
   }
   if (output?.refreshToken !== persistentSessionRefreshToken) {
-    throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
+    throw new Error('Actual value does not match expected value: AccountManager.login(): Return value');
   }
   let verifiedToken;
   try {
@@ -92,10 +92,10 @@ const testLoginCredentials = async () => {
     });
   }
   catch {
-    throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
+    throw new Error('Actual value does not match expected value: AccountManager.login(): Return value');
   }
   if (verifiedToken.sessionId !== persistentSessionId || verifiedToken.iat != currentTime || verifiedToken.exp != currentTime + volatileSessionDuration) {
-    throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
+    throw new Error('Actual value does not match expected value: AccountManager.login(): Return value');
   }
 };
 
@@ -113,7 +113,7 @@ const testLoginRefreshToken = async () => {
   ];
   timeServiceSpy.currentTimeSecondsReturnValue = currentTime;
   const authority = undefined;
-  const output = await authenticationManager.login(authority, {
+  const output = await accountManager.login(authority, {
     refreshToken: persistentSessionRefreshToken
   });
   if (persistentSessionRepositorySpy.readByRefreshTokenInvokeCount != 1) {
@@ -129,10 +129,10 @@ const testLoginRefreshToken = async () => {
     });
   }
   catch {
-    throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
+    throw new Error('Actual value does not match expected value: AccountManager.login(): Return value');
   }
   if (verifiedToken.sessionId !== persistentSessionId || verifiedToken.iat != currentTime || verifiedToken.exp != currentTime + volatileSessionDuration) {
-    throw new Error('Actual value does not match expected value: AuthenticationManager.login(): Return value');
+    throw new Error('Actual value does not match expected value: AccountManager.login(): Return value');
   }
 };
 
@@ -143,7 +143,7 @@ const testLogoutAccountId = async () => {
     id: accountId,
     roles: Role.User
   };
-  await authenticationManager.logout(authority, {
+  await accountManager.logout(authority, {
     accountId: accountId
   });
   if (persistentSessionRepositorySpy.deleteByAccountIdInvokeCount != 1) {
@@ -158,7 +158,7 @@ const testLogoutRefreshToken = async () => {
   persistentSessionRepositorySpy.resetSpy();
   persistentSessionRepositorySpy.deleteByRefreshTokenReturnValue = 0;
   const authority = undefined;
-  await authenticationManager.logout(authority, {
+  await accountManager.logout(authority, {
     refreshToken: persistentSessionRefreshToken
   });
   if (persistentSessionRepositorySpy.deleteByRefreshTokenInvokeCount != 1) {
@@ -184,7 +184,7 @@ const testReadAccount = async () => {
     id: accountId,
     roles: Role.User
   };
-  const output = await authenticationManager.readAccount(authority, accountId, accountName);
+  const output = await accountManager.readAccount(authority, accountId, accountName);
   if (accountRepositorySpy.readByIdAndNameInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): Invocation count');
   }
@@ -195,7 +195,7 @@ const testReadAccount = async () => {
     throw new Error('Actual value does not match expected value: AccountRepository.readByIdAndName(): name argument');
   }
   if (output == null || output.id !== accountId || output.name !== accountName || output.passwordHash != null || output.passwordSalt != null || output.roles != accountRoles) {
-    throw new Error('Actual value does not match expected value: AuthenticationManager.readAccount(): Return value');
+    throw new Error('Actual value does not match expected value: AccountManager.readAccount(): Return value');
   }
 };
 
@@ -210,7 +210,7 @@ const testCreateAccount = async () => {
   };
   randomServiceSpy.generateRandomStringReturnValue = accountPasswordSalt;
   const authority = undefined;
-  const output = await authenticationManager.createAccount(authority, {
+  const output = await accountManager.createAccount(authority, {
     name: accountName,
     password: accountPassword
   });
@@ -221,7 +221,7 @@ const testCreateAccount = async () => {
     throw new Error('Actual value does not match expected value: AccountRepository.create(): account argument');
   }
   if (output == null || output.id !== accountId || output.name !== accountName || output.passwordHash != null || output.passwordSalt != null || output.roles != accountRoles) {
-    throw new Error('Actual value does not match expected value: AuthenticationManager.createAccount(): Return value');
+    throw new Error('Actual value does not match expected value: AccountManager.createAccount(): Return value');
   }
 };
 
@@ -251,7 +251,7 @@ const testUpdateAccount = async () => {
     roles: accountRoles,
     authTime: currentTime
   };
-  const output = await authenticationManager.updateAccount(authority, accountId, accountName, {
+  const output = await accountManager.updateAccount(authority, accountId, accountName, {
     name: modifiedName,
     password: accountPassword
   });
@@ -283,7 +283,7 @@ const testUpdateAccount = async () => {
     throw new Error('Actual value does not match expected value: AccountRepository.updateByIdAndName(): account argument');
   }
   if (output == null || output.id !== accountId || output.name !== modifiedName || output.passwordHash != null || output.passwordSalt != null || output.roles != accountRoles) {
-    throw new Error('Actual value does not match expected value: AuthenticationManager.updateAccount(): Return value');
+    throw new Error('Actual value does not match expected value: AccountManager.updateAccount(): Return value');
   }
 };
 
@@ -306,7 +306,7 @@ const testDeleteAccount = async () => {
     roles: accountRoles,
     authTime: currentTime
   };
-  await authenticationManager.deleteAccount(authority, accountId, accountName);
+  await accountManager.deleteAccount(authority, accountId, accountName);
   if (persistentSessionRepositorySpy.deleteByAccountIdInvokeCount != 1) {
     throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByAccountId(): Invocation count');
   }
@@ -353,7 +353,7 @@ const persistentSessionRepositorySpy = new PersistentSessionRepositorySpy();
 const accountRepositorySpy = new AccountRepositorySpy();
 const randomServiceSpy = new RandomServiceSpy();
 const timeServiceSpy = new TimeServiceSpy();
-const authenticationManager = new AuthenticationManager(persistentSessionRepositorySpy, accountRepositorySpy, randomServiceSpy, timeServiceSpy, {
+const accountManager = new AccountManager(persistentSessionRepositorySpy, accountRepositorySpy, randomServiceSpy, timeServiceSpy, {
   tokenAlgorithm: tokenAlgorithm,
   tokenSecretKey: tokenSecretKey,
   passwordHashAlgorithm: passwordHashAlgorithm,

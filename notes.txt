@@ -9,6 +9,3 @@ TODO ---
   through the gateway?
 
 - concurrent requests may invoke closeSequelize()
-
-- delete existing account service and rename authentication service to account
-  service

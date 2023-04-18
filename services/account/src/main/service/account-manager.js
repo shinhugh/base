@@ -1,7 +1,7 @@
 import { createHash, getHashes } from 'crypto';
 import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
-import { AuthenticationService } from './authentication-service.js';
+import { AccountService } from './account-service.js';
 import { wrapError } from '../common.js';
 import { IllegalArgumentError as RepositoryIllegalArgumentError, NotFoundError as RepositoryNotFoundError, ConflictError as RepositoryConflictError } from '../repository/model/errors.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
@@ -11,7 +11,7 @@ import { TimeService } from './time-service.js';
 import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './model/errors.js';
 import { Role } from './model/role.js';
 
-class AuthenticationManager extends AuthenticationService {
+class AccountManager extends AccountService {
   #persistentSessionRepository;
   #accountRepository;
   #randomService;
@@ -21,19 +21,19 @@ class AuthenticationManager extends AuthenticationService {
   constructor(persistentSessionRepository, accountRepository, randomService, timeService, config) {
     super();
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
-      throw new Error('Invalid persistentSessionRepository provided to AuthenticationManager constructor');
+      throw new Error('Invalid persistentSessionRepository provided to AccountManager constructor');
     }
     if (!(accountRepository instanceof AccountRepository)) {
-      throw new Error('Invalid accountRepository provided to AuthenticationManager constructor');
+      throw new Error('Invalid accountRepository provided to AccountManager constructor');
     }
     if (!(randomService instanceof RandomService)) {
-      throw new Error('Invalid randomService provided to AuthenticationManager constructor');
+      throw new Error('Invalid randomService provided to AccountManager constructor');
     }
     if (!(timeService instanceof TimeService)) {
-      throw new Error('Invalid timeService provided to AuthenticationManager constructor');
+      throw new Error('Invalid timeService provided to AccountManager constructor');
     }
     if (config == null || !validateConfig(config)) {
-      throw new Error('Invalid config provided to AuthenticationManager constructor');
+      throw new Error('Invalid config provided to AccountManager constructor');
     }
     this.#persistentSessionRepository = persistentSessionRepository;
     this.#accountRepository = accountRepository;
@@ -620,5 +620,5 @@ const passwordSaltAllowedChars = passwordAllowedChars;
 const passwordSaltLength = 32;
 
 export {
-  AuthenticationManager
+  AccountManager
 };

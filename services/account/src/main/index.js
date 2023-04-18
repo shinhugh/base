@@ -2,8 +2,8 @@ import { PersistentSessionSequelizeRepository } from './repository/persistent-se
 import { AccountSequelizeRepository } from './repository/account-sequelize-repository.js';
 import { RandomManager } from './service/random-manager.js'
 import { TimeManager } from './service/time-manager.js'
-import { AuthenticationManager } from './service/authentication-manager.js';
-import { AuthenticationController } from './controller/authentication-controller.js';
+import { AccountManager } from './service/account-manager.js';
+import { AccountController } from './controller/account-controller.js';
 import { Server } from './server.js';
 
 // Use environment variables for production; hard-coded for testing only
@@ -22,7 +22,7 @@ const config = {
     username: 'root',
     password: ''
   },
-  authenticationManager: {
+  accountManager: {
     tokenAlgorithm: 'HS256',
     tokenSecretKey: Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64'),
     passwordHashAlgorithm: 'sha256',
@@ -34,31 +34,31 @@ const config = {
     endpoints: {
       '/identify': {
         get: async (request) => {
-          return await authenticationController.identify(request);
+          return await accountController.identify(request);
         }
       },
       '/login': {
         post: async (request) => {
-          return await authenticationController.login(request);
+          return await accountController.login(request);
         }
       },
       '/logout': {
         post: async (request) => {
-          return await authenticationController.logout(request);
+          return await accountController.logout(request);
         }
       },
       '/account': {
         get: async (request) => {
-          return await authenticationController.readAccount(request);
+          return await accountController.readAccount(request);
         },
         post: async (request) => {
-          return await authenticationController.createAccount(request);
+          return await accountController.createAccount(request);
         },
         put: async (request) => {
-          return await authenticationController.updateAccount(request);
+          return await accountController.updateAccount(request);
         },
         delete: async (request) => {
-          return await authenticationController.deleteAccount(request);
+          return await accountController.deleteAccount(request);
         }
       }
     },
@@ -85,8 +85,8 @@ const persistentSessionSequelizeRepository = new PersistentSessionSequelizeRepos
 const accountSequelizeRepository = new AccountSequelizeRepository(config.accountSequelizeRepository);
 const randomManager = new RandomManager();
 const timeManager = new TimeManager();
-const authenticationManager = new AuthenticationManager(persistentSessionSequelizeRepository, accountSequelizeRepository, randomManager, timeManager, config.authenticationManager);
-const authenticationController = new AuthenticationController(authenticationManager);
+const accountManager = new AccountManager(persistentSessionSequelizeRepository, accountSequelizeRepository, randomManager, timeManager, config.accountManager);
+const accountController = new AccountController(accountManager);
 const server = new Server(config.server);
 
 server.start();
@@ -94,7 +94,7 @@ server.start();
 let purgeExpiredSessionsFailCount = 0;
 let purgeExpiredSessionsInterval = setInterval(() => {
   try {
-    authenticationManager.purgeExpiredSessions();
+    accountManager.purgeExpiredSessions();
     purgeExpiredSessionsFailCount = 0;
   }
   catch {
@@ -112,7 +112,7 @@ let purgeExpiredSessionsInterval = setInterval(() => {
 let purgeDanglingSessionsFailCount = 0;
 let purgeDanglingSessionsInterval = setInterval(() => {
   try {
-    authenticationManager.purgeDanglingSessions();
+    accountManager.purgeDanglingSessions();
     purgeDanglingSessionsFailCount = 0;
   }
   catch {

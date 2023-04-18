@@ -1,4 +1,4 @@
-class AuthenticationService {
+class AccountService {
   async identify(authority, token) { }
 
   async login(authority, loginInfo) { }
@@ -19,5 +19,5 @@ class AuthenticationService {
 }
 
 export {
-  AuthenticationService
+  AccountService
 };

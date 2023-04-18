@@ -1,4 +1,4 @@
-import { tests } from './authentication-manager-tests.js';
+import { tests } from './account-manager-tests.js';
 
 for (const test of tests) {
   const header = '[' + test.name + '] ';
