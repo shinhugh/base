@@ -16,15 +16,20 @@ public class ProfileManager implements ProfileService {
     private static final int NAME_MIN_LENGTH = 2;
     private static final int NAME_MAX_LENGTH = 16;
     private final ProfileRepository profileRepository;
+    private final AccountServiceClient accountServiceClient;
 
-    public ProfileManager(ProfileRepository profileRepository, Map<String, String> config) { // TODO: config currently unnecessary
+    public ProfileManager(ProfileRepository profileRepository, AccountServiceClient accountServiceClient, Map<String, String> config) { // TODO: config currently unnecessary
         if (profileRepository == null) {
             throw new RuntimeException("Invalid profileRepository provided to ProfileManager constructor");
+        }
+        if (accountServiceClient == null) {
+            throw new RuntimeException("Invalid accountServiceClient provided to ProfileManager constructor");
         }
         if (config == null || !validateConfig(config)) {
             throw new RuntimeException("Invalid config provided to ProfileManager constructor");
         }
         this.profileRepository = profileRepository;
+        this.accountServiceClient = accountServiceClient;
     }
 
     @Override
@@ -69,7 +74,16 @@ public class ProfileManager implements ProfileService {
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN)) && !profile.getAccountId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
-        // TODO: Throw some domain exception (IllegalArgumentException?) if Account doesn't exist for given profile's accountId
+        boolean accountExists;
+        try {
+            accountExists = accountServiceClient.checkForAccountExistence(authority, profile.getAccountId());
+        }
+        catch (Exception e) {
+            throw wrapException(e, "Failed to invoke account service");
+        }
+        if (!accountExists) {
+            throw new IllegalArgumentException();
+        }
         base.profile.repository.model.Profile entry = new base.profile.repository.model.Profile(profile.getAccountId(), profile.getName());
         try {
             entry = profileRepository.create(entry);

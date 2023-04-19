@@ -2,8 +2,9 @@ package base.profile;
 
 import base.profile.controller.ProfileController;
 import base.profile.repository.ProfileJpaRepository;
+import base.profile.service.AccountServiceBridge;
+import base.profile.service.HttpBridge;
 import base.profile.service.ProfileManager;
-import base.profile.service.ProfileService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,10 +25,13 @@ public class ProfileServlet extends HttpServlet {
     private static final String PROFILE_DB_PASSWORD = "";
     private static final String PROFILE_DB_CONNECTION_URL_FORMAT = "jdbc:mysql://%s:%s/%s";
     private static final Map<String, String> PROFILE_JPA_REPOSITORY_CONFIG = Map.of("hibernate.connection.url", String.format(PROFILE_DB_CONNECTION_URL_FORMAT, PROFILE_DB_HOST, PROFILE_DB_PORT, PROFILE_DB_DATABASE), "hibernate.connection.username", PROFILE_DB_USERNAME, "hibernate.connection.password", PROFILE_DB_PASSWORD);
+    private static final Map<String, String> ACCOUNT_SERVICE_BRIDGE_CONFIG = Map.of(); // TODO: Configure
     private static final Map<String, String> PROFILE_MANAGER_CONFIG = Map.of();
     private final ProfileJpaRepository profileJpaRepository = new ProfileJpaRepository(PROFILE_JPA_REPOSITORY_CONFIG);
-    private final ProfileService profileService = new ProfileManager(profileJpaRepository, PROFILE_MANAGER_CONFIG);
-    private final ProfileController profileController = new ProfileController(profileService);
+    private final HttpBridge httpBridge = new HttpBridge();
+    private final AccountServiceBridge accountServiceBridge = new AccountServiceBridge(httpBridge, ACCOUNT_SERVICE_BRIDGE_CONFIG);
+    private final ProfileManager profileManager = new ProfileManager(profileJpaRepository, accountServiceBridge, PROFILE_MANAGER_CONFIG);
+    private final ProfileController profileController = new ProfileController(profileManager);
 
     @Override
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
