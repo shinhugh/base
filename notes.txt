@@ -9,6 +9,3 @@ TODO ---
 - concurrent requests may invoke closeSequelize()
 
 - build profile service (CRUD)
-
-- account ID should not be private
-  account name should be private

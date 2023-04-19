@@ -230,6 +230,9 @@ class AccountManager extends AccountService {
     if (account == null || !validateAccount(account, authorizedAsSystemOrAdmin)) {
       throw new IllegalArgumentError();
     }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
+      throw new AccessDeniedError();
+    }
     const queryContainsPrivateData = name != null;
     const matches = await (async () => {
       try {
@@ -292,6 +295,9 @@ class AccountManager extends AccountService {
     }
     if (!validateName(name)) {
       throw new IllegalArgumentError();
+    }
+    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
+      throw new AccessDeniedError();
     }
     const queryContainsPrivateData = name != null;
     const authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin);
