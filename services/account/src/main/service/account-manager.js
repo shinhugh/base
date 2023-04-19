@@ -66,7 +66,7 @@ class AccountManager extends AccountService {
         });
       }
       catch (e) {
-        if (e instanceof JsonWebTokenError && e.message === 'invalid algorithm') {
+        if (e instanceof jwt.JsonWebTokenError && e.message === 'invalid algorithm') {
           throw wrapError(e, 'Failed to verify JWT');
         }
         return null;
