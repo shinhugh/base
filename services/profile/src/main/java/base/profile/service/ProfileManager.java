@@ -4,7 +4,6 @@ import base.profile.repository.ProfileRepository;
 import base.profile.service.model.IllegalArgumentException;
 import base.profile.service.model.*;
 
-import java.util.Map;
 import java.util.UUID;
 
 import static base.profile.Common.wrapException;
@@ -18,15 +17,12 @@ public class ProfileManager implements ProfileService {
     private final ProfileRepository profileRepository;
     private final AccountServiceClient accountServiceClient;
 
-    public ProfileManager(ProfileRepository profileRepository, AccountServiceClient accountServiceClient, Map<String, String> config) { // TODO: config currently unnecessary
+    public ProfileManager(ProfileRepository profileRepository, AccountServiceClient accountServiceClient) {
         if (profileRepository == null) {
             throw new RuntimeException("Invalid profileRepository provided to ProfileManager constructor");
         }
         if (accountServiceClient == null) {
             throw new RuntimeException("Invalid accountServiceClient provided to ProfileManager constructor");
-        }
-        if (config == null || !validateConfig(config)) {
-            throw new RuntimeException("Invalid config provided to ProfileManager constructor");
         }
         this.profileRepository = profileRepository;
         this.accountServiceClient = accountServiceClient;
@@ -166,14 +162,6 @@ public class ProfileManager implements ProfileService {
         catch (Exception e) {
             throw wrapException(e, "Failed to write to profile store");
         }
-    }
-
-    private static boolean validateConfig(Map<String, String> config) {
-        if (config == null) {
-            return true;
-        }
-        // TODO: Implement
-        return true;
     }
 
     private static boolean validateId(String id) {

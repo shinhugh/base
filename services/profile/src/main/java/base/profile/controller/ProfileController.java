@@ -38,12 +38,12 @@ public class ProfileController {
         }
         String accountId = null;
         String name = null;
-        if (request.getQuery() != null) {
-            if (request.getQuery().get("id") != null && !request.getQuery().get("id").isEmpty()) {
-                accountId = request.getQuery().get("id").get(0);
+        if (request.getQueryParameters() != null) {
+            if (request.getQueryParameters().get("id") != null && !request.getQueryParameters().get("id").isEmpty()) {
+                accountId = request.getQueryParameters().get("id").get(0);
             }
-            if (request.getQuery().get("name") != null && !request.getQuery().get("name").isEmpty()) {
-                name = request.getQuery().get("name").get(0);
+            if (request.getQueryParameters().get("name") != null && !request.getQueryParameters().get("name").isEmpty()) {
+                name = request.getQueryParameters().get("name").get(0);
             }
         }
         Profile[] output;
@@ -117,9 +117,9 @@ public class ProfileController {
             return new Response((short) 400, null, null);
         }
         String accountId = null;
-        if (request.getQuery() != null) {
-            if (request.getQuery().get("id") != null && !request.getQuery().get("id").isEmpty()) {
-                accountId = request.getQuery().get("id").get(0);
+        if (request.getQueryParameters() != null) {
+            if (request.getQueryParameters().get("id") != null && !request.getQueryParameters().get("id").isEmpty()) {
+                accountId = request.getQueryParameters().get("id").get(0);
             }
         }
         Profile output;
@@ -145,9 +145,9 @@ public class ProfileController {
             return new Response((short) 400, null, null);
         }
         String accountId = null;
-        if (request.getQuery() != null) {
-            if (request.getQuery().get("id") != null && !request.getQuery().get("id").isEmpty()) {
-                accountId = request.getQuery().get("id").get(0);
+        if (request.getQueryParameters() != null) {
+            if (request.getQueryParameters().get("id") != null && !request.getQueryParameters().get("id").isEmpty()) {
+                accountId = request.getQueryParameters().get("id").get(0);
             }
         }
         try {
@@ -209,12 +209,12 @@ public class ProfileController {
 
     public static class Request {
         private Map<String, List<String>> headers;
-        private Map<String, List<String>> query;
+        private Map<String, List<String>> queryParameters;
         private InputStream body;
 
-        public Request(Map<String, List<String>> headers, Map<String, List<String>> query, InputStream body) {
+        public Request(Map<String, List<String>> headers, Map<String, List<String>> queryParameters, InputStream body) {
             this.headers = headers;
-            this.query = query;
+            this.queryParameters = queryParameters;
             this.body = body;
         }
 
@@ -226,12 +226,12 @@ public class ProfileController {
             this.headers = headers;
         }
 
-        public Map<String, List<String>> getQuery() {
-            return query;
+        public Map<String, List<String>> getQueryParameters() {
+            return queryParameters;
         }
 
-        public void setQuery(Map<String, List<String>> query) {
-            this.query = query;
+        public void setQueryParameters(Map<String, List<String>> queryParameters) {
+            this.queryParameters = queryParameters;
         }
 
         public InputStream getBody() {

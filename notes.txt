@@ -10,3 +10,12 @@ TODO ---
 
 - account deletion should notify profile service so it can delete corresponding
   profile
+
+- add Java HttpClient/HttpBridge, RandomService/RandomManager, and
+  TimeService/TimeManager to reference code
+
+- change all verifyAuthorityContainsAtLeastOneRole() calls to variables
+
+- change all validateConfig() to configure()
+
+- null or empty string for host or port config should use localhost and 80

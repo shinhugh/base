@@ -13,16 +13,16 @@ public interface HttpClient {
         private String path;
         private Method method;
         private Map<String, List<String>> headers;
-        private Map<String, List<String>> query;
+        private Map<String, List<String>> queryParameters;
         private InputStream body;
 
-        public Request(String host, int port, String path, Method method, Map<String, List<String>> headers, Map<String, List<String>> query, InputStream body) {
+        public Request(String host, int port, String path, Method method, Map<String, List<String>> headers, Map<String, List<String>> queryParameters, InputStream body) {
             this.host = host;
             this.port = port;
             this.path = path;
             this.method = method;
             this.headers = headers;
-            this.query = query;
+            this.queryParameters = queryParameters;
             this.body = body;
         }
 
@@ -66,12 +66,12 @@ public interface HttpClient {
             this.headers = headers;
         }
 
-        public Map<String, List<String>> getQuery() {
-            return query;
+        public Map<String, List<String>> getQueryParameters() {
+            return queryParameters;
         }
 
-        public void setQuery(Map<String, List<String>> query) {
-            this.query = query;
+        public void setQueryParameters(Map<String, List<String>> queryParameters) {
+            this.queryParameters = queryParameters;
         }
 
         public InputStream getBody() {

@@ -25,12 +25,11 @@ public class ProfileServlet extends HttpServlet {
     private static final String PROFILE_DB_PASSWORD = "";
     private static final String PROFILE_DB_CONNECTION_URL_FORMAT = "jdbc:mysql://%s:%s/%s";
     private static final Map<String, String> PROFILE_JPA_REPOSITORY_CONFIG = Map.of("hibernate.connection.url", String.format(PROFILE_DB_CONNECTION_URL_FORMAT, PROFILE_DB_HOST, PROFILE_DB_PORT, PROFILE_DB_DATABASE), "hibernate.connection.username", PROFILE_DB_USERNAME, "hibernate.connection.password", PROFILE_DB_PASSWORD);
-    private static final Map<String, String> ACCOUNT_SERVICE_BRIDGE_CONFIG = Map.of(); // TODO: Configure
-    private static final Map<String, String> PROFILE_MANAGER_CONFIG = Map.of();
+    private static final Map<String, String> ACCOUNT_SERVICE_BRIDGE_CONFIG = Map.of("port", "8081");
     private final ProfileJpaRepository profileJpaRepository = new ProfileJpaRepository(PROFILE_JPA_REPOSITORY_CONFIG);
     private final HttpBridge httpBridge = new HttpBridge();
     private final AccountServiceBridge accountServiceBridge = new AccountServiceBridge(httpBridge, ACCOUNT_SERVICE_BRIDGE_CONFIG);
-    private final ProfileManager profileManager = new ProfileManager(profileJpaRepository, accountServiceBridge, PROFILE_MANAGER_CONFIG);
+    private final ProfileManager profileManager = new ProfileManager(profileJpaRepository, accountServiceBridge);
     private final ProfileController profileController = new ProfileController(profileManager);
 
     @Override
@@ -69,16 +68,16 @@ public class ProfileServlet extends HttpServlet {
     private static ProfileController.Request translateRequest(HttpServletRequest request) throws IOException {
         ByteArrayOutputStream bodyBufferStream = new ByteArrayOutputStream();
         request.getInputStream().transferTo(bodyBufferStream);
-        InputStream bodyStream = new ByteArrayInputStream(bodyBufferStream.toByteArray());
-        return new ProfileController.Request(getHeaders(request), getQuery(request), bodyStream);
+        InputStream body = new ByteArrayInputStream(bodyBufferStream.toByteArray());
+        return new ProfileController.Request(getHeaders(request), getQueryParameters(request), body);
     }
 
     private static void translateResponse(ProfileController.Response src, HttpServletResponse dst) throws IOException {
         dst.setStatus(src.getStatus());
         if (src.getHeaders() != null) {
-            for (Map.Entry<String, List<String>> entry : src.getHeaders().entrySet()) {
-                for (String headerValue : entry.getValue()) {
-                    dst.addHeader(entry.getKey(), headerValue);
+            for (Map.Entry<String, List<String>> header : src.getHeaders().entrySet()) {
+                for (String headerValue : header.getValue()) {
+                    dst.addHeader(header.getKey(), headerValue);
                 }
             }
         }
@@ -100,15 +99,15 @@ public class ProfileServlet extends HttpServlet {
         return headers;
     }
 
-    private static Map<String, List<String>> getQuery(HttpServletRequest request) {
+    private static Map<String, List<String>> getQueryParameters(HttpServletRequest request) {
         Map<String, String[]> parameterMap = request.getParameterMap();
         if (parameterMap == null) {
             return null;
         }
-        Map<String, List<String>> query = new HashMap<>();
-        for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
-            query.put(entry.getKey(), Arrays.asList(entry.getValue()));
+        Map<String, List<String>> queryParameters = new HashMap<>();
+        for (Map.Entry<String, String[]> parameter : parameterMap.entrySet()) {
+            queryParameters.put(parameter.getKey(), Arrays.asList(parameter.getValue()));
         }
-        return query;
+        return queryParameters;
     }
 }

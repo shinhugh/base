@@ -17,30 +17,30 @@ public class HttpBridge implements HttpClient {
     @Override
     public Response sendRequest(Request request) {
         StringBuilder queryString = new StringBuilder();
-        if (request.getQuery() != null) {
-            for (Map.Entry<String, List<String>> entry : request.getQuery().entrySet()) {
-                if (entry.getKey() != null && entry.getKey().length() > 0) {
-                    if (entry.getValue() == null || entry.getValue().isEmpty()) {
+        if (request.getQueryParameters() != null) {
+            for (Map.Entry<String, List<String>> queryParameter : request.getQueryParameters().entrySet()) {
+                if (queryParameter.getKey() != null && queryParameter.getKey().length() > 0) {
+                    if (queryParameter.getValue() == null || queryParameter.getValue().isEmpty()) {
                         if (queryString.length() == 0) {
                             queryString.append('?');
                         }
                         else {
                             queryString.append('&');
                         }
-                        queryString.append(entry.getKey());
+                        queryString.append(queryParameter.getKey());
                     }
                     else {
-                        for (String value : entry.getValue()) {
+                        for (String queryParameterValue : queryParameter.getValue()) {
                             if (queryString.length() == 0) {
                                 queryString.append('?');
                             }
                             else {
                                 queryString.append('&');
                             }
-                            queryString.append(entry.getKey());
-                            if (value != null && value.length() > 0) {
+                            queryString.append(queryParameter.getKey());
+                            if (queryParameterValue != null && queryParameterValue.length() > 0) {
                                 queryString.append('=');
-                                queryString.append(value);
+                                queryString.append(queryParameterValue);
                             }
                         }
                     }
@@ -84,11 +84,11 @@ public class HttpBridge implements HttpClient {
                 throw wrapException(e, String.format("Failed to set request method: %s", request.getMethod().toString()));
             }
             if (request.getHeaders() != null) {
-                for (Map.Entry<String, List<String>> entry : request.getHeaders().entrySet()) {
-                    if (entry.getKey() != null && entry.getKey().length() > 0) {
+                for (Map.Entry<String, List<String>> header : request.getHeaders().entrySet()) {
+                    if (header.getKey() != null && header.getKey().length() > 0) {
                         StringBuilder headerValues = new StringBuilder();
-                        if (entry.getValue() != null) {
-                            for (String headerValue : entry.getValue()) {
+                        if (header.getValue() != null) {
+                            for (String headerValue : header.getValue()) {
                                 if (headerValue != null && headerValue.length() > 0) {
                                     if (headerValues.length() != 0) {
                                         headerValues.append(',');
@@ -97,7 +97,7 @@ public class HttpBridge implements HttpClient {
                                 }
                             }
                         }
-                        connection.setRequestProperty(entry.getKey(), headerValues.toString());
+                        connection.setRequestProperty(header.getKey(), headerValues.toString());
                     }
                 }
             }
