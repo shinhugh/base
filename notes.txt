@@ -3,5 +3,6 @@ TODO ---
 - consider service that requires websockets - how would a connection work
   through the gateway?
 
-- account deletion should notify profile service so it can delete corresponding
-  profile
+- implement an inter-service publisher-subscriber mechanism
+  - profile service needs to subscribe to account delete event and delete
+    corresponding profile when event is triggered
