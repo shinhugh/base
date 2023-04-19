@@ -11,12 +11,11 @@ import jakarta.persistence.TypedQuery;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static base.profile.Common.wrapException;
 
 public class ProfileJpaRepository implements ProfileRepository {
-    private static final int ID_MAX_LENGTH = 36;
+    private static final int ACCOUNT_ID_MAX_LENGTH = 36;
     private static final int NAME_MAX_LENGTH = 16;
     private final EntityManagerFactory entityManagerFactory;
 
@@ -33,11 +32,34 @@ public class ProfileJpaRepository implements ProfileRepository {
     }
 
     @Override
-    public Profile[] readByIdAndName(String id, String name) throws IllegalArgumentException {
-        if (id == null && name == null) {
+    public Profile[] readByAccountId(String accountId) throws IllegalArgumentException {
+        if (accountId == null || accountId.length() > ACCOUNT_ID_MAX_LENGTH) {
             throw new IllegalArgumentException();
         }
-        if (id != null && id.length() > ID_MAX_LENGTH) {
+        String queryString = "from Profile as x where x.accountId = :accountId";
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        try {
+            entityManager.getTransaction().begin();
+            TypedQuery<Profile> query = entityManager.createQuery(queryString, Profile.class);
+            query.setParameter("accountId", accountId);
+            List<Profile> matches = query.getResultList();
+            entityManager.getTransaction().rollback();
+            return matches.toArray(new Profile[0]);
+        }
+        catch (Exception e) {
+            throw wrapException(e, "Failed to execute database transaction");
+        }
+        finally {
+            entityManager.close();
+        }
+    }
+
+    @Override
+    public Profile[] readByAccountIdAndName(String accountId, String name) throws IllegalArgumentException {
+        if (accountId == null && name == null) {
+            throw new IllegalArgumentException();
+        }
+        if (accountId != null && accountId.length() > ACCOUNT_ID_MAX_LENGTH) {
             throw new IllegalArgumentException();
         }
         if (name != null && name.length() > NAME_MAX_LENGTH) {
@@ -45,8 +67,8 @@ public class ProfileJpaRepository implements ProfileRepository {
         }
         String queryString = "from Profile as x where ";
         boolean filterAdded = false;
-        if (id != null) {
-            queryString += "x.id = :id";
+        if (accountId != null) {
+            queryString += "x.accountId = :accountId";
             filterAdded = true;
         }
         if (name != null) {
@@ -59,8 +81,8 @@ public class ProfileJpaRepository implements ProfileRepository {
         try {
             entityManager.getTransaction().begin();
             TypedQuery<Profile> query = entityManager.createQuery(queryString, Profile.class);
-            if (id != null) {
-                query.setParameter("id", id);
+            if (accountId != null) {
+                query.setParameter("accountId", accountId);
             }
             if (name != null) {
                 query.setParameter("name", name);
@@ -79,24 +101,23 @@ public class ProfileJpaRepository implements ProfileRepository {
 
     @Override
     public Profile create(Profile profile) throws IllegalArgumentException, ConflictException {
-        if (profile == null || !validateProfile(profile)) {
+        if (profile == null || !validateProfile(profile, true)) {
             throw new IllegalArgumentException();
         }
-        Profile entry = new Profile(null, profile.getName());
+        Profile entry = new Profile(profile.getAccountId(), profile.getName());
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             Profile conflict = null;
             entityManager.getTransaction().begin();
-            TypedQuery<Profile> query = entityManager.createQuery("from Profile as x where x.name = :name", Profile.class);
+            TypedQuery<Profile> query = entityManager.createQuery("from Profile as x where x.accountId = :accountId", Profile.class);
             try {
-                conflict = query.setParameter("name", profile.getName()).getSingleResult();
+                conflict = query.setParameter("accountId", profile.getAccountId()).getSingleResult();
             }
             catch (Exception ignored) { }
             if (conflict != null) {
                 entityManager.getTransaction().rollback();
                 throw new ConflictException();
             }
-            entry.setId(generateId(entityManager));
             entityManager.merge(entry);
             entityManager.getTransaction().commit();
             return entry;
@@ -113,42 +134,20 @@ public class ProfileJpaRepository implements ProfileRepository {
     }
 
     @Override
-    public Profile updateByIdAndName(String id, String name, Profile profile) throws IllegalArgumentException, NotFoundException, ConflictException {
-        if (id == null && name == null) {
+    public Profile updateByAccountId(String accountId, Profile profile) throws IllegalArgumentException, NotFoundException {
+        if (accountId == null || accountId.length() > ACCOUNT_ID_MAX_LENGTH) {
             throw new IllegalArgumentException();
         }
-        if (id != null && id.length() > ID_MAX_LENGTH) {
+        if (profile == null || !validateProfile(profile, false)) {
             throw new IllegalArgumentException();
         }
-        if (name != null && name.length() > NAME_MAX_LENGTH) {
-            throw new IllegalArgumentException();
-        }
-        if (profile == null || !validateProfile(profile)) {
-            throw new IllegalArgumentException();
-        }
-        String queryString = "from Profile as x where ";
-        boolean filterAdded = false;
-        if (id != null) {
-            queryString += "x.id = :id";
-            filterAdded = true;
-        }
-        if (name != null) {
-            if (filterAdded) {
-                queryString += " and ";
-            }
-            queryString += "x.name = :name";
-        }
+        String queryString = "from Profile as x where x.accountId = :accountId";
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             Profile match = null;
             entityManager.getTransaction().begin();
             TypedQuery<Profile> query = entityManager.createQuery(queryString, Profile.class);
-            if (id != null) {
-                query.setParameter("id", id);
-            }
-            if (name != null) {
-                query.setParameter("name", name);
-            }
+            query.setParameter("accountId", accountId);
             try {
                 match = query.getSingleResult();
             }
@@ -157,21 +156,11 @@ public class ProfileJpaRepository implements ProfileRepository {
                 entityManager.getTransaction().rollback();
                 throw new NotFoundException();
             }
-            Profile conflict = null;
-            query = entityManager.createQuery("from Profile as x where x.name = :name", Profile.class);
-            try {
-                conflict = query.setParameter("name", profile.getName()).getSingleResult();
-            }
-            catch (Exception ignored) { }
-            if (conflict != null && !match.getId().equals(conflict.getId())) {
-                entityManager.getTransaction().rollback();
-                throw new ConflictException();
-            }
             match.setName(profile.getName());
             entityManager.getTransaction().commit();
             return match;
         }
-        catch (NotFoundException | ConflictException e) {
+        catch (NotFoundException e) {
             throw e;
         }
         catch (Exception e) {
@@ -183,38 +172,16 @@ public class ProfileJpaRepository implements ProfileRepository {
     }
 
     @Override
-    public int deleteByIdAndName(String id, String name) throws IllegalArgumentException {
-        if (id == null && name == null) {
+    public int deleteByAccountId(String accountId) throws IllegalArgumentException {
+        if (accountId == null || accountId.length() > ACCOUNT_ID_MAX_LENGTH) {
             throw new IllegalArgumentException();
         }
-        if (id != null && id.length() > ID_MAX_LENGTH) {
-            throw new IllegalArgumentException();
-        }
-        if (name != null && name.length() > NAME_MAX_LENGTH) {
-            throw new IllegalArgumentException();
-        }
-        String queryString = "from Profile as x where ";
-        boolean filterAdded = false;
-        if (id != null) {
-            queryString += "x.id = :id";
-            filterAdded = true;
-        }
-        if (name != null) {
-            if (filterAdded) {
-                queryString += " and ";
-            }
-            queryString += "x.name = :name";
-        }
+        String queryString = "from Profile as x where x.accountId = :accountId";
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             entityManager.getTransaction().begin();
             TypedQuery<Profile> query = entityManager.createQuery(queryString, Profile.class);
-            if (id != null) {
-                query.setParameter("id", id);
-            }
-            if (name != null) {
-                query.setParameter("name", name);
-            }
+            query.setParameter("accountId", accountId);
             List<Profile> matches = query.getResultList();
             for (Profile match : matches) {
                 entityManager.remove(match);
@@ -230,18 +197,13 @@ public class ProfileJpaRepository implements ProfileRepository {
         }
     }
 
-    private static boolean validateProfile(Profile profile) {
+    private static boolean validateProfile(Profile profile, boolean validateAccountId) {
         if (profile == null) {
             return true;
         }
-        return profile.getName() != null && profile.getName().length() <= NAME_MAX_LENGTH;
-    }
-
-    private static String generateId(EntityManager entityManager) {
-        String id = UUID.randomUUID().toString();
-        while (entityManager.find(Profile.class, id) != null) {
-            id = UUID.randomUUID().toString();
+        if (validateAccountId && (profile.getAccountId() == null || profile.getAccountId().length() > ACCOUNT_ID_MAX_LENGTH)) {
+            return false;
         }
-        return id;
+        return profile.getName() != null && profile.getName().length() <= NAME_MAX_LENGTH;
     }
 }

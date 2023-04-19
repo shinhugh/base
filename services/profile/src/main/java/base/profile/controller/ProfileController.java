@@ -36,11 +36,11 @@ public class ProfileController {
         catch (Exception e) {
             return new Response((short) 400, null, null);
         }
-        String id = null;
+        String accountId = null;
         String name = null;
         if (request.getQuery() != null) {
             if (request.getQuery().get("id") != null && !request.getQuery().get("id").isEmpty()) {
-                id = request.getQuery().get("id").get(0);
+                accountId = request.getQuery().get("id").get(0);
             }
             if (request.getQuery().get("name") != null && !request.getQuery().get("name").isEmpty()) {
                 name = request.getQuery().get("name").get(0);
@@ -48,7 +48,7 @@ public class ProfileController {
         }
         Profile[] output;
         try {
-            output = profileService.readProfiles(authority, id, name);
+            output = profileService.readProfiles(authority, accountId, name);
         }
         catch (Exception e) {
             return new Response(mapExceptionToStatusCode(e), null, null);
@@ -116,19 +116,15 @@ public class ProfileController {
         catch (Exception e) {
             return new Response((short) 400, null, null);
         }
-        String id = null;
-        String name = null;
+        String accountId = null;
         if (request.getQuery() != null) {
             if (request.getQuery().get("id") != null && !request.getQuery().get("id").isEmpty()) {
-                id = request.getQuery().get("id").get(0);
-            }
-            if (request.getQuery().get("name") != null && !request.getQuery().get("name").isEmpty()) {
-                name = request.getQuery().get("name").get(0);
+                accountId = request.getQuery().get("id").get(0);
             }
         }
         Profile output;
         try {
-            output = profileService.updateProfile(authority, id, name, profile);
+            output = profileService.updateProfile(authority, accountId, profile);
         }
         catch (Exception e) {
             return new Response(mapExceptionToStatusCode(e), null, null);
@@ -148,18 +144,14 @@ public class ProfileController {
         catch (Exception e) {
             return new Response((short) 400, null, null);
         }
-        String id = null;
-        String name = null;
+        String accountId = null;
         if (request.getQuery() != null) {
             if (request.getQuery().get("id") != null && !request.getQuery().get("id").isEmpty()) {
-                id = request.getQuery().get("id").get(0);
-            }
-            if (request.getQuery().get("name") != null && !request.getQuery().get("name").isEmpty()) {
-                name = request.getQuery().get("name").get(0);
+                accountId = request.getQuery().get("id").get(0);
             }
         }
         try {
-            profileService.deleteProfile(authority, id, name);
+            profileService.deleteProfile(authority, accountId);
         }
         catch (Exception e) {
             return new Response(mapExceptionToStatusCode(e), null, null);

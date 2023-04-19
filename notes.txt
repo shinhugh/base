@@ -8,4 +8,5 @@ TODO ---
 
 - concurrent requests may invoke closeSequelize()
 
-- build profile service (CRUD)
+- account deletion should notify profile service so it can delete corresponding
+  profile

@@ -9,24 +9,24 @@ import jakarta.persistence.Table;
 @Table(name = "Profiles")
 public class Profile {
     @Id
-    @Column(name = "Id", nullable = false)
-    private String id;
-    @Column(name = "Name", nullable = false, unique = true)
+    @Column(name = "AccountId", nullable = false)
+    private String accountId;
+    @Column(name = "Name", nullable = false)
     private String name;
 
     public Profile() { }
 
-    public Profile(String id, String name) {
-        this.id = id;
+    public Profile(String accountId, String name) {
+        this.accountId = accountId;
         this.name = name;
     }
 
-    public String getId() {
-        return id;
+    public String getAccountId() {
+        return accountId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
     public String getName() {

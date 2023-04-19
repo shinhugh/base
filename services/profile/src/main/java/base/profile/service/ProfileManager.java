@@ -28,45 +28,49 @@ public class ProfileManager implements ProfileService {
     }
 
     @Override
-    public Profile[] readProfiles(Authority authority, String id, String name) throws IllegalArgumentException, AccessDeniedException, NotFoundException {
+    public Profile[] readProfiles(Authority authority, String accountId, String name) throws IllegalArgumentException {
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        if (id == null && name == null) {
+        if (accountId == null && name == null) {
             throw new IllegalArgumentException();
         }
-        if (!validateUuid(id)) {
+        if (!validateId(accountId)) {
             throw new IllegalArgumentException();
         }
         if (!validateName(name)) {
             throw new IllegalArgumentException();
         }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
-            throw new AccessDeniedException();
-        }
         base.profile.repository.model.Profile[] matches;
         try {
-            matches = profileRepository.readByIdAndName(id, name);
+            matches = profileRepository.readByAccountIdAndName(accountId, name);
         }
         catch (Exception e) {
             throw wrapException(e, "Failed to read from profile store");
         }
         Profile[] output = new Profile[matches.length];
         for (int i = 0; i < matches.length; i++) {
-            output[i] = new Profile(matches[i].getId(), matches[i].getName());
+            output[i] = new Profile(matches[i].getAccountId(), matches[i].getName());
         }
         return output;
     }
 
     @Override
-    public Profile createProfile(Authority authority, Profile profile) throws IllegalArgumentException, ConflictException {
+    public Profile createProfile(Authority authority, Profile profile) throws IllegalArgumentException, AccessDeniedException, ConflictException {
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        if (profile == null || !validateProfile(profile)) {
+        if (profile == null || !validateProfile(profile, true)) {
             throw new IllegalArgumentException();
         }
-        base.profile.repository.model.Profile entry = new base.profile.repository.model.Profile(null, profile.getName());
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
+            throw new AccessDeniedException();
+        }
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN)) && !profile.getAccountId().equals(authority.getId())) {
+            throw new AccessDeniedException();
+        }
+        // TODO: Throw some domain exception (IllegalArgumentException?) if Account doesn't exist for given profile's accountId
+        base.profile.repository.model.Profile entry = new base.profile.repository.model.Profile(profile.getAccountId(), profile.getName());
         try {
             entry = profileRepository.create(entry);
         }
@@ -76,36 +80,26 @@ public class ProfileManager implements ProfileService {
         catch (Exception e) {
             throw wrapException(e, "Failed to write to profile store");
         }
-        return new Profile(entry.getId(), entry.getName());
+        return new Profile(entry.getAccountId(), entry.getName());
     }
 
     @Override
-    public Profile updateProfile(Authority authority, String id, String name, Profile profile) throws IllegalArgumentException, AccessDeniedException, NotFoundException, ConflictException {
+    public Profile updateProfile(Authority authority, String accountId, Profile profile) throws IllegalArgumentException, AccessDeniedException, NotFoundException {
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        if (id == null && name == null) {
+        if (accountId == null || !validateId(accountId)) {
             throw new IllegalArgumentException();
         }
-        if (!validateUuid(id)) {
-            throw new IllegalArgumentException();
-        }
-        if (!validateName(name)) {
-            throw new IllegalArgumentException();
-        }
-        if (profile == null || !validateProfile(profile)) {
+        if (profile == null || !validateProfile(profile, false)) {
             throw new IllegalArgumentException();
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
         }
-        boolean authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
-        if (!authorizedAsSystemOrAdmin && authority.getId() == null) {
-            throw new AccessDeniedException();
-        }
         base.profile.repository.model.Profile[] matches;
         try {
-            matches = profileRepository.readByIdAndName(id, name);
+            matches = profileRepository.readByAccountId(accountId);
         }
         catch (Exception e) {
             throw wrapException(e, "Failed to read from profile store");
@@ -114,46 +108,33 @@ public class ProfileManager implements ProfileService {
             throw new NotFoundException();
         }
         base.profile.repository.model.Profile match = matches[0];
-        if (!authorizedAsSystemOrAdmin && !match.getId().equals(authority.getId())) {
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN)) && !match.getAccountId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
         base.profile.repository.model.Profile entry = new base.profile.repository.model.Profile(null, profile.getName());
         try {
-            entry = profileRepository.updateByIdAndName(id, name, entry);
-        }
-        catch (base.profile.repository.model.ConflictException e) {
-            throw new ConflictException();
+            entry = profileRepository.updateByAccountId(accountId, entry);
         }
         catch (Exception e) {
             throw wrapException(e, "Failed to write to profile store");
         }
-        return new Profile(entry.getId(), entry.getName());
+        return new Profile(entry.getAccountId(), entry.getName());
     }
 
     @Override
-    public void deleteProfile(Authority authority, String id, String name) throws IllegalArgumentException, AccessDeniedException, NotFoundException {
+    public void deleteProfile(Authority authority, String accountId) throws IllegalArgumentException, AccessDeniedException, NotFoundException {
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
-        if (id == null && name == null) {
-            throw new IllegalArgumentException();
-        }
-        if (!validateUuid(id)) {
-            throw new IllegalArgumentException();
-        }
-        if (!validateName(name)) {
+        if (accountId == null || !validateId(accountId)) {
             throw new IllegalArgumentException();
         }
         if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
             throw new AccessDeniedException();
         }
-        boolean authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
-        if (!authorizedAsSystemOrAdmin && authority.getId() == null) {
-            throw new AccessDeniedException();
-        }
         base.profile.repository.model.Profile[] matches;
         try {
-            matches = profileRepository.readByIdAndName(id, name);
+            matches = profileRepository.readByAccountId(accountId);
         }
         catch (Exception e) {
             throw wrapException(e, "Failed to read from profile store");
@@ -162,11 +143,11 @@ public class ProfileManager implements ProfileService {
             throw new NotFoundException();
         }
         base.profile.repository.model.Profile match = matches[0];
-        if (!authorizedAsSystemOrAdmin && !match.getId().equals(authority.getId())) {
+        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN)) && !match.getAccountId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
         try {
-            profileRepository.deleteByIdAndName(id, name);
+            profileRepository.deleteByAccountId(accountId);
         }
         catch (Exception e) {
             throw wrapException(e, "Failed to write to profile store");
@@ -181,7 +162,7 @@ public class ProfileManager implements ProfileService {
         return true;
     }
 
-    private static boolean validateUuid(String id) {
+    private static boolean validateId(String id) {
         if (id == null) {
             return true;
         }
@@ -198,7 +179,7 @@ public class ProfileManager implements ProfileService {
         if (authority == null) {
             return true;
         }
-        if (authority.getId() != null && !validateUuid(authority.getId())) {
+        if (authority.getId() != null && !validateId(authority.getId())) {
             return false;
         }
         if (authority.getRoles() < 0 || authority.getRoles() > ROLES_MAX_VALUE) {
@@ -222,9 +203,12 @@ public class ProfileManager implements ProfileService {
         return true;
     }
 
-    private static boolean validateProfile(Profile profile) {
+    private static boolean validateProfile(Profile profile, boolean validateAccountId) {
         if (profile == null) {
             return true;
+        }
+        if (validateAccountId && (profile.getAccountId() == null || !validateId(profile.getAccountId()))) {
+            return false;
         }
         return profile.getName() != null && validateName(profile.getName());
     }

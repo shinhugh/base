@@ -6,8 +6,9 @@ import base.profile.repository.model.NotFoundException;
 import base.profile.repository.model.Profile;
 
 public interface ProfileRepository {
-    Profile[] readByIdAndName(String id, String name) throws IllegalArgumentException;
+    Profile[] readByAccountId(String accountId) throws IllegalArgumentException;
+    Profile[] readByAccountIdAndName(String accountId, String name) throws IllegalArgumentException;
     Profile create(Profile profile) throws IllegalArgumentException, ConflictException;
-    Profile updateByIdAndName(String id, String name, Profile profile) throws IllegalArgumentException, NotFoundException, ConflictException;
-    int deleteByIdAndName(String id, String name) throws IllegalArgumentException;
+    Profile updateByAccountId(String accountId, Profile profile) throws IllegalArgumentException, NotFoundException;
+    int deleteByAccountId(String accountId) throws IllegalArgumentException;
 }

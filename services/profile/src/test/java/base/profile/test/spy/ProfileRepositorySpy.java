@@ -4,29 +4,37 @@ import base.profile.repository.ProfileRepository;
 import base.profile.repository.model.Profile;
 
 public class ProfileRepositorySpy implements ProfileRepository {
-    private Profile[] readByIdAndNameReturnValue;
-    private int readByIdAndNameInvokeCount;
-    private String readByIdAndNameIdArgument;
-    private String readByIdAndNameNameArgument;
+    private Profile[] readByAccountIdReturnValue;
+    private int readByAccountIdInvokeCount;
+    private String readByAccountIdAccountIdArgument;
+    private Profile[] readByAccountIdAndNameReturnValue;
+    private int readByAccountIdAndNameInvokeCount;
+    private String readByAccountIdAndNameAccountIdArgument;
+    private String readByAccountIdAndNameNameArgument;
     private Profile createReturnValue;
     private int createInvokeCount;
     private Profile createProfileArgument;
-    private Profile updateByIdAndNameReturnValue;
-    private int updateByIdAndNameInvokeCount;
-    private String updateByIdAndNameIdArgument;
-    private String updateByIdAndNameNameArgument;
-    private Profile updateByIdAndNameProfileArgument;
-    private int deleteByIdAndNameReturnValue;
-    private int deleteByIdAndNameInvokeCount;
-    private String deleteByIdAndNameIdArgument;
-    private String deleteByIdAndNameNameArgument;
+    private Profile updateByAccountIdReturnValue;
+    private int updateByAccountIdInvokeCount;
+    private String updateByAccountIdAccountIdArgument;
+    private Profile updateByAccountIdProfileArgument;
+    private int deleteByAccountIdReturnValue;
+    private int deleteByAccountIdInvokeCount;
+    private String deleteByAccountIdAccountIdArgument;
 
     @Override
-    public Profile[] readByIdAndName(String id, String name) {
-        readByIdAndNameInvokeCount++;
-        readByIdAndNameIdArgument = id;
-        readByIdAndNameNameArgument = name;
-        return readByIdAndNameReturnValue;
+    public Profile[] readByAccountId(String accountId) {
+        readByAccountIdInvokeCount++;
+        readByAccountIdAccountIdArgument = accountId;
+        return readByAccountIdReturnValue;
+    }
+
+    @Override
+    public Profile[] readByAccountIdAndName(String accountId, String name) {
+        readByAccountIdAndNameInvokeCount++;
+        readByAccountIdAndNameAccountIdArgument = accountId;
+        readByAccountIdAndNameNameArgument = name;
+        return readByAccountIdAndNameReturnValue;
     }
 
     @Override
@@ -37,51 +45,61 @@ public class ProfileRepositorySpy implements ProfileRepository {
     }
 
     @Override
-    public Profile updateByIdAndName(String id, String name, Profile profile) {
-        updateByIdAndNameInvokeCount++;
-        updateByIdAndNameIdArgument = id;
-        updateByIdAndNameNameArgument = name;
-        updateByIdAndNameProfileArgument = profile;
-        return updateByIdAndNameReturnValue;
+    public Profile updateByAccountId(String accountId, Profile profile) {
+        updateByAccountIdInvokeCount++;
+        updateByAccountIdAccountIdArgument = accountId;
+        updateByAccountIdProfileArgument = profile;
+        return updateByAccountIdReturnValue;
     }
 
     @Override
-    public int deleteByIdAndName(String id, String name) {
-        deleteByIdAndNameInvokeCount++;
-        deleteByIdAndNameIdArgument = id;
-        deleteByIdAndNameNameArgument = name;
-        return deleteByIdAndNameReturnValue;
+    public int deleteByAccountId(String accountId) {
+        deleteByAccountIdInvokeCount++;
+        deleteByAccountIdAccountIdArgument = accountId;
+        return deleteByAccountIdReturnValue;
     }
 
     public void resetSpy() {
-        readByIdAndNameInvokeCount = 0;
-        readByIdAndNameIdArgument = null;
-        readByIdAndNameNameArgument = null;
+        readByAccountIdInvokeCount = 0;
+        readByAccountIdAccountIdArgument = null;
+        readByAccountIdAndNameInvokeCount = 0;
+        readByAccountIdAndNameAccountIdArgument = null;
+        readByAccountIdAndNameNameArgument = null;
         createInvokeCount = 0;
         createProfileArgument = null;
-        updateByIdAndNameInvokeCount = 0;
-        updateByIdAndNameIdArgument = null;
-        updateByIdAndNameNameArgument = null;
-        updateByIdAndNameProfileArgument = null;
-        deleteByIdAndNameInvokeCount = 0;
-        deleteByIdAndNameIdArgument = null;
-        deleteByIdAndNameNameArgument = null;
+        updateByAccountIdInvokeCount = 0;
+        updateByAccountIdAccountIdArgument = null;
+        updateByAccountIdProfileArgument = null;
+        deleteByAccountIdInvokeCount = 0;
+        deleteByAccountIdAccountIdArgument = null;
     }
 
-    public void setReadByIdAndNameReturnValue(Profile[] readByIdAndNameReturnValue) {
-        this.readByIdAndNameReturnValue = readByIdAndNameReturnValue;
+    public void setReadByAccountIdReturnValue(Profile[] readByAccountIdReturnValue) {
+        this.readByAccountIdReturnValue = readByAccountIdReturnValue;
     }
 
-    public int getReadByIdAndNameInvokeCount() {
-        return readByIdAndNameInvokeCount;
+    public int getReadByAccountIdInvokeCount() {
+        return readByAccountIdInvokeCount;
     }
 
-    public String getReadByIdAndNameIdArgument() {
-        return readByIdAndNameIdArgument;
+    public String getReadByAccountIdAccountIdArgument() {
+        return readByAccountIdAccountIdArgument;
     }
 
-    public String getReadByIdAndNameNameArgument() {
-        return readByIdAndNameNameArgument;
+    public void setReadByAccountIdAndNameReturnValue(Profile[] readByAccountIdAndNameReturnValue) {
+        this.readByAccountIdAndNameReturnValue = readByAccountIdAndNameReturnValue;
+    }
+
+    public int getReadByAccountIdAndNameInvokeCount() {
+        return readByAccountIdAndNameInvokeCount;
+    }
+
+    public String getReadByAccountIdAndNameAccountIdArgument() {
+        return readByAccountIdAndNameAccountIdArgument;
+    }
+
+    public String getReadByAccountIdAndNameNameArgument() {
+        return readByAccountIdAndNameNameArgument;
     }
 
     public void setCreateReturnValue(Profile createReturnValue) {
@@ -96,39 +114,31 @@ public class ProfileRepositorySpy implements ProfileRepository {
         return createProfileArgument;
     }
 
-    public void setUpdateByIdAndNameReturnValue(Profile updateByIdAndNameReturnValue) {
-        this.updateByIdAndNameReturnValue = updateByIdAndNameReturnValue;
+    public void setUpdateByAccountIdReturnValue(Profile updateByAccountIdReturnValue) {
+        this.updateByAccountIdReturnValue = updateByAccountIdReturnValue;
     }
 
-    public int getUpdateByIdAndNameInvokeCount() {
-        return updateByIdAndNameInvokeCount;
+    public int getUpdateByAccountIdInvokeCount() {
+        return updateByAccountIdInvokeCount;
     }
 
-    public String getUpdateByIdAndNameIdArgument() {
-        return updateByIdAndNameIdArgument;
+    public String getUpdateByAccountIdAccountIdArgument() {
+        return updateByAccountIdAccountIdArgument;
     }
 
-    public String getUpdateByIdAndNameNameArgument() {
-        return updateByIdAndNameNameArgument;
+    public Profile getUpdateByAccountIdProfileArgument() {
+        return updateByAccountIdProfileArgument;
     }
 
-    public Profile getUpdateByIdAndNameProfileArgument() {
-        return updateByIdAndNameProfileArgument;
+    public void setDeleteByAccountIdReturnValue(int deleteByAccountIdReturnValue) {
+        this.deleteByAccountIdReturnValue = deleteByAccountIdReturnValue;
     }
 
-    public void setDeleteByIdAndNameReturnValue(int deleteByIdAndNameReturnValue) {
-        this.deleteByIdAndNameReturnValue = deleteByIdAndNameReturnValue;
+    public int getDeleteByAccountIdInvokeCount() {
+        return deleteByAccountIdInvokeCount;
     }
 
-    public int getDeleteByIdAndNameInvokeCount() {
-        return deleteByIdAndNameInvokeCount;
-    }
-
-    public String getDeleteByIdAndNameIdArgument() {
-        return deleteByIdAndNameIdArgument;
-    }
-
-    public String getDeleteByIdAndNameNameArgument() {
-        return deleteByIdAndNameNameArgument;
+    public String getDeleteByAccountIdAccountIdArgument() {
+        return deleteByAccountIdAccountIdArgument;
     }
 }
