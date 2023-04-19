@@ -10,20 +10,16 @@ import java.util.List;
 import java.util.Map;
 
 public class AccountServiceBridge implements AccountServiceClient {
-    private final String host;
-    private final int port;
     private final HttpClient httpClient;
+    private String host;
+    private int port;
 
     public AccountServiceBridge(HttpClient httpClient, Map<String, String> config) {
+        configure(config);
         if (httpClient == null) {
             throw new RuntimeException("Invalid httpClient provided to AccountServiceBridge constructor");
         }
-        if (config == null || !validateConfig(config)) {
-            throw new RuntimeException("Invalid config provided to AccountServiceBridge constructor");
-        }
         this.httpClient = httpClient;
-        host = (config.get("host") == null || config.get("host").length() == 0) ? "localhost" : config.get("host");
-        port = (config.get("port") == null || config.get("port").length() == 0) ? 80 : Integer.parseInt(config.get("port"));
     }
 
     @Override
@@ -59,15 +55,14 @@ public class AccountServiceBridge implements AccountServiceClient {
         }
     }
 
-    private static boolean validateConfig(Map<String, String> config) {
+    private void configure(Map<String, String> config) {
         if (config == null) {
-            return true;
+            throw new RuntimeException("Invalid config provided to AccountServiceBridge constructor");
         }
-        String host = config.get("host");
+        host = config.get("host");
         if (host == null || host.length() == 0) {
             host = "localhost";
         }
-        int port;
         if (config.get("port") == null || config.get("port").length() == 0) {
             port = 80;
         }
@@ -76,15 +71,14 @@ public class AccountServiceBridge implements AccountServiceClient {
                 port = Integer.parseInt(config.get("port"));
             }
             catch (Exception e) {
-                return false;
+                throw new RuntimeException("Invalid config provided to AccountServiceBridge constructor");
             }
         }
         try {
-            new URL("http://" + host + ":" + port);
+            new URL("http", host, port, "/");
         }
         catch (Exception e) {
-            return false;
+            throw new RuntimeException("Invalid config provided to AccountServiceBridge constructor");
         }
-        return true;
     }
 }

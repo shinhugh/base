@@ -1,8 +1,5 @@
 TODO ---
 
-- periodically purge "dangling" sessions whose Account ID no longer pertains to
-  an existing Account instance (infrequent)
-
 - consider service that requires websockets - how would a connection work
   through the gateway?
 
@@ -13,9 +10,3 @@ TODO ---
 
 - add Java HttpClient/HttpBridge, RandomService/RandomManager, and
   TimeService/TimeManager to reference code
-
-- change all verifyAuthorityContainsAtLeastOneRole() calls to variables
-
-- change all validateConfig() to configure()
-
-- null or empty string for host or port config should use localhost and 80

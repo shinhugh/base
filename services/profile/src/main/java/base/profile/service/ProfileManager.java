@@ -64,10 +64,12 @@ public class ProfileManager implements ProfileService {
         if (profile == null || !validateProfile(profile, true)) {
             throw new IllegalArgumentException();
         }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
+        boolean authorizedAsSystemOrUserOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN));
+        if (!authorizedAsSystemOrUserOrAdmin) {
             throw new AccessDeniedException();
         }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN)) && !profile.getAccountId().equals(authority.getId())) {
+        boolean authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
+        if (!authorizedAsSystemOrAdmin && !profile.getAccountId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
         boolean accountExists;
@@ -104,7 +106,8 @@ public class ProfileManager implements ProfileService {
         if (profile == null || !validateProfile(profile, false)) {
             throw new IllegalArgumentException();
         }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
+        boolean authorizedAsSystemOrUserOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN));
+        if (!authorizedAsSystemOrUserOrAdmin) {
             throw new AccessDeniedException();
         }
         base.profile.repository.model.Profile[] matches;
@@ -118,7 +121,8 @@ public class ProfileManager implements ProfileService {
             throw new NotFoundException();
         }
         base.profile.repository.model.Profile match = matches[0];
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN)) && !match.getAccountId().equals(authority.getId())) {
+        boolean authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
+        if (!authorizedAsSystemOrAdmin && !match.getAccountId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
         base.profile.repository.model.Profile entry = new base.profile.repository.model.Profile(null, profile.getName());
@@ -139,7 +143,8 @@ public class ProfileManager implements ProfileService {
         if (accountId == null || !validateId(accountId)) {
             throw new IllegalArgumentException();
         }
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN))) {
+        boolean authorizedAsSystemOrUserOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.USER | Role.ADMIN));
+        if (!authorizedAsSystemOrUserOrAdmin) {
             throw new AccessDeniedException();
         }
         base.profile.repository.model.Profile[] matches;
@@ -153,7 +158,8 @@ public class ProfileManager implements ProfileService {
             throw new NotFoundException();
         }
         base.profile.repository.model.Profile match = matches[0];
-        if (!verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN)) && !match.getAccountId().equals(authority.getId())) {
+        boolean authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, (short) (Role.SYSTEM | Role.ADMIN));
+        if (!authorizedAsSystemOrAdmin && !match.getAccountId().equals(authority.getId())) {
             throw new AccessDeniedException();
         }
         try {
