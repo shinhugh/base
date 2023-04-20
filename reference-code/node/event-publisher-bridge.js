@@ -12,7 +12,7 @@ class EventPublisherBridge extends EventPublisherClient {
     this.#amqpChannel = amqpChannel;
   }
 
-  async publishEvent(content) {
+  async publish(content) {
     try {
       await this.#amqpChannel.assertExchange(this.#exchangeName, this.#exchangeType);
     }

@@ -333,11 +333,11 @@ const testDeleteAccount = async () => {
   if (accountRepositorySpy.deleteByIdAndNameNameArgument !== accountName) {
     throw new Error('Actual value does not match expected value: AccountRepository.deleteByIdAndName(): name argument');
   }
-  if (accountDeleteEventPublisherClientSpy.publishEventInvocationCount != 1) {
-    throw new Error('Actual value does not match expected value: EventPublisherClient.publishEvent(): Invocation count');
+  if (accountDeleteEventPublisherClientSpy.publishInvocationCount != 1) {
+    throw new Error('Actual value does not match expected value: EventPublisherClient.publish(): Invocation count');
   }
-  if (accountDeleteEventPublisherClientSpy.publishEventContentArgument == null || accountDeleteEventPublisherClientSpy.publishEventContentArgument.id !== accountId) {
-    throw new Error('Actual value does not match expected value: EventPublisherClient.publishEvent(): content argument');
+  if (accountDeleteEventPublisherClientSpy.publishContentArgument == null || accountDeleteEventPublisherClientSpy.publishContentArgument.id !== accountId) {
+    throw new Error('Actual value does not match expected value: EventPublisherClient.publish(): content argument');
   }
 };
 

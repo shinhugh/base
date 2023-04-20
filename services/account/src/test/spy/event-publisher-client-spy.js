@@ -1,25 +1,25 @@
 import { EventPublisherClient } from '../../main/service/event-publisher-client.js';
 
 class EventPublisherClientSpy extends EventPublisherClient {
-  #publishEventInvocationCount;
-  #publishEventContentArgument;
+  #publishInvocationCount;
+  #publishContentArgument;
 
-  async publishEvent(content) {
-    this.#publishEventInvocationCount++;
-    this.#publishEventContentArgument = content;
+  async publish(content) {
+    this.#publishInvocationCount++;
+    this.#publishContentArgument = content;
   }
 
   resetSpy() {
-    this.#publishEventInvocationCount = 0;
-    this.#publishEventContentArgument = undefined;
+    this.#publishInvocationCount = 0;
+    this.#publishContentArgument = undefined;
   }
 
-  get publishEventInvocationCount() {
-    return this.#publishEventInvocationCount;
+  get publishInvocationCount() {
+    return this.#publishInvocationCount;
   }
 
-  get publishEventContentArgument() {
-    return this.#publishEventContentArgument;
+  get publishContentArgument() {
+    return this.#publishContentArgument;
   }
 }
 

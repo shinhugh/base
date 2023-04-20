@@ -3,6 +3,10 @@ TODO ---
 - consider service that requires websockets - how would a connection work
   through the gateway?
 
+- occasionally purge "dangling" profiles? - account delete calls that failed to
+  delete corresponding profiles due to unexpected errors
+
 - profile service should:
   - create queue "profile"
   - bind queue to exchange "account" with routing key "account.delete"
+  - handle event by deleting profile x where x.accountId == event.id

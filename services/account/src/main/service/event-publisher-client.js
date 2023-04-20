@@ -1,5 +1,5 @@
 class EventPublisherClient {
-  async publishEvent(content) { }
+  async publish(content) { }
 }
 
 export {
