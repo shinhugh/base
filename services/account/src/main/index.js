@@ -1,7 +1,7 @@
 import { PersistentSessionSequelizeRepository } from './repository/persistent-session-sequelize-repository.js';
 import { AccountSequelizeRepository } from './repository/account-sequelize-repository.js';
-import { RandomManager } from './service/random-manager.js'
-import { TimeManager } from './service/time-manager.js'
+import { RandomManager } from './service/random-manager.js';
+import { TimeManager } from './service/time-manager.js';
 import { AccountManager } from './service/account-manager.js';
 import { AccountController } from './controller/account-controller.js';
 import { Server } from './server.js';

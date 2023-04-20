@@ -2,8 +2,8 @@ import jwt from 'jsonwebtoken';
 import { Role } from '../main/service/model/role.js';
 import { PersistentSessionRepositorySpy } from './spy/persistent-session-repository-spy.js';
 import { AccountRepositorySpy } from './spy/account-repository-spy.js';
-import { RandomServiceSpy } from './spy/random-service-spy.js'
-import { TimeServiceSpy } from './spy/time-service-spy.js'
+import { RandomServiceSpy } from './spy/random-service-spy.js';
+import { TimeServiceSpy } from './spy/time-service-spy.js';
 import { AccountManager } from '../main/service/account-manager.js';
 
 const testIdentify = async () => {
