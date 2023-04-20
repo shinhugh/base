@@ -3,6 +3,6 @@ TODO ---
 - consider service that requires websockets - how would a connection work
   through the gateway?
 
-- implement an inter-service publisher-subscriber mechanism
-  - profile service needs to subscribe to account delete event and delete
-    corresponding profile when event is triggered
+- profile service should:
+  - create queue "profile"
+  - bind queue to exchange "account" with routing key "account.delete"

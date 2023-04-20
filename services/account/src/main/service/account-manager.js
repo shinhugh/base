@@ -8,6 +8,7 @@ import { PersistentSessionRepository } from '../repository/persistent-session-re
 import { AccountRepository } from '../repository/account-repository.js';
 import { RandomService } from './random-service.js';
 import { TimeService } from './time-service.js';
+import { EventPublisherClient } from './event-publisher-client.js';
 import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './model/errors.js';
 import { Role } from './model/role.js';
 
@@ -16,9 +17,10 @@ class AccountManager extends AccountService {
   #accountRepository;
   #randomService;
   #timeService;
+  #accountDeleteEventPublisherClient;
   #config;
 
-  constructor(persistentSessionRepository, accountRepository, randomService, timeService, config) {
+  constructor(persistentSessionRepository, accountRepository, randomService, timeService, accountDeleteEventPublisherClient, config) {
     super();
     this.#configure(config);
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
@@ -33,10 +35,14 @@ class AccountManager extends AccountService {
     if (!(timeService instanceof TimeService)) {
       throw new Error('Invalid timeService provided to AccountManager constructor');
     }
+    if (!(accountDeleteEventPublisherClient instanceof EventPublisherClient)) {
+      throw new Error('Invalid accountDeleteEventPublisherClient provided to AccountManager constructor');
+    }
     this.#persistentSessionRepository = persistentSessionRepository;
     this.#accountRepository = accountRepository;
     this.#randomService = randomService;
     this.#timeService = timeService;
+    this.#accountDeleteEventPublisherClient = accountDeleteEventPublisherClient;
   }
 
   async identify(authority, token) {
@@ -326,6 +332,12 @@ class AccountManager extends AccountService {
     }
     try {
       await this.#persistentSessionRepository.deleteByAccountId(match.id);
+    }
+    catch { }
+    try {
+      await this.#accountDeleteEventPublisherClient.publishEvent(Buffer.from(JSON.stringify({
+        id: match.id
+      })));
     }
     catch { }
   }

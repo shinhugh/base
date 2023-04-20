@@ -1,7 +1,9 @@
+import amqplib from 'amqplib';
 import { PersistentSessionSequelizeRepository } from './repository/persistent-session-sequelize-repository.js';
 import { AccountSequelizeRepository } from './repository/account-sequelize-repository.js';
 import { RandomManager } from './service/random-manager.js';
 import { TimeManager } from './service/time-manager.js';
+import { EventPublisherBridge } from './service/event-publisher-bridge.js';
 import { AccountManager } from './service/account-manager.js';
 import { AccountController } from './controller/account-controller.js';
 import { Server } from './server.js';
@@ -21,6 +23,11 @@ const config = {
     database: 'base',
     username: 'root',
     password: ''
+  },
+  accountDeleteEventPublisherBridge: {
+    exchangeName: 'account',
+    exchangeType: 'direct',
+    routingKey: 'account.delete'
   },
   accountManager: {
     tokenAlgorithm: 'HS256',
@@ -81,48 +88,64 @@ const config = {
   }
 };
 
-const persistentSessionSequelizeRepository = new PersistentSessionSequelizeRepository(config.persistentSessionSequelizeRepository);
-const accountSequelizeRepository = new AccountSequelizeRepository(config.accountSequelizeRepository);
-const randomManager = new RandomManager();
-const timeManager = new TimeManager();
-const accountManager = new AccountManager(persistentSessionSequelizeRepository, accountSequelizeRepository, randomManager, timeManager, config.accountManager);
-const accountController = new AccountController(accountManager);
-const server = new Server(config.server);
+let amqpConnection;
+let amqpChannel;
+let persistentSessionSequelizeRepository;
+let accountSequelizeRepository;
+let randomManager;
+let timeManager;
+let accountDeleteEventPublisherBridge;
+let accountManager;
+let accountController;
+let server;
 
-server.start();
+(async () => {
+  amqpConnection = await amqplib.connect('amqp://localhost:5672');
+  amqpChannel = await amqpConnection.createChannel();
+  persistentSessionSequelizeRepository = new PersistentSessionSequelizeRepository(config.persistentSessionSequelizeRepository);
+  accountSequelizeRepository = new AccountSequelizeRepository(config.accountSequelizeRepository);
+  randomManager = new RandomManager();
+  timeManager = new TimeManager();
+  accountDeleteEventPublisherBridge = new EventPublisherBridge(amqpChannel, config.accountDeleteEventPublisherBridge);
+  accountManager = new AccountManager(persistentSessionSequelizeRepository, accountSequelizeRepository, randomManager, timeManager, accountDeleteEventPublisherBridge, config.accountManager);
+  accountController = new AccountController(accountManager);
+  server = new Server(config.server);
 
-let purgeExpiredSessionsFailCount = 0;
-let purgeExpiredSessionsInterval = setInterval(() => {
-  try {
-    accountManager.purgeExpiredSessions();
-    purgeExpiredSessionsFailCount = 0;
-  }
-  catch {
-    purgeExpiredSessionsFailCount++;
-    if (purgeExpiredSessionsFailCount == 3) {
-      clearInterval(purgeExpiredSessionsInterval);
-      console.error('Failed to purge expired sessions; canceled task');
-    }
-    else {
-      console.error('Failed to purge expired sessions');
-    }
-  }
-}, 60000);
+  server.start();
 
-let purgeDanglingSessionsFailCount = 0;
-let purgeDanglingSessionsInterval = setInterval(() => {
-  try {
-    accountManager.purgeDanglingSessions();
-    purgeDanglingSessionsFailCount = 0;
-  }
-  catch {
-    purgeDanglingSessionsFailCount++;
-    if (purgeDanglingSessionsFailCount == 3) {
-      clearInterval(purgeDanglingSessionsInterval);
-      console.error('Failed to purge dangling sessions; canceled task');
+  let purgeExpiredSessionsFailCount = 0;
+  let purgeExpiredSessionsInterval = setInterval(() => {
+    try {
+      accountManager.purgeExpiredSessions();
+      purgeExpiredSessionsFailCount = 0;
     }
-    else {
-      console.error('Failed to purge dangling sessions');
+    catch {
+      purgeExpiredSessionsFailCount++;
+      if (purgeExpiredSessionsFailCount == 3) {
+        clearInterval(purgeExpiredSessionsInterval);
+        console.error('Failed to purge expired sessions; canceled task');
+      }
+      else {
+        console.error('Failed to purge expired sessions');
+      }
     }
-  }
-}, 3600000);
+  }, 60000);
+
+  let purgeDanglingSessionsFailCount = 0;
+  let purgeDanglingSessionsInterval = setInterval(() => {
+    try {
+      accountManager.purgeDanglingSessions();
+      purgeDanglingSessionsFailCount = 0;
+    }
+    catch {
+      purgeDanglingSessionsFailCount++;
+      if (purgeDanglingSessionsFailCount == 3) {
+        clearInterval(purgeDanglingSessionsInterval);
+        console.error('Failed to purge dangling sessions; canceled task');
+      }
+      else {
+        console.error('Failed to purge dangling sessions');
+      }
+    }
+  }, 3600000);
+})();
