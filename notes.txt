@@ -10,3 +10,19 @@ TODO ---
   delete corresponding profiles due to unexpected errors
 
 - consider letter cases for queries and conflict checks
+  - database: case-sensitive
+  - repository read/update/delete (matching): configurable by parameter
+
+
+
+- Accounts.Id - service transforms input to lowercase
+- Accounts.Name - service.read/update/delete does case-sensitive search for
+  initial match
+  service.create/update does case-insensitive search to check for conflict
+- Accounts.PasswordHash - fine
+- Accounts.PasswordSalt - fine
+- Profiles.AccountId - service transforms input to lowercase
+- Profiles.Name - service.read does case-insensitive search
+- PersistentSessions.Id - service transforms input to lowercase
+- PersistentSessions.AccountId - service transforms input to lowercase
+- PersistentSessions.RefreshToken - fine
