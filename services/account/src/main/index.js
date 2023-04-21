@@ -3,7 +3,7 @@ import { PersistentSessionSequelizeRepository } from './repository/persistent-se
 import { AccountSequelizeRepository } from './repository/account-sequelize-repository.js';
 import { RandomManager } from './service/random-manager.js';
 import { TimeManager } from './service/time-manager.js';
-import { EventSinkBridge } from './service/event-sink-bridge.js';
+import { AccountEventAmqpSink } from './service/account-event-amqp-sink.js';
 import { AccountManager } from './service/account-manager.js';
 import { AccountHttpController } from './controller/account-http-controller.js';
 import { Server } from './server.js';
@@ -24,10 +24,10 @@ const config = {
     username: 'root',
     password: ''
   },
-  accountDeleteEventSinkBridge: {
-    exchangeName: 'account',
-    exchangeType: 'direct',
-    routingKey: 'account.delete'
+  accountEventAmqpSink: {
+    accountDeleteEventExchangeName: 'account',
+    accountDeleteEventExchangeType: 'direct',
+    accountDeleteEventRoutingKey: 'account.delete'
   },
   accountManager: {
     tokenAlgorithm: 'HS256',
@@ -94,7 +94,7 @@ let persistentSessionSequelizeRepository;
 let accountSequelizeRepository;
 let randomManager;
 let timeManager;
-let accountDeleteEventSinkBridge;
+let accountEventAmqpSink;
 let accountManager;
 let accountHttpController;
 let server;
@@ -106,8 +106,8 @@ let server;
   accountSequelizeRepository = new AccountSequelizeRepository(config.accountSequelizeRepository);
   randomManager = new RandomManager();
   timeManager = new TimeManager();
-  accountDeleteEventSinkBridge = new EventSinkBridge(amqpChannel, config.accountDeleteEventSinkBridge);
-  accountManager = new AccountManager(persistentSessionSequelizeRepository, accountSequelizeRepository, randomManager, timeManager, accountDeleteEventSinkBridge, config.accountManager);
+  accountEventAmqpSink = new AccountEventAmqpSink(amqpChannel, config.accountEventAmqpSink);
+  accountManager = new AccountManager(persistentSessionSequelizeRepository, accountSequelizeRepository, randomManager, timeManager, accountEventAmqpSink, config.accountManager);
   accountHttpController = new AccountHttpController(accountManager);
   server = new Server(config.server);
 

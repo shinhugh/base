@@ -3,12 +3,12 @@ import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { AccountService } from './account-service.js';
 import { wrapError } from '../common.js';
-import { IllegalArgumentError as RepositoryIllegalArgumentError, NotFoundError as RepositoryNotFoundError, ConflictError as RepositoryConflictError } from '../repository/model/errors.js';
+import { IllegalArgumentError as RepositoryIllegalArgumentError, ConflictError as RepositoryConflictError } from '../repository/model/errors.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
 import { AccountRepository } from '../repository/account-repository.js';
 import { RandomService } from './random-service.js';
 import { TimeService } from './time-service.js';
-import { EventSinkClient } from './event-sink-client.js';
+import { AccountEventSink } from './account-event-sink.js';
 import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './model/errors.js';
 import { Role } from './model/role.js';
 
@@ -17,10 +17,10 @@ class AccountManager extends AccountService {
   #accountRepository;
   #randomService;
   #timeService;
-  #accountDeleteEventSinkClient;
+  #accountEventSink;
   #config;
 
-  constructor(persistentSessionRepository, accountRepository, randomService, timeService, accountDeleteEventSinkClient, config) {
+  constructor(persistentSessionRepository, accountRepository, randomService, timeService, accountEventSink, config) {
     super();
     this.#configure(config);
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
@@ -35,14 +35,14 @@ class AccountManager extends AccountService {
     if (!(timeService instanceof TimeService)) {
       throw new Error('Invalid timeService provided to AccountManager constructor');
     }
-    if (!(accountDeleteEventSinkClient instanceof EventSinkClient)) {
-      throw new Error('Invalid accountDeleteEventSinkClient provided to AccountManager constructor');
+    if (!(accountEventSink instanceof AccountEventSink)) {
+      throw new Error('Invalid accountEventSink provided to AccountManager constructor');
     }
     this.#persistentSessionRepository = persistentSessionRepository;
     this.#accountRepository = accountRepository;
     this.#randomService = randomService;
     this.#timeService = timeService;
-    this.#accountDeleteEventSinkClient = accountDeleteEventSinkClient;
+    this.#accountEventSink = accountEventSink;
   }
 
   async identify(authority, token) {
@@ -335,7 +335,7 @@ class AccountManager extends AccountService {
     }
     catch { }
     try {
-      await this.#accountDeleteEventSinkClient.publish(Buffer.from(match.id));
+      await this.#accountEventSink.publishAccountDeleteEvent(match.id);
     }
     catch { }
   }
