@@ -335,9 +335,7 @@ class AccountManager extends AccountService {
     }
     catch { }
     try {
-      await this.#accountDeleteEventPublisherClient.publish(Buffer.from(JSON.stringify({
-        id: match.id
-      })));
+      await this.#accountDeleteEventPublisherClient.publish(Buffer.from(match.id));
     }
     catch { }
   }
