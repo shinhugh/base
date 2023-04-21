@@ -17,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 public class ProfileServlet extends HttpServlet {
     // Use environment variables for production; hard-coded for testing only
@@ -33,35 +34,32 @@ public class ProfileServlet extends HttpServlet {
     private static final String AMQP_ACCOUNT_DELETE_ROUTING_KEY = "account.delete";
     private static final Map<String, String> PROFILE_JPA_REPOSITORY_CONFIG = Map.of("hibernate.connection.url", String.format(PROFILE_DB_CONNECTION_URL_FORMAT, PROFILE_DB_HOST, PROFILE_DB_PORT, PROFILE_DB_DATABASE), "hibernate.connection.username", PROFILE_DB_USERNAME, "hibernate.connection.password", PROFILE_DB_PASSWORD);
     private static final Map<String, String> ACCOUNT_SERVICE_BRIDGE_CONFIG = Map.of("port", "8081");
-    private final Connection amqpConnection = createAmqpConnection();
-    private final Channel amqpChannel = createAmqpChannel(amqpConnection);
     private final ProfileJpaRepository profileJpaRepository = new ProfileJpaRepository(PROFILE_JPA_REPOSITORY_CONFIG);
     private final HttpBridge httpBridge = new HttpBridge();
     private final AccountServiceBridge accountServiceBridge = new AccountServiceBridge(httpBridge, ACCOUNT_SERVICE_BRIDGE_CONFIG);
     private final ProfileManager profileManager = new ProfileManager(profileJpaRepository, accountServiceBridge);
     private final ProfileHttpController profileHttpController = new ProfileHttpController(profileManager);
     private final ProfileAmqpController profileAmqpController = new ProfileAmqpController(profileManager);
+    private Connection amqpConnection;
+    private Channel amqpChannel;
 
     @Override
     public void init() {
         try {
-            amqpChannel.queueDeclare(AMQP_PROFILE_DELETE_QUEUE_NAME, false, false, true, null);
+            initializeAmqp();
         }
         catch (Exception e) {
-            throw new RuntimeException("Failed to create queue");
+            System.out.println("Unexpected exception:\n" + e);
         }
+    }
+
+    @Override
+    public void destroy() {
         try {
-            amqpChannel.queueBind(AMQP_PROFILE_DELETE_QUEUE_NAME, AMQP_ACCOUNT_EXCHANGE_NAME, AMQP_ACCOUNT_DELETE_ROUTING_KEY);
+            deinitializeAmqp();
         }
         catch (Exception e) {
-            throw new RuntimeException("Failed to bind queue");
-        }
-        ProfileDeleteConsumer profileDeleteConsumer = new ProfileDeleteConsumer(amqpChannel, profileAmqpController);
-        try {
-            amqpChannel.basicConsume(AMQP_PROFILE_DELETE_QUEUE_NAME, profileDeleteConsumer);
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Failed to register consumer");
+            System.out.println("Unexpected exception:\n" + e);
         }
     }
 
@@ -95,27 +93,6 @@ public class ProfileServlet extends HttpServlet {
             default: {
                 response.setStatus(405);
             }
-        }
-    }
-
-    private static Connection createAmqpConnection() {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.setHost(AMQP_HOST);
-        connectionFactory.setPort(AMQP_PORT);
-        try {
-            return connectionFactory.newConnection();
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Failed to create connection");
-        }
-    }
-
-    private static Channel createAmqpChannel(Connection amqpConnection) {
-        try {
-            return amqpConnection.createChannel();
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Failed to create channel");
         }
     }
 
@@ -163,6 +140,33 @@ public class ProfileServlet extends HttpServlet {
             queryParameters.put(parameter.getKey(), Arrays.asList(parameter.getValue()));
         }
         return queryParameters;
+    }
+
+    private void initializeAmqp() throws IOException, TimeoutException {
+        if (amqpConnection == null) {
+            ConnectionFactory connectionFactory = new ConnectionFactory();
+            connectionFactory.setHost(AMQP_HOST);
+            connectionFactory.setPort(AMQP_PORT);
+            amqpConnection = connectionFactory.newConnection();
+        }
+        if (amqpChannel == null) {
+            amqpChannel = amqpConnection.createChannel();
+        }
+        amqpChannel.queueDeclare(AMQP_PROFILE_DELETE_QUEUE_NAME, false, false, true, null);
+        amqpChannel.queueBind(AMQP_PROFILE_DELETE_QUEUE_NAME, AMQP_ACCOUNT_EXCHANGE_NAME, AMQP_ACCOUNT_DELETE_ROUTING_KEY);
+        ProfileDeleteConsumer profileDeleteConsumer = new ProfileDeleteConsumer(amqpChannel, profileAmqpController);
+        amqpChannel.basicConsume(AMQP_PROFILE_DELETE_QUEUE_NAME, profileDeleteConsumer);
+    }
+
+    private void deinitializeAmqp() throws IOException, TimeoutException {
+        if (amqpChannel != null) {
+            amqpChannel.close();
+            amqpChannel = null;
+        }
+        if (amqpConnection != null) {
+            amqpConnection.close();
+            amqpConnection = null;
+        }
     }
 
     private static class ProfileDeleteConsumer extends DefaultConsumer {
