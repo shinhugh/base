@@ -14,8 +14,6 @@ class AccountService {
   async deleteAccount(authority, id, name) { }
 
   async purgeExpiredSessions() { }
-
-  async purgeDanglingSessions() { }
 }
 
 export {

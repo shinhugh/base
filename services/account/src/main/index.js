@@ -130,22 +130,4 @@ let server;
       }
     }
   }, 60000);
-
-  let purgeDanglingSessionsFailCount = 0;
-  let purgeDanglingSessionsInterval = setInterval(() => {
-    try {
-      accountManager.purgeDanglingSessions();
-      purgeDanglingSessionsFailCount = 0;
-    }
-    catch {
-      purgeDanglingSessionsFailCount++;
-      if (purgeDanglingSessionsFailCount == 3) {
-        clearInterval(purgeDanglingSessionsInterval);
-        console.error('Failed to purge dangling sessions; canceled task');
-      }
-      else {
-        console.error('Failed to purge dangling sessions');
-      }
-    }
-  }, 3600000);
 })();

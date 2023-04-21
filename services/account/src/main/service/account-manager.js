@@ -350,10 +350,6 @@ class AccountManager extends AccountService {
     }
   }
 
-  async purgeDanglingSessions() {
-    // TODO: Implement
-  }
-
   async #loginViaCredentials(authority, credentials) {
     const account = await (async () => {
       let accountMatches;
