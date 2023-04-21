@@ -1,14 +1,12 @@
 package base.profile;
 
+import base.profile.controller.ProfileAmqpController;
 import base.profile.controller.ProfileHttpController;
 import base.profile.repository.ProfileJpaRepository;
 import base.profile.service.AccountServiceBridge;
-import base.profile.service.EventSourceBridge;
 import base.profile.service.HttpBridge;
 import base.profile.service.ProfileManager;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.*;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,17 +28,42 @@ public class ProfileServlet extends HttpServlet {
     private static final String PROFILE_DB_CONNECTION_URL_FORMAT = "jdbc:mysql://%s:%s/%s";
     private static final String AMQP_HOST = "localhost";
     private static final int AMQP_PORT = 5672;
+    private static final String AMQP_PROFILE_DELETE_QUEUE_NAME = "profile.delete";
+    private static final String AMQP_ACCOUNT_EXCHANGE_NAME = "account";
+    private static final String AMQP_ACCOUNT_DELETE_ROUTING_KEY = "account.delete";
     private static final Map<String, String> PROFILE_JPA_REPOSITORY_CONFIG = Map.of("hibernate.connection.url", String.format(PROFILE_DB_CONNECTION_URL_FORMAT, PROFILE_DB_HOST, PROFILE_DB_PORT, PROFILE_DB_DATABASE), "hibernate.connection.username", PROFILE_DB_USERNAME, "hibernate.connection.password", PROFILE_DB_PASSWORD);
     private static final Map<String, String> ACCOUNT_SERVICE_BRIDGE_CONFIG = Map.of("port", "8081");
-    private static final Map<String, String> ACCOUNT_DELETE_EVENT_SOURCE_BRIDGE_CONFIG = Map.of("queueName", "profile.delete", "exchangeName", "account", "routingKey", "account.delete");
     private final Connection amqpConnection = createAmqpConnection();
     private final Channel amqpChannel = createAmqpChannel(amqpConnection);
     private final ProfileJpaRepository profileJpaRepository = new ProfileJpaRepository(PROFILE_JPA_REPOSITORY_CONFIG);
     private final HttpBridge httpBridge = new HttpBridge();
     private final AccountServiceBridge accountServiceBridge = new AccountServiceBridge(httpBridge, ACCOUNT_SERVICE_BRIDGE_CONFIG);
-    private final EventSourceBridge accountDeleteEventSourceBridge = new EventSourceBridge(amqpChannel, ACCOUNT_DELETE_EVENT_SOURCE_BRIDGE_CONFIG);
-    private final ProfileManager profileManager = new ProfileManager(profileJpaRepository, accountServiceBridge, accountDeleteEventSourceBridge);
+    private final ProfileManager profileManager = new ProfileManager(profileJpaRepository, accountServiceBridge);
     private final ProfileHttpController profileHttpController = new ProfileHttpController(profileManager);
+    private final ProfileAmqpController profileAmqpController = new ProfileAmqpController(profileManager);
+
+    @Override
+    public void init() {
+        try {
+            amqpChannel.queueDeclare(AMQP_PROFILE_DELETE_QUEUE_NAME, false, false, true, null);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Failed to create queue");
+        }
+        try {
+            amqpChannel.queueBind(AMQP_PROFILE_DELETE_QUEUE_NAME, AMQP_ACCOUNT_EXCHANGE_NAME, AMQP_ACCOUNT_DELETE_ROUTING_KEY);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Failed to bind queue");
+        }
+        ProfileDeleteConsumer profileDeleteConsumer = new ProfileDeleteConsumer(amqpChannel, profileAmqpController);
+        try {
+            amqpChannel.basicConsume(AMQP_PROFILE_DELETE_QUEUE_NAME, profileDeleteConsumer);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Failed to register consumer");
+        }
+    }
 
     @Override
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -140,5 +163,21 @@ public class ProfileServlet extends HttpServlet {
             queryParameters.put(parameter.getKey(), Arrays.asList(parameter.getValue()));
         }
         return queryParameters;
+    }
+
+    private static class ProfileDeleteConsumer extends DefaultConsumer {
+        private final ProfileAmqpController profileAmqpController;
+
+        public ProfileDeleteConsumer(Channel channel, ProfileAmqpController profileAmqpController) {
+            super(channel);
+            this.profileAmqpController = profileAmqpController;
+        }
+
+        @Override
+        public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+            ByteArrayInputStream messageBody = new ByteArrayInputStream(body);
+            ProfileAmqpController.Message message = new ProfileAmqpController.Message(messageBody);
+            profileAmqpController.deleteProfile(message);
+        }
     }
 }
