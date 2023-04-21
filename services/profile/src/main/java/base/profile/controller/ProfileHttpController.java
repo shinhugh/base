@@ -13,11 +13,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-public class ProfileController {
+public class ProfileHttpController {
     private final ProfileService profileService;
     private final Gson gson;
 
-    public ProfileController(ProfileService profileService) {
+    public ProfileHttpController(ProfileService profileService) {
         if (profileService == null) {
             throw new RuntimeException("Invalid profileService provided to ProfileController constructor");
         }

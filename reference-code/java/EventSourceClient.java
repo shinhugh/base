@@ -1,8 +1,6 @@
-package base.profile.service;
-
 import java.io.InputStream;
 
-public interface EventSubscriberClient {
+public interface EventSourceClient {
     void subscribe(EventHandler eventHandler);
 
     interface EventHandler {

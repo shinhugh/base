@@ -1,5 +1,3 @@
-package base.profile.service;
-
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
@@ -8,13 +6,13 @@ import com.rabbitmq.client.Envelope;
 import java.io.ByteArrayInputStream;
 import java.util.Map;
 
-public class EventSubscriberBridge implements EventSubscriberClient {
+public class EventSourceBridge implements EventSourceClient {
     private final Channel amqpChannel;
     private String queueName;
     private String exchangeName;
     private String routingKey;
 
-    public EventSubscriberBridge(Channel amqpChannel, Map<String, String> config) {
+    public EventSourceBridge(Channel amqpChannel, Map<String, String> config) {
         configure(config);
         this.amqpChannel = amqpChannel;
     }
@@ -71,7 +69,7 @@ public class EventSubscriberBridge implements EventSubscriberClient {
         @Override
         public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
             ByteArrayInputStream eventBody = new ByteArrayInputStream(body);
-            EventSubscriberClient.EventHandler.Event event = new EventSubscriberClient.EventHandler.Event(eventBody);
+            EventSourceClient.EventHandler.Event event = new EventSourceClient.EventHandler.Event(eventBody);
             eventHandler.handle(event);
         }
     }

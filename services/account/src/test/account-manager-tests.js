@@ -4,7 +4,7 @@ import { PersistentSessionRepositorySpy } from './spy/persistent-session-reposit
 import { AccountRepositorySpy } from './spy/account-repository-spy.js';
 import { RandomServiceSpy } from './spy/random-service-spy.js';
 import { TimeServiceSpy } from './spy/time-service-spy.js';
-import { EventPublisherClientSpy } from './spy/event-publisher-client-spy.js';
+import { EventSinkClientSpy } from './spy/event-sink-client-spy.js';
 import { AccountManager } from '../main/service/account-manager.js';
 
 const testIdentify = async () => {
@@ -291,7 +291,7 @@ const testUpdateAccount = async () => {
 const testDeleteAccount = async () => {
   persistentSessionRepositorySpy.resetSpy();
   accountRepositorySpy.resetSpy();
-  accountDeleteEventPublisherClientSpy.resetSpy();
+  accountDeleteEventSinkClientSpy.resetSpy();
   persistentSessionRepositorySpy.deleteByAccountIdReturnValue = 0;
   accountRepositorySpy.readByIdAndNameReturnValue = [
     {
@@ -333,11 +333,11 @@ const testDeleteAccount = async () => {
   if (accountRepositorySpy.deleteByIdAndNameNameArgument !== accountName) {
     throw new Error('Actual value does not match expected value: AccountRepository.deleteByIdAndName(): name argument');
   }
-  if (accountDeleteEventPublisherClientSpy.publishInvocationCount != 1) {
-    throw new Error('Actual value does not match expected value: EventPublisherClient.publish(): Invocation count');
+  if (accountDeleteEventSinkClientSpy.publishInvocationCount != 1) {
+    throw new Error('Actual value does not match expected value: EventSinkClient.publish(): Invocation count');
   }
-  if (accountDeleteEventPublisherClientSpy.publishContentArgument == null || accountDeleteEventPublisherClientSpy.publishContentArgument.id !== accountId) {
-    throw new Error('Actual value does not match expected value: EventPublisherClient.publish(): content argument');
+  if (!(accountDeleteEventSinkClientSpy.publishContentArgument instanceof Buffer) || accountDeleteEventSinkClientSpy.publishContentArgument.toString() !== accountId) {
+    throw new Error('Actual value does not match expected value: EventSinkClient.publish(): content argument');
   }
 };
 
@@ -361,8 +361,8 @@ const persistentSessionRepositorySpy = new PersistentSessionRepositorySpy();
 const accountRepositorySpy = new AccountRepositorySpy();
 const randomServiceSpy = new RandomServiceSpy();
 const timeServiceSpy = new TimeServiceSpy();
-const accountDeleteEventPublisherClientSpy = new EventPublisherClientSpy();
-const accountManager = new AccountManager(persistentSessionRepositorySpy, accountRepositorySpy, randomServiceSpy, timeServiceSpy, accountDeleteEventPublisherClientSpy, {
+const accountDeleteEventSinkClientSpy = new EventSinkClientSpy();
+const accountManager = new AccountManager(persistentSessionRepositorySpy, accountRepositorySpy, randomServiceSpy, timeServiceSpy, accountDeleteEventSinkClientSpy, {
   tokenAlgorithm: tokenAlgorithm,
   tokenSecretKey: tokenSecretKey,
   passwordHashAlgorithm: passwordHashAlgorithm,

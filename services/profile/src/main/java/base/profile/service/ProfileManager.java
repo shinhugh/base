@@ -17,7 +17,7 @@ public class ProfileManager implements ProfileService {
     private final ProfileRepository profileRepository;
     private final AccountServiceClient accountServiceClient;
 
-    public ProfileManager(ProfileRepository profileRepository, AccountServiceClient accountServiceClient, EventSubscriberClient accountDeleteEventSubscriberClient) {
+    public ProfileManager(ProfileRepository profileRepository, AccountServiceClient accountServiceClient, EventSourceClient accountDeleteEventSourceClient) {
         if (profileRepository == null) {
             throw new RuntimeException("Invalid profileRepository provided to ProfileManager constructor");
         }
@@ -26,7 +26,7 @@ public class ProfileManager implements ProfileService {
         }
         this.profileRepository = profileRepository;
         this.accountServiceClient = accountServiceClient;
-        accountDeleteEventSubscriberClient.subscribe(new AccountDeleteEventHandler(this));
+        accountDeleteEventSourceClient.subscribe(new AccountDeleteEventHandler(this));
     }
 
     @Override
@@ -232,7 +232,7 @@ public class ProfileManager implements ProfileService {
         return (authority.getRoles() & roles) != 0;
     }
 
-    private static class AccountDeleteEventHandler implements EventSubscriberClient.EventHandler {
+    private static class AccountDeleteEventHandler implements EventSourceClient.EventHandler {
         private final ProfileService profileService;
 
         public AccountDeleteEventHandler(ProfileService profileService) {

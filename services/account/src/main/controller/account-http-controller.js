@@ -1,19 +1,19 @@
 import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from '../service/model/errors.js';
 import { AccountService } from '../service/account-service.js';
 
-class AccountController {
+class AccountHttpController {
   #accountService;
 
   constructor(accountService) {
     if (!(accountService instanceof AccountService)) {
-      throw new Error('Invalid accountService provided to AccountController constructor');
+      throw new Error('Invalid accountService provided to AccountHttpController constructor');
     }
     this.#accountService = accountService;
   }
 
   async identify(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AccountController.identify()');
+      throw new Error('Invalid request provided to AccountHttpController.identify()');
     }
     const authority = parseAuthority(request);
     if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
@@ -50,7 +50,7 @@ class AccountController {
 
   async login(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AccountController.login()');
+      throw new Error('Invalid request provided to AccountHttpController.login()');
     }
     const authority = parseAuthority(request);
     if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
@@ -87,7 +87,7 @@ class AccountController {
 
   async logout(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AccountController.logout()');
+      throw new Error('Invalid request provided to AccountHttpController.logout()');
     }
     const authority = parseAuthority(request);
     if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
@@ -119,7 +119,7 @@ class AccountController {
 
   async readAccount(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AccountController.readAccount()');
+      throw new Error('Invalid request provided to AccountHttpController.readAccount()');
     }
     const authority = parseAuthority(request);
     const id = request.queryParameters?.id?.[0];
@@ -144,7 +144,7 @@ class AccountController {
 
   async createAccount(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AccountController.createAccount()');
+      throw new Error('Invalid request provided to AccountHttpController.createAccount()');
     }
     const authority = parseAuthority(request);
     if (request.headers == null || request.headers['content-type'] == null || request.headers['content-type'].length != 1 || !request.headers['content-type'][0].includes('application/json')) {
@@ -181,7 +181,7 @@ class AccountController {
 
   async updateAccount(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AccountController.updateAccount()');
+      throw new Error('Invalid request provided to AccountHttpController.updateAccount()');
     }
     const authority = parseAuthority(request);
     const id = request.queryParameters?.id?.[0];
@@ -220,7 +220,7 @@ class AccountController {
 
   async deleteAccount(request) {
     if (request == null || !validateRequest(request)) {
-      throw new Error('Invalid request provided to AccountController.deleteAccount()');
+      throw new Error('Invalid request provided to AccountHttpController.deleteAccount()');
     }
     const authority = parseAuthority(request);
     const id = request.queryParameters?.id?.[0];
@@ -327,5 +327,5 @@ const mapErrorToStatusCode = (e) => {
 };
 
 export {
-  AccountController
+  AccountHttpController
 };

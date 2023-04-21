@@ -3,9 +3,9 @@ import { PersistentSessionSequelizeRepository } from './repository/persistent-se
 import { AccountSequelizeRepository } from './repository/account-sequelize-repository.js';
 import { RandomManager } from './service/random-manager.js';
 import { TimeManager } from './service/time-manager.js';
-import { EventPublisherBridge } from './service/event-publisher-bridge.js';
+import { EventSinkBridge } from './service/event-sink-bridge.js';
 import { AccountManager } from './service/account-manager.js';
-import { AccountController } from './controller/account-controller.js';
+import { AccountHttpController } from './controller/account-http-controller.js';
 import { Server } from './server.js';
 
 // Use environment variables for production; hard-coded for testing only
@@ -24,7 +24,7 @@ const config = {
     username: 'root',
     password: ''
   },
-  accountDeleteEventPublisherBridge: {
+  accountDeleteEventSinkBridge: {
     exchangeName: 'account',
     exchangeType: 'direct',
     routingKey: 'account.delete'
@@ -41,31 +41,31 @@ const config = {
     endpoints: {
       '/identify': {
         get: async (request) => {
-          return await accountController.identify(request);
+          return await accountHttpController.identify(request);
         }
       },
       '/login': {
         post: async (request) => {
-          return await accountController.login(request);
+          return await accountHttpController.login(request);
         }
       },
       '/logout': {
         post: async (request) => {
-          return await accountController.logout(request);
+          return await accountHttpController.logout(request);
         }
       },
       '/account': {
         get: async (request) => {
-          return await accountController.readAccount(request);
+          return await accountHttpController.readAccount(request);
         },
         post: async (request) => {
-          return await accountController.createAccount(request);
+          return await accountHttpController.createAccount(request);
         },
         put: async (request) => {
-          return await accountController.updateAccount(request);
+          return await accountHttpController.updateAccount(request);
         },
         delete: async (request) => {
-          return await accountController.deleteAccount(request);
+          return await accountHttpController.deleteAccount(request);
         }
       }
     },
@@ -94,9 +94,9 @@ let persistentSessionSequelizeRepository;
 let accountSequelizeRepository;
 let randomManager;
 let timeManager;
-let accountDeleteEventPublisherBridge;
+let accountDeleteEventSinkBridge;
 let accountManager;
-let accountController;
+let accountHttpController;
 let server;
 
 (async () => {
@@ -106,9 +106,9 @@ let server;
   accountSequelizeRepository = new AccountSequelizeRepository(config.accountSequelizeRepository);
   randomManager = new RandomManager();
   timeManager = new TimeManager();
-  accountDeleteEventPublisherBridge = new EventPublisherBridge(amqpChannel, config.accountDeleteEventPublisherBridge);
-  accountManager = new AccountManager(persistentSessionSequelizeRepository, accountSequelizeRepository, randomManager, timeManager, accountDeleteEventPublisherBridge, config.accountManager);
-  accountController = new AccountController(accountManager);
+  accountDeleteEventSinkBridge = new EventSinkBridge(amqpChannel, config.accountDeleteEventSinkBridge);
+  accountManager = new AccountManager(persistentSessionSequelizeRepository, accountSequelizeRepository, randomManager, timeManager, accountDeleteEventSinkBridge, config.accountManager);
+  accountHttpController = new AccountHttpController(accountManager);
   server = new Server(config.server);
 
   server.start();

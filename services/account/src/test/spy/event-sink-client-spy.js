@@ -1,6 +1,6 @@
-import { EventPublisherClient } from '../../main/service/event-publisher-client.js';
+import { EventSinkClient } from '../../main/service/event-sink-client.js';
 
-class EventPublisherClientSpy extends EventPublisherClient {
+class EventSinkClientSpy extends EventSinkClient {
   #publishInvocationCount;
   #publishContentArgument;
 
@@ -24,5 +24,5 @@ class EventPublisherClientSpy extends EventPublisherClient {
 }
 
 export {
-  EventPublisherClientSpy
+  EventSinkClientSpy
 };

@@ -1,9 +1,9 @@
 package base.profile;
 
-import base.profile.controller.ProfileController;
+import base.profile.controller.ProfileHttpController;
 import base.profile.repository.ProfileJpaRepository;
 import base.profile.service.AccountServiceBridge;
-import base.profile.service.EventSubscriberBridge;
+import base.profile.service.EventSourceBridge;
 import base.profile.service.HttpBridge;
 import base.profile.service.ProfileManager;
 import com.rabbitmq.client.Channel;
@@ -32,15 +32,15 @@ public class ProfileServlet extends HttpServlet {
     private static final int AMQP_PORT = 5672;
     private static final Map<String, String> PROFILE_JPA_REPOSITORY_CONFIG = Map.of("hibernate.connection.url", String.format(PROFILE_DB_CONNECTION_URL_FORMAT, PROFILE_DB_HOST, PROFILE_DB_PORT, PROFILE_DB_DATABASE), "hibernate.connection.username", PROFILE_DB_USERNAME, "hibernate.connection.password", PROFILE_DB_PASSWORD);
     private static final Map<String, String> ACCOUNT_SERVICE_BRIDGE_CONFIG = Map.of("port", "8081");
-    private static final Map<String, String> ACCOUNT_DELETE_EVENT_SUBSCRIBER_BRIDGE_CONFIG = Map.of("queueName", "profile.delete", "exchangeName", "account", "routingKey", "account.delete");
+    private static final Map<String, String> ACCOUNT_DELETE_EVENT_SOURCE_BRIDGE_CONFIG = Map.of("queueName", "profile.delete", "exchangeName", "account", "routingKey", "account.delete");
     private final Connection amqpConnection = createAmqpConnection();
     private final Channel amqpChannel = createAmqpChannel(amqpConnection);
     private final ProfileJpaRepository profileJpaRepository = new ProfileJpaRepository(PROFILE_JPA_REPOSITORY_CONFIG);
     private final HttpBridge httpBridge = new HttpBridge();
     private final AccountServiceBridge accountServiceBridge = new AccountServiceBridge(httpBridge, ACCOUNT_SERVICE_BRIDGE_CONFIG);
-    private final EventSubscriberBridge accountDeleteEventSubscriberBridge = new EventSubscriberBridge(amqpChannel, ACCOUNT_DELETE_EVENT_SUBSCRIBER_BRIDGE_CONFIG);
-    private final ProfileManager profileManager = new ProfileManager(profileJpaRepository, accountServiceBridge, accountDeleteEventSubscriberBridge);
-    private final ProfileController profileController = new ProfileController(profileManager);
+    private final EventSourceBridge accountDeleteEventSourceBridge = new EventSourceBridge(amqpChannel, ACCOUNT_DELETE_EVENT_SOURCE_BRIDGE_CONFIG);
+    private final ProfileManager profileManager = new ProfileManager(profileJpaRepository, accountServiceBridge, accountDeleteEventSourceBridge);
+    private final ProfileHttpController profileHttpController = new ProfileHttpController(profileManager);
 
     @Override
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -50,22 +50,22 @@ public class ProfileServlet extends HttpServlet {
         }
         switch (request.getMethod().toLowerCase()) {
             case "get": {
-                ProfileController.Response res = profileController.readProfile(translateRequest(request));
+                ProfileHttpController.Response res = profileHttpController.readProfile(translateRequest(request));
                 translateResponse(res, response);
                 return;
             }
             case "post": {
-                ProfileController.Response res = profileController.createProfile(translateRequest(request));
+                ProfileHttpController.Response res = profileHttpController.createProfile(translateRequest(request));
                 translateResponse(res, response);
                 return;
             }
             case "put": {
-                ProfileController.Response res = profileController.updateProfile(translateRequest(request));
+                ProfileHttpController.Response res = profileHttpController.updateProfile(translateRequest(request));
                 translateResponse(res, response);
                 return;
             }
             case "delete": {
-                ProfileController.Response res = profileController.deleteProfile(translateRequest(request));
+                ProfileHttpController.Response res = profileHttpController.deleteProfile(translateRequest(request));
                 translateResponse(res, response);
                 return;
             }
@@ -96,14 +96,14 @@ public class ProfileServlet extends HttpServlet {
         }
     }
 
-    private static ProfileController.Request translateRequest(HttpServletRequest request) throws IOException {
+    private static ProfileHttpController.Request translateRequest(HttpServletRequest request) throws IOException {
         ByteArrayOutputStream bodyBufferStream = new ByteArrayOutputStream();
         request.getInputStream().transferTo(bodyBufferStream);
         InputStream body = new ByteArrayInputStream(bodyBufferStream.toByteArray());
-        return new ProfileController.Request(getHeaders(request), getQueryParameters(request), body);
+        return new ProfileHttpController.Request(getHeaders(request), getQueryParameters(request), body);
     }
 
-    private static void translateResponse(ProfileController.Response src, HttpServletResponse dst) throws IOException {
+    private static void translateResponse(ProfileHttpController.Response src, HttpServletResponse dst) throws IOException {
         dst.setStatus(src.getStatus());
         if (src.getHeaders() != null) {
             for (Map.Entry<String, List<String>> header : src.getHeaders().entrySet()) {

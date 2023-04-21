@@ -1,6 +1,6 @@
-import { EventPublisherClient } from './event-publisher-client.js';
+import { EventSinkClient } from './event-sink-client.js';
 
-class EventPublisherBridge extends EventPublisherClient {
+class EventSinkBridge extends EventSinkClient {
   #amqpChannel;
   #exchangeName;
   #exchangeType;
@@ -29,26 +29,26 @@ class EventPublisherBridge extends EventPublisherClient {
 
   #configure(config) {
     if (config == null) {
-      throw new Error('Invalid config provided to EventPublisherBridge constructor');
+      throw new Error('Invalid config provided to EventSinkBridge constructor');
     }
     if (typeof config !== 'object') {
-      throw new Error('Invalid config provided to EventPublisherBridge constructor');
+      throw new Error('Invalid config provided to EventSinkBridge constructor');
     }
     if (typeof config.exchangeName !== 'string') {
-      throw new Error('Invalid config provided to EventPublisherBridge constructor');
+      throw new Error('Invalid config provided to EventSinkBridge constructor');
     }
     this.#exchangeName = config.exchangeName;
     if (typeof config.exchangeType !== 'string') {
-      throw new Error('Invalid config provided to EventPublisherBridge constructor');
+      throw new Error('Invalid config provided to EventSinkBridge constructor');
     }
     this.#exchangeType = config.exchangeType;
     if (typeof config.routingKey !== 'string') {
-      throw new Error('Invalid config provided to EventPublisherBridge constructor');
+      throw new Error('Invalid config provided to EventSinkBridge constructor');
     }
     this.#routingKey = config.routingKey;
   }
 }
 
 export {
-  EventPublisherBridge
+  EventSinkBridge
 };
