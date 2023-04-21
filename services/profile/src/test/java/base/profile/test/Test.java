@@ -13,11 +13,11 @@ public class Test {
         String header = "[" + name + "] ";
         try {
             runnable.run();
-            System.out.println(header + "SUCCESS");
+            System.out.println(header + "PASS");
         }
         catch (Exception e) {
             System.out.println(header + e.getMessage());
-            System.out.println(header + "FAILURE");
+            System.out.println(header + "FAIL");
         }
     }
 

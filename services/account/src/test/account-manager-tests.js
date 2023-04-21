@@ -377,10 +377,10 @@ const tests = [
   { name: 'Login with refresh token', run: testLoginRefreshToken },
   { name: 'Logout with account ID', run: testLogoutAccountId },
   { name: 'Logout with refresh token', run: testLogoutRefreshToken },
-  { name: 'Read Account', run: testReadAccount },
-  { name: 'Create Account', run: testCreateAccount },
-  { name: 'Update Account', run: testUpdateAccount },
-  { name: 'Delete Account', run: testDeleteAccount }
+  { name: 'Read account', run: testReadAccount },
+  { name: 'Create account', run: testCreateAccount },
+  { name: 'Update account', run: testUpdateAccount },
+  { name: 'Delete account', run: testDeleteAccount }
 ];
 
 export {
