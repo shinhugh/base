@@ -19,7 +19,7 @@ public class ProfileHttpController {
 
     public ProfileHttpController(ProfileService profileService) {
         if (profileService == null) {
-            throw new RuntimeException("Invalid profileService provided to ProfileController constructor");
+            throw new RuntimeException("Invalid profileService provided to ProfileHttpController constructor");
         }
         this.profileService = profileService;
         gson = new GsonBuilder().create();
@@ -27,7 +27,7 @@ public class ProfileHttpController {
 
     public Response readProfile(Request request) {
         if (request == null) {
-            throw new RuntimeException("Invalid request provided to ProfileController.read()");
+            throw new RuntimeException("Invalid request provided to ProfileHttpController.read()");
         }
         Authority authority;
         try {
@@ -59,7 +59,7 @@ public class ProfileHttpController {
 
     public Response createProfile(Request request) {
         if (request == null) {
-            throw new RuntimeException("Invalid request provided to ProfileController.create()");
+            throw new RuntimeException("Invalid request provided to ProfileHttpController.create()");
         }
         Authority authority;
         try {
@@ -94,7 +94,7 @@ public class ProfileHttpController {
 
     public Response updateProfile(Request request) {
         if (request == null) {
-            throw new RuntimeException("Invalid request provided to ProfileController.update()");
+            throw new RuntimeException("Invalid request provided to ProfileHttpController.update()");
         }
         Authority authority;
         try {
@@ -135,7 +135,7 @@ public class ProfileHttpController {
 
     public Response deleteProfile(Request request) {
         if (request == null) {
-            throw new RuntimeException("Invalid request provided to ProfileController.delete()");
+            throw new RuntimeException("Invalid request provided to ProfileHttpController.delete()");
         }
         Authority authority;
         try {
