@@ -140,7 +140,6 @@ class AccountManager extends AccountService {
   }
 
   async readAccount(authority, id, name) {
-    id = id?.toLowerCase();
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
@@ -170,6 +169,12 @@ class AccountManager extends AccountService {
       throw new NotFoundError();
     }
     const match = matches[0];
+    if (name != null && match.name !== name) {
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
+      }
+      throw new NotFoundError();
+    }
     const owner = match.id === authority?.id;
     if (!authorizedAsSystemOrAdmin && !owner) {
       if (queryContainsPrivateData) {
@@ -212,7 +217,6 @@ class AccountManager extends AccountService {
   }
 
   async updateAccount(authority, id, name, account) {
-    id = id?.toLowerCase();
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
@@ -249,6 +253,12 @@ class AccountManager extends AccountService {
       throw new NotFoundError();
     }
     const match = matches[0];
+    if (name != null && match.name !== name) {
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
+      }
+      throw new NotFoundError();
+    }
     const owner = match.id === authority?.id;
     if (!authorizedAsSystemOrAdmin && !owner) {
       throw new AccessDeniedError();
@@ -285,7 +295,6 @@ class AccountManager extends AccountService {
   }
 
   async deleteAccount(authority, id, name) {
-    id = id?.toLowerCase();
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
@@ -319,6 +328,12 @@ class AccountManager extends AccountService {
       throw new NotFoundError();
     }
     const match = matches[0];
+    if (name != null && match.name !== name) {
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
+      }
+      throw new NotFoundError();
+    }
     const owner = match.id === authority?.id;
     if (!authorizedAsSystemOrAdmin && !owner) {
       throw new AccessDeniedError();
@@ -365,6 +380,9 @@ class AccountManager extends AccountService {
       return accountMatches[0];
     })();
     if (account == null) {
+      throw new AccessDeniedError();
+    }
+    if (account.name !== credentials.name) {
       throw new AccessDeniedError();
     }
     const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, credentials.password, account.passwordSalt);
@@ -457,7 +475,6 @@ class AccountManager extends AccountService {
   }
 
   async #logoutViaAccountId(authority, accountId) {
-    accountId = accountId.toLowerCase();
     const authorizedAsSystemOrUserOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin);
     if (!authorizedAsSystemOrUserOrAdmin) {
       throw new AccessDeniedError();

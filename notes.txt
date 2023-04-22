@@ -1,29 +1,66 @@
-TODO ---
-
-- consider service that requires websockets - how would a connection work
-  through the gateway?
-
-- occasionally purge "dangling" sessions? - account delete calls that failed to
-  delete corresponding sessions due to unexpected errors
-
-- occasionally purge "dangling" profiles? - account delete calls that failed to
-  delete corresponding profiles due to unexpected errors
-
-- consider letter cases for queries and conflict checks
-  - database: case-sensitive
-  - repository read/update/delete (matching): configurable by parameter
+Notes ---
 
 
+If entire DB uses case-sensitive collation:
 
-- Accounts.Id - service transforms input to lowercase
-- Accounts.Name - service.read/update/delete does case-sensitive search for
-  initial match
-  service.create/update does case-insensitive search to check for conflict
-- Accounts.PasswordHash - fine
-- Accounts.PasswordSalt - fine
-- PersistentSessions.Id - service transforms input to lowercase
-- PersistentSessions.AccountId - service transforms input to lowercase
-- PersistentSessions.RefreshToken - fine
+Repository must support case-insensitive search by running special query with
+LOWER()
+Repository can optionally also support case-insensitive conflict match
 
-- Profiles.AccountId - service transforms input to lowercase
-- Profiles.Name - service.read does case-insensitive search
+- Accounts.Id
+    service transforms input to lowercase, does case-sensitive operation
+
+- Accounts.Name
+    service.read/update/delete does case-sensitive search
+    service.create/update does case-insensitive conflict match
+
+- Accounts.PasswordHash
+    fine as is
+
+- Accounts.PasswordSalt
+    fine as is
+
+- PersistentSessions.Id
+    service transforms input to lowercase, does case-sensitive operation
+
+- PersistentSessions.AccountId
+    service transforms input to lowercase, does case-sensitive operation
+
+- PersistentSessions.RefreshToken
+    fine as is
+
+- Profiles.AccountId
+    service transforms input to lowercase, does case-sensitive operation
+
+- Profiles.Name
+    service.read does case-insensitive search
+
+
+If assigning different collations to each DB column:
+
+- Accounts.Id
+    insensitive
+
+- Accounts.Name
+    insensitive (but service does manual case-sensitive compare)
+
+- Accounts.PasswordHash
+    sensitive
+
+- Accounts.PasswordSalt
+    sensitive
+
+- PersistentSessions.Id
+    insensitive
+
+- PersistentSessions.AccountId
+    insensitive
+
+- PersistentSessions.RefreshToken
+    sensitive
+
+- Profiles.AccountId
+    insensitive
+
+- Profiles.Name
+    insensitive

@@ -30,7 +30,6 @@ public class ProfileManager implements ProfileService {
 
     @Override
     public Profile[] readProfiles(Authority authority, String accountId, String name) throws IllegalArgumentException {
-        accountId = accountId == null ? null : accountId.toLowerCase();
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
@@ -98,7 +97,6 @@ public class ProfileManager implements ProfileService {
 
     @Override
     public Profile updateProfile(Authority authority, String accountId, Profile profile) throws IllegalArgumentException, AccessDeniedException, NotFoundException {
-        accountId = accountId == null ? null : accountId.toLowerCase();
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
@@ -139,7 +137,6 @@ public class ProfileManager implements ProfileService {
 
     @Override
     public void deleteProfile(Authority authority, String accountId) throws IllegalArgumentException, AccessDeniedException, NotFoundException {
-        accountId = accountId == null ? null : accountId.toLowerCase();
         if (!validateAuthority(authority)) {
             throw new IllegalArgumentException();
         }
