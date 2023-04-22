@@ -8,3 +8,6 @@ TODO ---
 
 - occasionally purge "dangling" profiles? - account delete calls that failed to
   delete corresponding profiles due to unexpected errors
+
+- update readme with updated architecture (merged account + authentication
+  services, new profile service, new message broker)
