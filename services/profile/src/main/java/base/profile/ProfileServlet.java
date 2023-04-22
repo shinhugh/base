@@ -49,7 +49,7 @@ public class ProfileServlet extends HttpServlet {
             initializeAmqp();
         }
         catch (Exception e) {
-            System.out.println("Unexpected exception:\n" + e);
+            System.out.println("Unexpected exception while initializing AMQP:\n" + e);
         }
     }
 
@@ -59,7 +59,7 @@ public class ProfileServlet extends HttpServlet {
             deinitializeAmqp();
         }
         catch (Exception e) {
-            System.out.println("Unexpected exception:\n" + e);
+            System.out.println("Unexpected exception while deinitializing AMQP:\n" + e);
         }
     }
 
@@ -152,7 +152,7 @@ public class ProfileServlet extends HttpServlet {
         if (amqpChannel == null) {
             amqpChannel = amqpConnection.createChannel();
         }
-        amqpChannel.queueDeclare(AMQP_PROFILE_DELETE_QUEUE_NAME, false, false, true, null);
+        amqpChannel.queueDeclare(AMQP_PROFILE_DELETE_QUEUE_NAME, true, false, false, null);
         amqpChannel.queueBind(AMQP_PROFILE_DELETE_QUEUE_NAME, AMQP_ACCOUNT_EXCHANGE_NAME, AMQP_ACCOUNT_DELETE_ROUTING_KEY);
         ProfileDeleteConsumer profileDeleteConsumer = new ProfileDeleteConsumer(amqpChannel, profileAmqpController);
         amqpChannel.basicConsume(AMQP_PROFILE_DELETE_QUEUE_NAME, profileDeleteConsumer);
