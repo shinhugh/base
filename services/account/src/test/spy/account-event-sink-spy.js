@@ -1,7 +1,7 @@
 import { AccountEventSink } from '../../main/service/account-event-sink.js';
 
 class AccountEventSinkSpy extends AccountEventSink {
-  #publishAccountDeleteEventInvocationCount;
+  #publishAccountDeleteEventInvocationCount = 0;
   #publishAccountDeleteEventIdArgument;
 
   async publishAccountDeleteEvent(id) {

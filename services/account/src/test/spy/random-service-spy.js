@@ -2,7 +2,7 @@ import { RandomService } from '../../main/service/random-service.js';
 
 class RandomServiceSpy extends RandomService {
   #generateRandomStringReturnValue;
-  #generateRandomStringInvokeCount;
+  #generateRandomStringInvokeCount = 0;
   #generateRandomStringPoolArgument;
   #generateRandomStringLengthArgument;
 

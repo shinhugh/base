@@ -21,8 +21,9 @@ TODO ---
   service.create/update does case-insensitive search to check for conflict
 - Accounts.PasswordHash - fine
 - Accounts.PasswordSalt - fine
-- Profiles.AccountId - service transforms input to lowercase
-- Profiles.Name - service.read does case-insensitive search
 - PersistentSessions.Id - service transforms input to lowercase
 - PersistentSessions.AccountId - service transforms input to lowercase
 - PersistentSessions.RefreshToken - fine
+
+- Profiles.AccountId - service transforms input to lowercase
+- Profiles.Name - service.read does case-insensitive search

@@ -2,20 +2,23 @@ import { PersistentSessionRepository } from '../../main/repository/persistent-se
 
 class PersistentSessionRepositorySpy extends PersistentSessionRepository {
   #readByIdReturnValue;
-  #readByIdInvokeCount;
+  #readByIdInvokeCount = 0;
   #readByIdIdArgument;
   #readByRefreshTokenReturnValue;
-  #readByRefreshTokenInvokeCount;
+  #readByRefreshTokenInvokeCount = 0;
   #readByRefreshTokenRefreshTokenArgument;
   #createReturnValue;
-  #createInvokeCount;
+  #createInvokeCount = 0;
   #createPersistentSessionArgument;
   #deleteByAccountIdReturnValue;
-  #deleteByAccountIdInvokeCount;
+  #deleteByAccountIdInvokeCount = 0;
   #deleteByAccountIdAccountIdArgument;
   #deleteByRefreshTokenReturnValue;
-  #deleteByRefreshTokenInvokeCount;
+  #deleteByRefreshTokenInvokeCount = 0;
   #deleteByRefreshTokenRefreshTokenArgument;
+  #deleteByLessThanExpirationTimeReturnValue;
+  #deleteByLessThanExpirationTimeInvokeCount = 0;
+  #deleteByLessThanExpirationTimeExpirationTimeArgument;
 
   async readById(id) {
     this.#readByIdInvokeCount++;
@@ -47,6 +50,12 @@ class PersistentSessionRepositorySpy extends PersistentSessionRepository {
     return this.#deleteByRefreshTokenReturnValue;
   }
 
+  async deleteByLessThanExpirationTime(expirationTime) {
+    this.#deleteByLessThanExpirationTimeInvokeCount++;
+    this.#deleteByLessThanExpirationTimeExpirationTimeArgument = expirationTime;
+    return this.#deleteByLessThanExpirationTimeReturnValue;
+  }
+
   resetSpy() {
     this.#readByIdInvokeCount = 0;
     this.#readByIdIdArgument = undefined;
@@ -58,6 +67,8 @@ class PersistentSessionRepositorySpy extends PersistentSessionRepository {
     this.#deleteByAccountIdAccountIdArgument = undefined;
     this.#deleteByRefreshTokenInvokeCount = 0;
     this.#deleteByRefreshTokenRefreshTokenArgument = undefined;
+    this.#deleteByLessThanExpirationTimeInvokeCount = 0;
+    this.#deleteByLessThanExpirationTimeExpirationTimeArgument = undefined;
   }
 
   set readByIdReturnValue(readByIdReturnValue) {
@@ -118,6 +129,18 @@ class PersistentSessionRepositorySpy extends PersistentSessionRepository {
 
   get deleteByRefreshTokenRefreshTokenArgument() {
     return this.#deleteByRefreshTokenRefreshTokenArgument;
+  }
+
+  set deleteByLessThanExpirationTimeReturnValue(deleteByLessThanExpirationTimeReturnValue) {
+    this.#deleteByLessThanExpirationTimeReturnValue = deleteByLessThanExpirationTimeReturnValue;
+  }
+
+  get deleteByLessThanExpirationTimeInvokeCount() {
+    return this.#deleteByLessThanExpirationTimeInvokeCount;
+  }
+
+  get deleteByLessThanExpirationTimeExpirationTimeArgument() {
+    return this.#deleteByLessThanExpirationTimeExpirationTimeArgument;
   }
 }
 

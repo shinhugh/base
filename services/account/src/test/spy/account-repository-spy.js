@@ -2,22 +2,22 @@ import { AccountRepository } from '../../main/repository/account-repository.js';
 
 class AccountRepositorySpy extends AccountRepository {
   #readByNameReturnValue;
-  #readByNameInvokeCount;
+  #readByNameInvokeCount = 0;
   #readByNameNameArgument;
   #readByIdAndNameReturnValue;
-  #readByIdAndNameInvokeCount;
+  #readByIdAndNameInvokeCount = 0;
   #readByIdAndNameIdArgument;
   #readByIdAndNameNameArgument;
   #createReturnValue;
-  #createInvokeCount;
+  #createInvokeCount = 0;
   #createAccountArgument;
   #updateByIdAndNameReturnValue;
-  #updateByIdAndNameInvokeCount;
+  #updateByIdAndNameInvokeCount = 0;
   #updateByIdAndNameIdArgument;
   #updateByIdAndNameNameArgument;
   #updateByIdAndNameAccountArgument;
   #deleteByIdAndNameReturnValue;
-  #deleteByIdAndNameInvokeCount;
+  #deleteByIdAndNameInvokeCount = 0;
   #deleteByIdAndNameIdArgument;
   #deleteByIdAndNameNameArgument;
 

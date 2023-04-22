@@ -341,6 +341,19 @@ const testDeleteAccount = async () => {
   }
 };
 
+const testPurgeExpiredSessions = async () => {
+  persistentSessionRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.deleteByLessThanExpirationTimeReturnValue = 1;
+  timeServiceSpy.currentTimeSecondsReturnValue = 0;
+  await accountManager.purgeExpiredSessions();
+  if (persistentSessionRepositorySpy.deleteByLessThanExpirationTimeInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByLessThanExpirationTime(): Invocation count');
+  }
+  if (persistentSessionRepositorySpy.deleteByLessThanExpirationTimeExpirationTimeArgument != 0) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByLessThanExpirationTime(): expirationTime argument');
+  }
+};
+
 const currentTime = Math.floor(Date.now() / 1000);
 const tokenAlgorithm = 'HS256';
 const tokenSecretKey = Buffer.from('Vg+rXZ6G/Mu2zkv2JUm+gG2yRe4lqOqD5VDIYPCFzng=', 'base64');
@@ -380,7 +393,8 @@ const tests = [
   { name: 'Read account', run: testReadAccount },
   { name: 'Create account', run: testCreateAccount },
   { name: 'Update account', run: testUpdateAccount },
-  { name: 'Delete account', run: testDeleteAccount }
+  { name: 'Delete account', run: testDeleteAccount },
+  { name: 'Purge expired sessions', run: testPurgeExpiredSessions }
 ];
 
 export {
