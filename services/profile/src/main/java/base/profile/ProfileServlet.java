@@ -182,6 +182,10 @@ public class ProfileServlet extends HttpServlet {
             ByteArrayInputStream messageBody = new ByteArrayInputStream(body);
             ProfileAmqpController.Message message = new ProfileAmqpController.Message(messageBody);
             profileAmqpController.deleteProfile(message);
+            try {
+                getChannel().basicAck(envelope.getDeliveryTag(), false);
+            }
+            catch (Exception ignored) { }
         }
     }
 }
