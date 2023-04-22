@@ -140,6 +140,7 @@ class AccountManager extends AccountService {
   }
 
   async readAccount(authority, id, name) {
+    id = id?.toLowerCase();
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
@@ -211,6 +212,7 @@ class AccountManager extends AccountService {
   }
 
   async updateAccount(authority, id, name, account) {
+    id = id?.toLowerCase();
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
@@ -283,6 +285,7 @@ class AccountManager extends AccountService {
   }
 
   async deleteAccount(authority, id, name) {
+    id = id?.toLowerCase();
     if (!validateAuthority(authority)) {
       throw new IllegalArgumentError();
     }
@@ -454,6 +457,7 @@ class AccountManager extends AccountService {
   }
 
   async #logoutViaAccountId(authority, accountId) {
+    accountId = accountId.toLowerCase();
     const authorizedAsSystemOrUserOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin);
     if (!authorizedAsSystemOrUserOrAdmin) {
       throw new AccessDeniedError();
