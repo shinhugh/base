@@ -1,0 +1,14 @@
+TODO ---
+
+- consider service that requires websockets - how would a connection work
+  through the gateway?
+
+- occasionally purge "dangling" sessions? - account delete calls that failed to
+  delete corresponding sessions due to unexpected errors
+
+- occasionally purge "dangling" profiles? - account delete calls that failed to
+  delete corresponding profiles due to unexpected errors
+
+- profile service's AMQP connection keeps breaking
+  - diagnose what's causing connection to break
+  - implement mechanism to reestablish connection upon break

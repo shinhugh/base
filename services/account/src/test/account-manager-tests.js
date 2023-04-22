@@ -2,8 +2,9 @@ import jwt from 'jsonwebtoken';
 import { Role } from '../main/service/model/role.js';
 import { PersistentSessionRepositorySpy } from './spy/persistent-session-repository-spy.js';
 import { AccountRepositorySpy } from './spy/account-repository-spy.js';
-import { RandomServiceSpy } from './spy/random-service-spy.js'
-import { TimeServiceSpy } from './spy/time-service-spy.js'
+import { RandomServiceSpy } from './spy/random-service-spy.js';
+import { TimeServiceSpy } from './spy/time-service-spy.js';
+import { AccountEventSinkSpy } from './spy/account-event-sink-spy.js';
 import { AccountManager } from '../main/service/account-manager.js';
 
 const testIdentify = async () => {
@@ -290,6 +291,7 @@ const testUpdateAccount = async () => {
 const testDeleteAccount = async () => {
   persistentSessionRepositorySpy.resetSpy();
   accountRepositorySpy.resetSpy();
+  accountEventSinkSpy.resetSpy();
   persistentSessionRepositorySpy.deleteByAccountIdReturnValue = 0;
   accountRepositorySpy.readByIdAndNameReturnValue = [
     {
@@ -331,6 +333,25 @@ const testDeleteAccount = async () => {
   if (accountRepositorySpy.deleteByIdAndNameNameArgument !== accountName) {
     throw new Error('Actual value does not match expected value: AccountRepository.deleteByIdAndName(): name argument');
   }
+  if (accountEventSinkSpy.publishAccountDeleteEventInvocationCount != 1) {
+    throw new Error('Actual value does not match expected value: AccountEventSink.publishAccountDeleteEvent(): Invocation count');
+  }
+  if (accountEventSinkSpy.publishAccountDeleteEventIdArgument !== accountId) {
+    throw new Error('Actual value does not match expected value: AccountEventSink.publishAccountDeleteEvent(): id argument');
+  }
+};
+
+const testPurgeExpiredSessions = async () => {
+  persistentSessionRepositorySpy.resetSpy();
+  persistentSessionRepositorySpy.deleteByLessThanExpirationTimeReturnValue = 1;
+  timeServiceSpy.currentTimeSecondsReturnValue = 0;
+  await accountManager.purgeExpiredSessions();
+  if (persistentSessionRepositorySpy.deleteByLessThanExpirationTimeInvokeCount != 1) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByLessThanExpirationTime(): Invocation count');
+  }
+  if (persistentSessionRepositorySpy.deleteByLessThanExpirationTimeExpirationTimeArgument != 0) {
+    throw new Error('Actual value does not match expected value: PersistentSessionRepository.deleteByLessThanExpirationTime(): expirationTime argument');
+  }
 };
 
 const currentTime = Math.floor(Date.now() / 1000);
@@ -353,7 +374,8 @@ const persistentSessionRepositorySpy = new PersistentSessionRepositorySpy();
 const accountRepositorySpy = new AccountRepositorySpy();
 const randomServiceSpy = new RandomServiceSpy();
 const timeServiceSpy = new TimeServiceSpy();
-const accountManager = new AccountManager(persistentSessionRepositorySpy, accountRepositorySpy, randomServiceSpy, timeServiceSpy, {
+const accountEventSinkSpy = new AccountEventSinkSpy();
+const accountManager = new AccountManager(persistentSessionRepositorySpy, accountRepositorySpy, randomServiceSpy, timeServiceSpy, accountEventSinkSpy, {
   tokenAlgorithm: tokenAlgorithm,
   tokenSecretKey: tokenSecretKey,
   passwordHashAlgorithm: passwordHashAlgorithm,
@@ -368,10 +390,11 @@ const tests = [
   { name: 'Login with refresh token', run: testLoginRefreshToken },
   { name: 'Logout with account ID', run: testLogoutAccountId },
   { name: 'Logout with refresh token', run: testLogoutRefreshToken },
-  { name: 'Read Account', run: testReadAccount },
-  { name: 'Create Account', run: testCreateAccount },
-  { name: 'Update Account', run: testUpdateAccount },
-  { name: 'Delete Account', run: testDeleteAccount }
+  { name: 'Read account', run: testReadAccount },
+  { name: 'Create account', run: testCreateAccount },
+  { name: 'Update account', run: testUpdateAccount },
+  { name: 'Delete account', run: testDeleteAccount },
+  { name: 'Purge expired sessions', run: testPurgeExpiredSessions }
 ];
 
 export {

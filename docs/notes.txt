@@ -1,0 +1,66 @@
+Notes ---
+
+
+If entire DB uses case-sensitive collation:
+
+Repository must support case-insensitive search by running special query with
+LOWER()
+Repository can optionally also support case-insensitive conflict match
+
+- Accounts.Id
+    service transforms input to lowercase, does case-sensitive operation
+
+- Accounts.Name
+    service.read/update/delete does case-sensitive search
+    service.create/update does case-insensitive conflict match
+
+- Accounts.PasswordHash
+    fine as is
+
+- Accounts.PasswordSalt
+    fine as is
+
+- PersistentSessions.Id
+    service transforms input to lowercase, does case-sensitive operation
+
+- PersistentSessions.AccountId
+    service transforms input to lowercase, does case-sensitive operation
+
+- PersistentSessions.RefreshToken
+    fine as is
+
+- Profiles.AccountId
+    service transforms input to lowercase, does case-sensitive operation
+
+- Profiles.Name
+    service.read does case-insensitive search
+
+
+If assigning different collations to each DB column:
+
+- Accounts.Id
+    insensitive
+
+- Accounts.Name
+    insensitive (but service does manual case-sensitive compare)
+
+- Accounts.PasswordHash
+    sensitive
+
+- Accounts.PasswordSalt
+    sensitive
+
+- PersistentSessions.Id
+    insensitive
+
+- PersistentSessions.AccountId
+    insensitive
+
+- PersistentSessions.RefreshToken
+    sensitive
+
+- Profiles.AccountId
+    insensitive
+
+- Profiles.Name
+    insensitive

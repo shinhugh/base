@@ -3,11 +3,12 @@ import { validate as validateUuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { AccountService } from './account-service.js';
 import { wrapError } from '../common.js';
-import { IllegalArgumentError as RepositoryIllegalArgumentError, NotFoundError as RepositoryNotFoundError, ConflictError as RepositoryConflictError } from '../repository/model/errors.js';
+import { IllegalArgumentError as RepositoryIllegalArgumentError, ConflictError as RepositoryConflictError } from '../repository/model/errors.js';
 import { PersistentSessionRepository } from '../repository/persistent-session-repository.js';
 import { AccountRepository } from '../repository/account-repository.js';
 import { RandomService } from './random-service.js';
 import { TimeService } from './time-service.js';
+import { AccountEventSink } from './account-event-sink.js';
 import { IllegalArgumentError, AccessDeniedError, NotFoundError, ConflictError } from './model/errors.js';
 import { Role } from './model/role.js';
 
@@ -16,10 +17,12 @@ class AccountManager extends AccountService {
   #accountRepository;
   #randomService;
   #timeService;
+  #accountEventSink;
   #config;
 
-  constructor(persistentSessionRepository, accountRepository, randomService, timeService, config) {
+  constructor(persistentSessionRepository, accountRepository, randomService, timeService, accountEventSink, config) {
     super();
+    this.#configure(config);
     if (!(persistentSessionRepository instanceof PersistentSessionRepository)) {
       throw new Error('Invalid persistentSessionRepository provided to AccountManager constructor');
     }
@@ -32,21 +35,14 @@ class AccountManager extends AccountService {
     if (!(timeService instanceof TimeService)) {
       throw new Error('Invalid timeService provided to AccountManager constructor');
     }
-    if (config == null || !validateConfig(config)) {
-      throw new Error('Invalid config provided to AccountManager constructor');
+    if (!(accountEventSink instanceof AccountEventSink)) {
+      throw new Error('Invalid accountEventSink provided to AccountManager constructor');
     }
     this.#persistentSessionRepository = persistentSessionRepository;
     this.#accountRepository = accountRepository;
     this.#randomService = randomService;
     this.#timeService = timeService;
-    this.#config = {
-      tokenAlgorithm: config.tokenAlgorithm,
-      tokenSecretKey: config.tokenSecretKey,
-      passwordHashAlgorithm: config.passwordHashAlgorithm,
-      persistentSessionDuration: config.persistentSessionDuration,
-      volatileSessionDuration: config.volatileSessionDuration,
-      modificationEnabledSessionAgeMaxValue: config.modificationEnabledSessionAgeMaxValue
-    };
+    this.#accountEventSink = accountEventSink;
   }
 
   async identify(authority, token) {
@@ -56,7 +52,8 @@ class AccountManager extends AccountService {
     if (typeof token !== 'string') {
       throw new IllegalArgumentError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System)) {
+    const authorizedAsSystem = verifyAuthorityContainsAtLeastOneRole(authority, Role.System);
+    if (!authorizedAsSystem) {
       throw new AccessDeniedError();
     }
     const tokenPayload = (() => {
@@ -66,7 +63,7 @@ class AccountManager extends AccountService {
         });
       }
       catch (e) {
-        if (e instanceof JsonWebTokenError && e.message === 'invalid algorithm') {
+        if (e instanceof jwt.JsonWebTokenError && e.message === 'invalid algorithm') {
           throw wrapError(e, 'Failed to verify JWT');
         }
         return null;
@@ -126,7 +123,7 @@ class AccountManager extends AccountService {
       throw new IllegalArgumentError();
     }
     if (logoutInfo.accountId != null) {
-      if (!validateUuid(logoutInfo.accountId)) {
+      if (!validateId(logoutInfo.accountId)) {
         throw new IllegalArgumentError();
       }
       await this.#logoutViaAccountId(authority, logoutInfo.accountId);
@@ -149,19 +146,14 @@ class AccountManager extends AccountService {
     if (id == null && name == null) {
       throw new IllegalArgumentError();
     }
-    if (id != null && !validateUuid(id)) {
+    if (!validateId(id)) {
       throw new IllegalArgumentError();
     }
     if (!validateName(name)) {
       throw new IllegalArgumentError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
-      throw new AccessDeniedError();
-    }
+    const queryContainsPrivateData = name != null;
     const authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin);
-    if (!authorizedAsSystemOrAdmin && authority.id == null) {
-      throw new AccessDeniedError();
-    }
     const matches = await (async () => {
       try {
         return await this.#accountRepository.readByIdAndName(id, name);
@@ -171,14 +163,24 @@ class AccountManager extends AccountService {
       }
     })();
     if (matches.length == 0) {
-      if (authorizedAsSystemOrAdmin) {
-        throw new NotFoundError();
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
       }
-      throw new AccessDeniedError();
+      throw new NotFoundError();
     }
     const match = matches[0];
-    if (!authorizedAsSystemOrAdmin && match.id !== authority.id) {
-      throw new AccessDeniedError();
+    if (name != null && match.name !== name) {
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
+      }
+      throw new NotFoundError();
+    }
+    const owner = match.id === authority?.id;
+    if (!authorizedAsSystemOrAdmin && !owner) {
+      if (queryContainsPrivateData) {
+        throw new AccessDeniedError();
+      }
+      delete match.name;
     }
     delete match.passwordHash;
     delete match.passwordSalt;
@@ -221,7 +223,7 @@ class AccountManager extends AccountService {
     if (id == null && name == null) {
       throw new IllegalArgumentError();
     }
-    if (id != null && !validateUuid(id)) {
+    if (!validateId(id)) {
       throw new IllegalArgumentError();
     }
     if (!validateName(name)) {
@@ -231,30 +233,38 @@ class AccountManager extends AccountService {
     if (account == null || !validateAccount(account, authorizedAsSystemOrAdmin)) {
       throw new IllegalArgumentError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
+    const authorizedAsSystemOrUserOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin);
+    if (!authorizedAsSystemOrUserOrAdmin) {
       throw new AccessDeniedError();
     }
-    if (!authorizedAsSystemOrAdmin && authority.id == null) {
-      throw new AccessDeniedError();
-    }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && authority.authTime + this.#config.modificationEnabledSessionAgeMaxValue <= this.#timeService.currentTimeSeconds()) {
-      throw new AccessDeniedError();
-    }
-    let matches;
-    try {
-      matches = await this.#accountRepository.readByIdAndName(id, name);
-    }
-    catch (e) {
-      throw wrapError(e, 'Failed to read from account store');
-    }
-    if (matches.length == 0) {
-      if (authorizedAsSystemOrAdmin) {
-        throw new NotFoundError();
+    const queryContainsPrivateData = name != null;
+    const matches = await (async () => {
+      try {
+        return await this.#accountRepository.readByIdAndName(id, name);
       }
-      throw new AccessDeniedError();
+      catch (e) {
+        throw wrapError(e, 'Failed to read from account store');
+      }
+    })();
+    if (matches.length == 0) {
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
+      }
+      throw new NotFoundError();
     }
     const match = matches[0];
-    if (!authorizedAsSystemOrAdmin && match.id !== authority.id) {
+    if (name != null && match.name !== name) {
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
+      }
+      throw new NotFoundError();
+    }
+    const owner = match.id === authority?.id;
+    if (!authorizedAsSystemOrAdmin && !owner) {
+      throw new AccessDeniedError();
+    }
+    const authorizedAsSystem = verifyAuthorityContainsAtLeastOneRole(authority, Role.System);
+    if (!authorizedAsSystem && this.#config.modificationEnabledSessionAgeMaxValue > 0 && (authority?.authTime ?? 0) + this.#config.modificationEnabledSessionAgeMaxValue <= this.#timeService.currentTimeSeconds()) {
       throw new AccessDeniedError();
     }
     const passwordSalt = this.#randomService.generateRandomString(passwordSaltAllowedChars, passwordSaltLength);
@@ -291,37 +301,45 @@ class AccountManager extends AccountService {
     if (id == null && name == null) {
       throw new IllegalArgumentError();
     }
-    if (id != null && !validateUuid(id)) {
+    if (!validateId(id)) {
       throw new IllegalArgumentError();
     }
     if (!validateName(name)) {
       throw new IllegalArgumentError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
+    const authorizedAsSystemOrUserOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin);
+    if (!authorizedAsSystemOrUserOrAdmin) {
       throw new AccessDeniedError();
     }
+    const queryContainsPrivateData = name != null;
     const authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin);
-    if (!authorizedAsSystemOrAdmin && authority.id == null) {
-      throw new AccessDeniedError();
-    }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System) && this.#config.modificationEnabledSessionAgeMaxValue > 0 && authority.authTime + this.#config.modificationEnabledSessionAgeMaxValue <= this.#timeService.currentTimeSeconds()) {
-      throw new AccessDeniedError();
-    }
-    let matches;
-    try {
-      matches = await this.#accountRepository.readByIdAndName(id, name);
-    }
-    catch (e) {
-      throw wrapError(e, 'Failed to read from account store');
-    }
-    if (matches.length == 0) {
-      if (authorizedAsSystemOrAdmin) {
-        throw new NotFoundError();
+    const matches = await (async () => {
+      try {
+        return await this.#accountRepository.readByIdAndName(id, name);
       }
-      throw new AccessDeniedError();
+      catch (e) {
+        throw wrapError(e, 'Failed to read from account store');
+      }
+    })();
+    if (matches.length == 0) {
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
+      }
+      throw new NotFoundError();
     }
     const match = matches[0];
-    if (!authorizedAsSystemOrAdmin && match.id !== authority.id) {
+    if (name != null && match.name !== name) {
+      if (queryContainsPrivateData && !authorizedAsSystemOrAdmin) {
+        throw new AccessDeniedError();
+      }
+      throw new NotFoundError();
+    }
+    const owner = match.id === authority?.id;
+    if (!authorizedAsSystemOrAdmin && !owner) {
+      throw new AccessDeniedError();
+    }
+    const authorizedAsSystem = verifyAuthorityContainsAtLeastOneRole(authority, Role.System);
+    if (!authorizedAsSystem && this.#config.modificationEnabledSessionAgeMaxValue > 0 && (authority?.authTime ?? 0) + this.#config.modificationEnabledSessionAgeMaxValue <= this.#timeService.currentTimeSeconds()) {
       throw new AccessDeniedError();
     }
     try {
@@ -332,6 +350,10 @@ class AccountManager extends AccountService {
     }
     try {
       await this.#persistentSessionRepository.deleteByAccountId(match.id);
+    }
+    catch { }
+    try {
+      await this.#accountEventSink.publishAccountDeleteEvent(match.id);
     }
     catch { }
   }
@@ -346,10 +368,6 @@ class AccountManager extends AccountService {
     }
   }
 
-  async purgeDanglingSessions() {
-    // TODO: Implement
-  }
-
   async #loginViaCredentials(authority, credentials) {
     const account = await (async () => {
       let accountMatches;
@@ -362,6 +380,9 @@ class AccountManager extends AccountService {
       return accountMatches[0];
     })();
     if (account == null) {
+      throw new AccessDeniedError();
+    }
+    if (account.name !== credentials.name) {
       throw new AccessDeniedError();
     }
     const passwordHash = hashPassword(this.#config.passwordHashAlgorithm, credentials.password, account.passwordSalt);
@@ -454,10 +475,12 @@ class AccountManager extends AccountService {
   }
 
   async #logoutViaAccountId(authority, accountId) {
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin)) {
+    const authorizedAsSystemOrUserOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.User | Role.Admin);
+    if (!authorizedAsSystemOrUserOrAdmin) {
       throw new AccessDeniedError();
     }
-    if (!verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin)) {
+    const authorizedAsSystemOrAdmin = verifyAuthorityContainsAtLeastOneRole(authority, Role.System | Role.Admin);
+    if (!authorizedAsSystemOrAdmin) {
       if (authority.id !== accountId) {
         throw new AccessDeniedError();
       }
@@ -481,37 +504,50 @@ class AccountManager extends AccountService {
       throw wrapError(e, 'Failed to write to session store');
     }
   }
+
+  #configure(config) {
+    this.#config = { };
+    if (config == null) {
+      throw new Error('Invalid config provided to AccountManager constructor');
+    }
+    if (typeof config !== 'object') {
+      throw new Error('Invalid config provided to AccountManager constructor');
+    }
+    if (typeof config.tokenAlgorithm !== 'string') {
+      throw new Error('Invalid config provided to AccountManager constructor');
+    }
+    this.#config.tokenAlgorithm = config.tokenAlgorithm;
+    if (!(config.tokenSecretKey instanceof Buffer)) {
+      throw new Error('Invalid config provided to AccountManager constructor');
+    }
+    this.#config.tokenSecretKey = config.tokenSecretKey;
+    if (typeof config.passwordHashAlgorithm !== 'string') {
+      throw new Error('Invalid config provided to AccountManager constructor');
+    }
+    if (getHashes().indexOf(config.passwordHashAlgorithm) < 0) {
+      throw new Error('Invalid config provided to AccountManager constructor');
+    }
+    this.#config.passwordHashAlgorithm = config.passwordHashAlgorithm;
+    if (!Number.isInteger(config.persistentSessionDuration) || config.persistentSessionDuration < 0 || config.persistentSessionDuration > timeMaxValue) {
+      throw new Error('Invalid config provided to AccountManager constructor');
+    }
+    this.#config.persistentSessionDuration = config.persistentSessionDuration;
+    if (!Number.isInteger(config.volatileSessionDuration) || config.volatileSessionDuration < 0 || config.volatileSessionDuration > timeMaxValue) {
+      throw new Error('Invalid config provided to AccountManager constructor');
+    }
+    this.#config.volatileSessionDuration = config.volatileSessionDuration;
+    if (!Number.isInteger(config.modificationEnabledSessionAgeMaxValue) || config.modificationEnabledSessionAgeMaxValue < 0 || config.modificationEnabledSessionAgeMaxValue > timeMaxValue) {
+      throw new Error('Invalid config provided to AccountManager constructor');
+    }
+    this.#config.modificationEnabledSessionAgeMaxValue = config.modificationEnabledSessionAgeMaxValue;
+  }
 }
 
-const validateConfig = (config) => {
-  if (config == null) {
+const validateId = (id) => {
+  if (id == null) {
     return true;
   }
-  if (typeof config !== 'object') {
-    return false;
-  }
-  if (typeof config.tokenAlgorithm !== 'string') {
-    return false;
-  }
-  if (!(config.tokenSecretKey instanceof Buffer)) {
-    return false;
-  }
-  if (typeof config.passwordHashAlgorithm !== 'string') {
-    return false;
-  }
-  if (getHashes().indexOf(config.passwordHashAlgorithm) < 0) {
-    return false;
-  }
-  if (!Number.isInteger(config.persistentSessionDuration) || config.persistentSessionDuration < 0 || config.persistentSessionDuration > timeMaxValue) {
-    return false;
-  }
-  if (!Number.isInteger(config.volatileSessionDuration) || config.volatileSessionDuration < 0 || config.volatileSessionDuration > timeMaxValue) {
-    return false;
-  }
-  if (!Number.isInteger(config.modificationEnabledSessionAgeMaxValue) || config.modificationEnabledSessionAgeMaxValue < 0 || config.modificationEnabledSessionAgeMaxValue > timeMaxValue) {
-    return false;
-  }
-  return true;
+  return validateUuid(id);
 };
 
 const validateAuthority = (authority) => {
@@ -521,7 +557,7 @@ const validateAuthority = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && !validateUuid(authority.id)) {
+  if (!validateId(authority.id)) {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {

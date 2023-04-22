@@ -10,16 +10,7 @@ class PersistentSessionSequelizeRepository extends PersistentSessionRepository {
 
   constructor(config) {
     super();
-    if (config == null || !validateConfig(config)) {
-      throw new Error('Invalid config provided to PersistentSessionSequelizeRepository constructor');
-    }
-    this.#config = {
-      host: config.host,
-      port: config.port,
-      database: config.database,
-      username: config.username,
-      password: config.password
-    };
+    this.#configure(config);
   }
 
   async readById(id) {
@@ -205,32 +196,48 @@ class PersistentSessionSequelizeRepository extends PersistentSessionRepository {
     }
     this.#sequelize = undefined;
   }
-}
 
-const validateConfig = (config) => {
-  if (config == null) {
-    return true;
+  #configure(config) {
+    this.#config = { };
+    if (config == null) {
+      throw new Error('Invalid config provided to PersistentSessionSequelizeRepository constructor');
+    }
+    if (typeof config !== 'object') {
+      throw new Error('Invalid config provided to PersistentSessionSequelizeRepository constructor');
+    }
+    if (config.host != null && typeof config.host !== 'string') {
+      throw new Error('Invalid config provided to PersistentSessionSequelizeRepository constructor');
+    }
+    if (config.host == null || config.host.length == 0) {
+      this.#config.host = 'localhost';
+    }
+    else {
+      this.#config.host = config.host;
+    }
+    if (!Number.isInteger(config.port)) {
+      throw new Error('Invalid config provided to PersistentSessionSequelizeRepository constructor');
+    }
+    this.#config.port = config.port;
+    try {
+      new URL('mysql://' + this.#config.host + ':' + this.#config.port + '/');
+    }
+    catch {
+      throw new Error('Invalid config provided to AccountSequelizeRepository constructor');
+    }
+    if (typeof config.database !== 'string') {
+      throw new Error('Invalid config provided to PersistentSessionSequelizeRepository constructor');
+    }
+    this.#config.database = config.database;
+    if (typeof config.username !== 'string') {
+      throw new Error('Invalid config provided to PersistentSessionSequelizeRepository constructor');
+    }
+    this.#config.username = config.username;
+    if (typeof config.password !== 'string') {
+      throw new Error('Invalid config provided to PersistentSessionSequelizeRepository constructor');
+    }
+    this.#config.password = config.password;
   }
-  if (typeof config !== 'object') {
-    return false;
-  }
-  if (typeof config.host !== 'string') {
-    return false;
-  }
-  if (!Number.isInteger(config.port) || config.port < 0 || config.port > portMaxValue) {
-    return false;
-  }
-  if (typeof config.database !== 'string') {
-    return false;
-  }
-  if (typeof config.username !== 'string') {
-    return false;
-  }
-  if (typeof config.password !== 'string') {
-    return false;
-  }
-  return true;
-};
+}
 
 const validatePersistentSession = (persistentSession) => {
   if (persistentSession == null) {
@@ -257,7 +264,6 @@ const validatePersistentSession = (persistentSession) => {
   return true;
 };
 
-const portMaxValue = 65535;
 const idMaxLength = 36;
 const accountIdMaxLength = 36;
 const rolesMaxValue = 255;

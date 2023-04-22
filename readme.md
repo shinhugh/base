@@ -3,10 +3,10 @@
 This project serves as a foundation to build on top of when developing a
 microservice-oriented HTTP API. Two services are provided:
 
-- Authentication service
 - Account service
+- Profile service
 
-These two services provide the following functionalities:
+The account service provides the following functionalities:
 
 - Account creation
 - Login
@@ -15,26 +15,31 @@ These two services provide the following functionalities:
 - Account read, update, and delete (with access control)
 - Granular access control over resources and other APIs
 
-As application-specific services are introduced into this ecosystem, these nodes
-can work with the information provided by the authentication service. There is
-no need for the developer to fret over things like credentials and tokens; the
-authentication service handles all of that entirely.
+The profile service, as is, only provides users the ability to create a
+public-facing name; it is intended to be extended upon as needed by the
+application. It is essentially a placeholder and an example member of the
+microservice network. It can safely be discarded altogether without affecting
+the core account and authentication system.
+
+As application-specific services are introduced into this ecosystem, they can
+work with the information provided by the account service. There is no need for
+the developer to manage credentials, tokens, sessions, and such; the account
+service entirely encapsulates these details.
 
 ## Overview
 
 ![Architecture](docs/architecture.png)
 
 Upon an HTTP request arriving at the gateway, the gateway unconditionally
-forwards it to the authentication service. The service constructs an authority
-object, which contains information relevant to what actions the client is
-allowed to execute. If the request does not contain a valid ID token, an empty
-authority object is generated.
+forwards it to the account service. The service constructs an authority object,
+which contains information relevant to what actions the client is allowed to
+execute. If the request does not contain a valid ID token, an empty authority
+object is generated.
 
-The authentication service sends this authority object back to the gateway,
-which then forwards it to the request's original destination alongside the
-request itself. The receiving service can then use this generated information to
-determine whether the client is authorized to perform the actions detailed by
-the request.
+The account service sends this authority object back to the gateway, which then
+forwards it to the request's original destination alongside the request itself.
+The receiving service can then use this generated information to determine
+whether the client is authorized to perform the actions detailed by the request.
 
 There are diagrams in the **Flows** section that describe the flows in greater
 detail.
@@ -47,9 +52,9 @@ by the service to determine whether the request should be accepted or denied. It
 is comprised of the following information:
 
 - **The identity of the caller**: This is the ID (UUID) of the account that the
-authentication service has correlated with the client. This would, for example,
-be used by the service to allow reading of private data that is restricted to
-the owner user only.
+account service has correlated with the client. This would, for example, be used
+by the service to allow reading of private data that is restricted to the owner
+user only.
 - **The roles of the caller**: This is a bit-flag represented in plain decimal
 form. Each bit represents a different role; a 1 signifies that the caller
 possesses the role. Starting from the least significant bit (right to left), the
@@ -75,7 +80,7 @@ will have different rules and requirements that dictate what gets allowed and
 what gets denied. The authority construct is what supplies the service with the
 information it needs to make this decision.
 
-## Configuration
+## Physical configuration
 
 It is extremely crucial that none of the services are directly accessible from
 the public. The gateway should be the one and only node that is reachable by the
@@ -130,7 +135,7 @@ values should be replaced with the appropriate values.
 The identification request is the very first piece of internal communication
 that occurs when a client's request arrives at the gateway. The gateway extracts
 the ID token from the authorization header of the client's request and sends a
-request with the following format to the authentication service:
+request with the following format to the account service:
 
 ```
 GET /identify
@@ -141,7 +146,7 @@ content-length: 198
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXNzaW9uSWQiOiJiYzVkM2MyMi1mODNhLTRhNjctOTExMS1mZDhiZWJlMjRkYzUiLCJpYXQiOjE2ODExNDA4MTAsImV4cCI6MTY4MTIyNzIxMH0.P-V0W3HwrUMT7NotqxoWFgKIxbPAtAU8mPHnxQOCZPA"
 ```
 
-The authentication service responds in the following format:
+The account service responds in the following format:
 
 ```
 200
@@ -177,9 +182,9 @@ authority-auth-time: 1681140810
 This request, with the modified headers, is then sent to the destination
 service.
 
-In the case that the authentication service provides no identification
-information (i.e. the client sent an invalid ID token), the client's request is
-sent in its original unmodified state.
+In the case that the account service provides no identification information
+(i.e. the client sent an invalid ID token), the client's request is sent in its
+original unmodified state.
 
 ### Inter-service requests
 
@@ -217,18 +222,8 @@ being set to `1` (and the other `authority` headers being cleared). This is
 necessary for flows that require the system to execute a privileged action on
 behalf of the client.
 
-One such case would be the login flow, where the client makes an unauthenticated
-request. The authentication service needs to fetch the (hashed) credential
-information from the account service, an action that the account service would
-normally deny due to the lack of authority information. Thus, the authentication
-service proceeds with a system override and sets the `authority-roles` header to
-`1` in its request to the account service.
-
 It's very important that any confidential data that is fetched in this manner
-do not get propagated back to the client. In the example with the login flow,
-the authentication service bypasses usual security measures to attain restricted
-information, but this information never leaves the service. It is used to
-verify the credentials provided by the client, then it is immediately discarded.
+do not get propagated back to the client.
 
 These system overrides should be used sparingly, only utilized when deemed
 absolutely necessary after careful design. Most actions can be done with just
@@ -329,8 +324,8 @@ refresh token is invalid or the request body is malformed and no action is
 taken.
 
 Note that the ID token is not sent; there is no need to notify the server that
-an ID token should be revoked. The authentication service treats an ID token as
-invalid if its parent refresh token has been revoked.
+an ID token should be revoked. The account service treats an ID token as invalid
+if its parent refresh token has been revoked.
 
 ## Philosophy
 
@@ -348,45 +343,44 @@ this decision?
 
 ### Approach: Front-loading access control
 
-"Front-loading" access control means pushing onto the authentication service the
-entire responsibility of deciding whether to allow a request (enabling the other
+"Front-loading" access control means pushing onto the account service the entire
+responsibility of deciding whether to allow a request (enabling the other
 services to operate with the assumption that all the requests that make it to
 them are authorized). There are two separate ways to go about this:
 
-- The authentication service is allowed to utilize business logic. This is
-  required in order to understand what the request is trying to do as well as
-  observe the state of the application model. Functionally, this fulfills the
-  access control requirements, but it manifests an avalanche of issues from a
-  development perspective:
+- The account service is allowed to utilize business logic. This is required in
+  order to understand what the request is trying to do as well as observe the
+  state of the application model. Functionally, this fulfills the access control
+  requirements, but it manifests an avalanche of issues from a development
+  perspective:
   - Each time a new service is added to the system or an existing service is
-  modified, the authentication service will have to be updated. This implies
-  that there is tight coupling between the authentication service and the other
-  services.
-  - The authentication service will inevitably have to invoke other services to
-  query for information that it requires in order to make its decision. This
-  adds complexity and latency, and it again demonstrates tight coupling.
-  - The authentication service will grow absolutely massive in both size and
+  modified, the account service will have to be updated. This implies that there
+  is tight coupling between the account service and the other services.
+  - The account service will inevitably have to invoke other services to query
+  for information that it requires in order to make its decision. This adds
+  complexity and latency, and it again demonstrates tight coupling.
+  - The account service will grow absolutely massive in both size and
   complexity, making it impossible to maintain.
-- The authentication service is not allowed to utilize business logic. This
-  means that it has no way of understanding the request's action and no way of
-  observing the application model's state. This significantly reduces the
-  granularity of access control, essentially rendering the authentication system
-  useless for the vast majority of applications.
+- The account service is not allowed to utilize business logic. This means that
+  it has no way of understanding the request's action and no way of observing
+  the application model's state. This significantly reduces the granularity of
+  access control, essentially rendering the authentication system useless for
+  the vast majority of applications.
 
 Neither option seems ideal.
 
 ### Approach: Back-loading access control
 
-"Back-loading" access control means eliminating the authentication service
-altogether. In this scenario, the individual services have to handle each
-request in its raw form without any extra information. While this allows for
-granular filtering, it hinders development and adds latency, as each service is
-required to handle authentication from scratch. Additionally, in cases where a
-service has to invoke another service, the invoked service will do redundant
-authentication, adding even more latency. This is exacerbated by the fact that
-service calls could potentially chain quite deep, adding this overhead many
-times over. Ultimately, there is unnecessary duplication in both code and
-runtime execution, not to mention the added complexity to each service.
+"Back-loading" access control means eliminating the account service altogether.
+In this scenario, the individual services have to handle each request in its raw
+form without any extra information. While this allows for granular filtering, it
+hinders development and adds latency, as each service is required to handle
+authentication from scratch. Additionally, in cases where a service has to
+invoke another service, the invoked service will do redundant authentication,
+adding even more latency. This is exacerbated by the fact that service calls
+could potentially chain quite deep, adding this overhead many times over.
+Ultimately, there is unnecessary duplication in both code and runtime execution,
+not to mention the added complexity to each service.
 
 This doesn't seem ideal either.
 
@@ -395,26 +389,26 @@ This doesn't seem ideal either.
 By splitting the responsibility of access control between the authentication
 service and the destination service, the problems listed above are solved.
 
-1. The authentication service identifies the client and fetches their roles.
-This information, along with the original request, is forwarded to the
-destination service.
+1. The account service identifies the client and fetches their roles. This
+information, along with the original request, is forwarded to the destination
+service.
 2. The destination service uses the identification information along with its
 understanding of the request in the context of the application model to make the
 final decision on whether the request should be accepted.
 
 This setup brings the following benefits:
 
-- The authentication service has no need to understand what the request is
-trying to do. All it cares about is the authorization token provided in the
-header. This completely frees the authentication service from having to
-understand any business logic whatsoever. As a result, the authentication
-service is lightweight, standalone, and reusable.
+- The account service has no need to understand what the request is trying to
+do. All it cares about is the authorization token provided in the header. This
+completely frees the account service from having to understand any business
+logic whatsoever. As a result, the account service is lightweight, standalone,
+and reusable.
 - The destination service is enabled to finely filter through requests without
 the overhead of deciphering tokens and querying sessions. Each service already
 understands its own domain, so there is no change in the scope that the service
 operates within. Provided with the identification information from the
-authentication service, it is well-equipped to make the final decision on
-whether a request should be processed.
+account service, it is well-equipped to make the final decision on whether a
+request should be processed.
 
 ## Flows
 

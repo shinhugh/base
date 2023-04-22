@@ -9,9 +9,7 @@ class Server {
   #port;
 
   constructor(config) {
-    if (config == null || !validateConfig(config)) {
-      throw new Error('Invalid config provided to Server constructor');
-    }
+    this.#configure(config);
     this.#app = express();
     this.#app.use(express.raw({
       type: () => { return true; }
@@ -20,67 +18,67 @@ class Server {
     this.#app.all('/*', async (req, res) => {
       await handleRequest(req, res, this.#endpoints, this.#internalErrorCallback, this.#notFoundCallback, this.#methodNotAllowedCallback);
     });
-    this.#endpoints = { };
-    for (const path in config.endpoints) {
-      this.#endpoints[path] = { };
-      for (const method in config.endpoints[path]) {
-        if (config.endpoints[path][method] != null) {
-          this.#endpoints[path][method] = config.endpoints[path][method];
-        }
-      }
-      if (Object.keys(this.#endpoints[path]).length == 0) {
-        delete this.#endpoints[path];
-      }
-    }
-    this.#internalErrorCallback = config.internalErrorCallback;
-    this.#notFoundCallback = config.notFoundCallback;
-    this.#methodNotAllowedCallback = config.methodNotAllowedCallback;
-    this.#port = config.port;
   }
 
   start() {
     this.#app.listen(this.#port);
   }
-}
 
-const validateConfig = (config) => {
-  if (config == null) {
-    return true;
-  }
-  if (typeof config !== 'object') {
-    return false;
-  }
-  if (config.endpoints != null) {
-    if (typeof config.endpoints !== 'object') {
-      return false;
+  #configure(config) {
+    if (config == null) {
+      throw new Error('Invalid config provided to Server constructor');
     }
-    for (const path in config.endpoints) {
-      if (config.endpoints[path] != null) {
-        if (typeof config.endpoints[path] !== 'object') {
-          return false;
-        }
-        for (const method in config.endpoints[path]) {
-          if (config.endpoints[path][method] != null && typeof config.endpoints[path][method] !== 'function') {
-            return false;
+    if (typeof config !== 'object') {
+      throw new Error('Invalid config provided to Server constructor');
+    }
+    this.#endpoints = { };
+    if (config.endpoints != null) {
+      if (typeof config.endpoints !== 'object') {
+        throw new Error('Invalid config provided to Server constructor');
+      }
+      for (const path in config.endpoints) {
+        if (config.endpoints[path] != null) {
+          this.#endpoints[path] = { };
+          if (typeof config.endpoints[path] !== 'object') {
+            throw new Error('Invalid config provided to Server constructor');
+          }
+          for (const method in config.endpoints[path]) {
+            if (config.endpoints[path][method] != null) {
+              if (typeof config.endpoints[path][method] !== 'function') {
+                throw new Error('Invalid config provided to Server constructor');
+              }
+              this.#endpoints[path][method] = config.endpoints[path][method];
+            }
+          }
+          if (Object.keys(this.#endpoints[path]).length == 0) {
+            delete this.#endpoints[path];
           }
         }
       }
     }
+    if (typeof config.internalErrorCallback !== 'function') {
+      throw new Error('Invalid config provided to Server constructor');
+    }
+    this.#internalErrorCallback = config.internalErrorCallback;
+    if (typeof config.notFoundCallback !== 'function') {
+      throw new Error('Invalid config provided to Server constructor');
+    }
+    this.#notFoundCallback = config.notFoundCallback;
+    if (typeof config.methodNotAllowedCallback !== 'function') {
+      throw new Error('Invalid config provided to Server constructor');
+    }
+    this.#methodNotAllowedCallback = config.methodNotAllowedCallback;
+    if (config.port == null) {
+      this.#port = 80;
+    }
+    else {
+      if (!Number.isInteger(config.port) || config.port < 0 || config.port > portMaxValue) {
+        throw new Error('Invalid config provided to Server constructor');
+      }
+      this.#port = config.port;
+    }
   }
-  if (typeof config.internalErrorCallback !== 'function') {
-    return false;
-  }
-  if (typeof config.notFoundCallback !== 'function') {
-    return false;
-  }
-  if (typeof config.methodNotAllowedCallback !== 'function') {
-    return false;
-  }
-  if (!Number.isInteger(config.port) || config.port < 0 || config.port > portMaxValue) {
-    return false;
-  }
-  return true;
-};
+}
 
 const validateResponse = (response) => {
   if (response == null) {

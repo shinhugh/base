@@ -2,7 +2,7 @@ import { TimeService } from '../../main/service/time-service.js';
 
 class TimeServiceSpy extends TimeService {
   #currentTimeSecondsReturnValue;
-  #currentTimeSecondsInvokeCount;
+  #currentTimeSecondsInvokeCount = 0;
 
   currentTimeSeconds() {
     this.#currentTimeSecondsInvokeCount++;

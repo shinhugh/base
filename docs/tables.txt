@@ -1,22 +1,41 @@
-PersistentSessions:
+Configuration for MySQL
+
+------------------------------------------------------------
+
+Database base:
+
+CREATE DATABASE base COLLATE utf8mb4_bin;
+
+------------------------------------------------------------
+
+Table PersistentSessions:
 
 CREATE TABLE PersistentSessions (
-  Id VARCHAR(36) NOT NULL PRIMARY KEY,
-  AccountId VARCHAR(36) NOT NULL,
+  Id VARCHAR(36) COLLATE utf8mb4_unicode_ci NOT NULL PRIMARY KEY,
+  AccountId VARCHAR(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   Roles TINYINT UNSIGNED NOT NULL,
-  RefreshToken VARCHAR(128) NOT NULL UNIQUE,
+  RefreshToken VARCHAR(128) COLLATE utf8mb4_bin NOT NULL UNIQUE,
   CreationTime INT UNSIGNED NOT NULL,
   ExpirationTime INT UNSIGNED NOT NULL
 );
 
 ------------------------------------------------------------
 
-Accounts:
+Table Accounts:
 
 CREATE TABLE Accounts (
-  Id VARCHAR(36) NOT NULL PRIMARY KEY,
-  Name VARCHAR(32) NOT NULL UNIQUE,
-  PasswordHash VARCHAR(64) NOT NULL,
-  PasswordSalt VARCHAR(32) NOT NULL,
+  Id VARCHAR(36) COLLATE utf8mb4_unicode_ci NOT NULL PRIMARY KEY,
+  Name VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
+  PasswordHash VARCHAR(64) COLLATE utf8mb4_bin NOT NULL,
+  PasswordSalt VARCHAR(32) COLLATE utf8mb4_bin NOT NULL,
   Roles TINYINT UNSIGNED NOT NULL
+);
+
+------------------------------------------------------------
+
+Table Profiles:
+
+CREATE TABLE Profiles (
+  AccountId VARCHAR(36) COLLATE utf8mb4_unicode_ci NOT NULL PRIMARY KEY,
+  Name VARCHAR(16) COLLATE utf8mb4_unicode_ci NOT NULL
 );
