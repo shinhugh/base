@@ -31,7 +31,7 @@ const handleRequest = async (req, res) => {
         identifyResponse = await httpClient.sendRequest(identifyRequest);
       }
       catch {
-        console.error('Failed to send request to authentication service for identification');
+        console.error('Failed to send request to account service for identification');
         res.status(500).end();
         return;
       }
@@ -174,7 +174,7 @@ const validateAuthority = (authority) => {
   if (typeof authority !== 'object') {
     return false;
   }
-  if (authority.id != null && (typeof authority.id !== 'string' || !validateUuid(authority.id))) {
+  if (authority.id != null && !validateUuid(authority.id)) {
     return false;
   }
   if (authority.roles != null && (!Number.isInteger(authority.roles) || authority.roles < 0 || authority.roles > rolesMaxValue)) {
@@ -202,7 +202,7 @@ const validateResponse = (response) => {
     }
     for (const headerKey in response.headers) {
       if (response.headers[headerKey] != null) {
-        if (typeof response.headers[headerKey] !== 'object' || typeof response.headers[headerKey].constructor !== 'function' || response.headers[headerKey].constructor.name !== 'Array') {
+        if (!(response.headers[headerKey] instanceof Array)) {
           return false;
         }
         for (const headerValue of response.headers[headerKey]) {
@@ -213,7 +213,7 @@ const validateResponse = (response) => {
       }
     }
   }
-  if (response.body != null && (typeof response.body !== 'object' || typeof response.body.constructor !== 'function' || response.body.constructor.name !== 'Buffer')) {
+  if (response.body != null && !(response.body instanceof Buffer)) {
     return false;
   }
   return true;
@@ -247,25 +247,25 @@ const endpoints = {
   '/api/account': {
     'get': {
       host: 'localhost',
-      port: 8080,
+      port: 8081,
       path: '/account',
       method: 'get'
     },
     'post': {
       host: 'localhost',
-      port: 8080,
+      port: 8081,
       path: '/account',
       method: 'post'
     },
     'put': {
       host: 'localhost',
-      port: 8080,
+      port: 8081,
       path: '/account',
       method: 'put'
     },
     'delete': {
       host: 'localhost',
-      port: 8080,
+      port: 8081,
       path: '/account',
       method: 'delete'
     }
