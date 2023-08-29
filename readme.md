@@ -1,4 +1,4 @@
-# Microservices foundation
+# Distributed Authentication/Authorization System
 
 This project serves as a foundation to build on top of when developing a
 microservice-oriented HTTP API. Two services are provided:
